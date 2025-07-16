@@ -3,6 +3,42 @@ import requests
 import json
 import urllib.parse
 import urllib3
+import argparse
+import os
+from datetime import datetime
+
+def get_all_agency_info():
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    base_url = "https://michildwelfarepubliclicensingsearch.michigan.gov/licagencysrch/webruntime/api/apex/execute"
+
+    params = {
+        "cacheable": "true",
+        "classname": "@udd/01p8z0000009E4V",
+        "isContinuation": "false",
+        "method": "getAgenciesDetail",
+        "namespace": "",
+        "params": json.dumps({"recordId": None}),
+        "language": "en-US",
+        "asGuest": "true",
+        "htmlEncode": "false"
+    }
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://michildwelfarepubliclicensingsearch.michigan.gov/licagencysrch/'
+    }
+
+    try:
+        print("GET request with recordId=null")
+        response = requests.get(base_url, params=params, headers=headers, verify=False, timeout=30)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"GET request with recordId=null failed: {e}")
+        return None
 
 def get_agency_details(record_id):
     """
@@ -92,45 +128,128 @@ def get_content_details_method(record_id):
 
 # Test the functions
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Download Child Welfare Licensing agency PDFs from Michigan's public licensing search.")
+    parser.add_argument("--output-dir", dest="output_dir", help="Directory to save the CSV and JSON files", default="./")
+    args = parser.parse_args()
+    output_dir = args.output_dir
+    os.makedirs(output_dir, exist_ok=True)
+
+    all_agency_info = get_all_agency_info()
+    print(json.dumps(all_agency_info, indent=2))
+    date_str = datetime.now().strftime("%Y-%m-%d")
+    agency_file = os.path.join(output_dir, f"{date_str}_all_agency_info.json")
+
+    with open(agency_file, "w", encoding="utf-8") as f:
+        json.dump(all_agency_info, f, indent=2, ensure_ascii=False)
+    print("All agency information saved to all_agency_info.json")
+
+    # Extract the list from all_agency_info
+    agency_list = (
+        all_agency_info.get('returnValue', {})
+        .get('objectData', {})
+        .get('responseResult', [])
+    )
+
+    # Define the columns to keep
+    keep_cols = [
+        "Address",
+        "agencyId",
+        "AgencyName",
+        "AgencyType",
+        "City",
+        "County",
+        "LicenseEffectiveDate",
+        "LicenseeGroupOrganizationName",
+        "LicenseExpirationDate",
+        "LicenseNumber",
+        "LicenseStatus",
+        "Phone",
+        "ZipCode"
+    ]
+
+    # Update CSV filename to include date
+    csv_file = os.path.join(output_dir, f"{date_str}_agency_info.csv")
+    with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=keep_cols, quoting=csv.QUOTE_ALL)
+        writer.writeheader()
+        for agency in agency_list:
+            row = {col: agency.get(col, "") for col in keep_cols}
+            writer.writerow(row)
+    print(f"Agency info written to {csv_file}")
+
     keep_cols = ['FileExtension', 'CreatedDate', 'Title', 'ContentBodyId', 'Id', 'ContentDocumentId']
-    record_id = "a0i8z0000006SelAAE"
 
-    result = get_agency_details(record_id)
-    pdf_results = get_content_details_method(record_id)
+    # Run for each agency id
+    for agency in agency_list:
+        record_id = agency.get('agencyId')
+        if not record_id:
+            print("No agency ID found, skipping...")
+            continue
 
-    if result:
-        print("Saving agency details:")
-        print(json.dumps(result, indent=2))
-        with open(f"{record_id}_agency_details.json", "w", encoding="utf-8") as f:
-            json.dump(result, f, indent=2, ensure_ascii=False)
-        print(f"Agency details saved to {record_id}_agency_details.json")
-    else:
-        print("Failed to retrieve agency details.")
+        print(f"Processing agency ID: {record_id}")
+        pdf_results = get_content_details_method(record_id)
 
-    if pdf_results:
-        print("PDF Content Details:")
-        print(json.dumps(pdf_results, indent=2))
-        # Save full JSON response to file
-        json_file = f"{record_id}_pdf_content_details.json"
-        with open(json_file, "w", encoding="utf-8") as jf:
-            json.dump(pdf_results, jf, indent=2, ensure_ascii=False)
-        print(f"Full JSON results written to {json_file}")
+        if pdf_results:
+            print(f"PDF Content Details for {record_id}:")
+            # print(json.dumps(pdf_results, indent=2))
+            # Save full JSON response to file
+            json_file = os.path.join(output_dir, f"{record_id}_pdf_content_details.json")
+            with open(json_file, "w", encoding="utf-8") as jf:
+                json.dump(pdf_results, jf, indent=2, ensure_ascii=False)
+            print(f"Full JSON results written to {json_file}")
 
-        # print(pdf_results.keys())
-        # Write top-level keys/values to CSV
-        csv_file = "pdf_content_details.csv"
-        with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_ALL)
-            # Write the header
-            writer.writerow(keep_cols)
-            for p in pdf_results.get('returnValue', {}).get('contentVersionRes', []):
-                row_data = []
-                for k,v in p.items():
-                    if k in keep_cols:
-                        row_data.append(v)
-                # print(row_data)
-                writer.writerow(row_data)
+            # Write top-level keys/values to CSV
+            csv_file = os.path.join(output_dir, f"{record_id}_pdf_content_details.csv")
+            with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+                # Write the header
+                writer.writerow(keep_cols)
+                for p in pdf_results.get('returnValue', {}).get('contentVersionRes', []):
+                    row_data = [p.get(k, "") for k in keep_cols]
+                    writer.writerow(row_data)
 
-        print(f"Top-level JSON results written to {csv_file}")
-    else:
-        print("Failed to retrieve PDF content details.")
+            print(f"Top-level JSON results written to {csv_file}")
+        else:
+            print(f"Failed to retrieve PDF content details for agency ID: {record_id}")
+
+    # record_id = "a0i8z0000006SelAAE"
+
+    # result = get_agency_details(record_id)
+    # pdf_results = get_content_details_method(record_id)
+
+    # if result:
+    #     print("Saving agency details:")
+    #     print(json.dumps(result, indent=2))
+    #     with open(f"{record_id}_agency_details.json", "w", encoding="utf-8") as f:
+    #         json.dump(result, f, indent=2, ensure_ascii=False)
+    #     print(f"Agency details saved to {record_id}_agency_details.json")
+    # else:
+    #     print("Failed to retrieve agency details.")
+
+    # if pdf_results:
+    #     print("PDF Content Details:")
+    #     print(json.dumps(pdf_results, indent=2))
+    #     # Save full JSON response to file
+    #     json_file = f"{record_id}_pdf_content_details.json"
+    #     with open(json_file, "w", encoding="utf-8") as jf:
+    #         json.dump(pdf_results, jf, indent=2, ensure_ascii=False)
+    #     print(f"Full JSON results written to {json_file}")
+
+    #     # print(pdf_results.keys())
+    #     # Write top-level keys/values to CSV
+    #     csv_file = "pdf_content_details.csv"
+    #     with open(csv_file, mode='w', newline='', encoding='utf-8') as f:
+    #         writer = csv.writer(f, quoting=csv.QUOTE_ALL)
+    #         # Write the header
+    #         writer.writerow(keep_cols)
+    #         for p in pdf_results.get('returnValue', {}).get('contentVersionRes', []):
+    #             row_data = []
+    #             for k,v in p.items():
+    #                 if k in keep_cols:
+    #                     row_data.append(v)
+    #             # print(row_data)
+    #             writer.writerow(row_data)
+
+    #     print(f"Top-level JSON results written to {csv_file}")
+    # else:
+    #     print("Failed to retrieve PDF content details.")
