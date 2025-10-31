@@ -110,9 +110,9 @@ def extract_date_before_initiat(text):
     if methodology_match:
         methodology_text = methodology_match.group(1)
 
-        # Look for date on the same line as "initiat" (using MULTILINE mode)
-        # This will match a date followed by anything on the same line, ending with "initiat"
-        match = re.search(r"^.*?(\d{1,2}/\d{1,2}/\d{2,4}).*?initiat", methodology_text, re.IGNORECASE | re.MULTILINE)
+        # Look for date near "initiat" - within same line or next ~100 chars
+        # This handles cases where "Investigation Initiation" is split across lines
+        match = re.search(r"(\d{1,2}/\d{1,2}/\d{2,4}).{0,100}?initiat", methodology_text, re.IGNORECASE | re.DOTALL)
         if match:
             return match.group(1)
     return ""
