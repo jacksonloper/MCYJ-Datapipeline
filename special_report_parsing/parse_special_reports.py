@@ -27,16 +27,24 @@ def extract(pattern, text, default="", flags=re.IGNORECASE):
 
 
 def extract_admin_and_designee(text):
-    patterns = [
-        r"Administrator:\s*(.*?)\s+Licensee Designee:\s*(.*?)(?:\n|$)",
-        r"Licensee Designee:\s*(.*?)\s+Chief Administrator:\s*(.*?)(?:\n|$)",
-        r"Licensee Designee:\s*(.*?)\s+Administrator:\s*(.*?)(?:\n|$)",
-    ]
-    for pat in patterns:
-        match = re.search(pat, text, re.IGNORECASE | re.DOTALL)
-        if match:
-            # Return stripped full matches
-            return match.group(1).strip(), match.group(2).strip()
+    # Pattern 1: Administrator before Licensee Designee
+    match = re.search(r"Administrator:\s*(.*?)\s+Licensee Designee:\s*(.*?)(?:\n|$)", text, re.IGNORECASE | re.DOTALL)
+    if match:
+        # Return (designee, admin) - note the reversed order since pattern captures (admin, designee)
+        return match.group(2).strip(), match.group(1).strip()
+
+    # Pattern 2: Licensee Designee before Chief Administrator
+    match = re.search(r"Licensee Designee:\s*(.*?)\s+Chief Administrator:\s*(.*?)(?:\n|$)", text, re.IGNORECASE | re.DOTALL)
+    if match:
+        # Return (designee, admin) - pattern captures in this order
+        return match.group(1).strip(), match.group(2).strip()
+
+    # Pattern 3: Licensee Designee before Administrator
+    match = re.search(r"Licensee Designee:\s*(.*?)\s+Administrator:\s*(.*?)(?:\n|$)", text, re.IGNORECASE | re.DOTALL)
+    if match:
+        # Return (designee, admin) - pattern captures in this order
+        return match.group(1).strip(), match.group(2).strip()
+
     return "", ""
 
 
