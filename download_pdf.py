@@ -27,7 +27,6 @@ def get_content_base_data(document_id):
     }
 
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -73,9 +72,6 @@ def download_michigan_pdf(document_id, document_agency=None, document_name=None,
     # Disable SSL warnings
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    # Construct the URL
-    url = f"https://michildwelfarepubliclicensingsearch.michigan.gov/vforcesite/pdfviewer?id={document_id}"
-
     # Headers to mimic a real browser
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -88,8 +84,7 @@ def download_michigan_pdf(document_id, document_agency=None, document_name=None,
 
     try:
         # Make the request
-        print(f"Fetching PDF from: {url}")
-        res = get_content_base_data(documentid=document_id)
+        res = get_content_base_data(document_id=document_id)
         base64_data = res['returnValue']
 
         # Decode the PDF content
