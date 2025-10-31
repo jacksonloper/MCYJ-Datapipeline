@@ -110,12 +110,11 @@ def extract_date_before_initiat(text):
     if methodology_match:
         methodology_text = methodology_match.group(1)
 
-        pattern = re.compile(r"(\d{1,2}/\d{1,2}/\d{2,4}).*?(?=initiat)", re.IGNORECASE | re.DOTALL)
-        matches = list(pattern.finditer(methodology_text))
-        if matches:
-            # The last match is the nearest date before "initiat"
-            nearest_date = matches[-1].group(1)
-            return nearest_date
+        # Look for date on the same line as "initiat" (using MULTILINE mode)
+        # This will match a date followed by anything on the same line, ending with "initiat"
+        match = re.search(r"^.*?(\d{1,2}/\d{1,2}/\d{2,4}).*?initiat", methodology_text, re.IGNORECASE | re.MULTILINE)
+        if match:
+            return match.group(1)
     return ""
 
 
