@@ -1,2 +1,3 @@
 sha256,notes
 388895d6bed6a4b8dbd5021c28f425aa1afbf053ef1a9076e4e40b15c89c21b6,"No Investigation # field anywhere in document. Parser incorrectly extracted 'Report' from 'SPECIAL INVESTIGATION REPORT' header due to overly broad fallback regex pattern."
+63878321fd44c82b6dfc89191da0d55ecc90bab9699a3ea8df8ed5a20a7ec54e,"Has 'Rule Code Placement' as column header before actual 'Rule Code & CPA Rule 400.12404'. Parser finds both instances of 'Rule Code' text, extracting 2 rules instead of 1, causing mismatch with 1 allegation."
