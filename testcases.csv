@@ -1,3 +1,9 @@
 sha256,notes
 388895d6bed6a4b8dbd5021c28f425aa1afbf053ef1a9076e4e40b15c89c21b6,"No Investigation # field anywhere in document. Parser incorrectly extracted 'Report' from 'SPECIAL INVESTIGATION REPORT' header due to overly broad fallback regex pattern."
 63878321fd44c82b6dfc89191da0d55ecc90bab9699a3ea8df8ed5a20a7ec54e,"Has 'Rule Code Placement' as column header before actual 'Rule Code & CPA Rule 400.12404'. Parser finds both instances of 'Rule Code' text, extracting 2 rules instead of 1, causing mismatch with 1 allegation."
+ac605a1d5c8e3135912168bf4c0f92f6607e7d4070b30f0548c492214e28a3ff,"1 allegation, 1 rule - correctly matched. Rule: 400.4109"
+e70f4645f381a94bb2f0f420ab323f868fa6bde61984c883042076a7771f58a5,"1 allegation, 1 rule - correctly matched. Rule: 400.4109"
+fd26ea8c0dae1a534c84607a0cf702855378ed1af4120032e919de2528b00ea4,"1 allegation, 2 rules extracted (incorrect). Has 'Rule Code Sufficiency of staff' column header followed by 'Rule Code & CCI Rule 400.4126'. Parser extracts duplicate rule 400.4126."
+276ad73de86c2dc25f8ec9f6b70416aa6fdd9df1aeddbdb4c1bdc6e01f88f898,"1 allegation, 2 rules extracted (incorrect). Has 'Rule Code Resident restraint' column header followed by 'Rule Code & COF Rule 400.10177'. Parser extracts duplicate rule 400.10177."
+c1080ee0baa88f48fd2e64956b5344ba86859a02da3e1ab496cd99a5f981d4bb,"2 allegations, 2 rules - correctly matched. Rules: 400.4126, 400.4109"
+f5040c7955484ea095166f6587ec21c34a67e712cf3374354f7868c4001b9ce0,"2 allegations, 4 rules extracted (incorrect). Each rule has column header causing duplication. Rules should be 400.4126, 400.4109 but parser extracts each twice."
