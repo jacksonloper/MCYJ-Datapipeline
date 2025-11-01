@@ -11,3 +11,4 @@ f5040c7955484ea095166f6587ec21c34a67e712cf3374354f7868c4001b9ce0,"2 allegations,
 50ed2233b052689cd71aac0f85a6c3b6b59fac3c7e49e77adc0f84c5dd4d5156,"Has column header 'Rule Code Youth restraint...' as title, then 'Rule Code & R 400.4159'. Different structure with 'R' prefix."
 592218a7faf9ebdacf7af21b6e90a2ffceef86ba87f7a47caa1e02c1ac5cd6cd,"Does NOT use 'Rule Code' prefix at all. Goes directly to 'R 400.12214 Compliance with 1975 PA 238.' Completely different format from most SIRs."
 99f436a47ab646b383c0c5b0bd82f3d44bc7d3a9dfb0a8c1d37e163afa04889f,"Uses 'Rule Code & R 400.4109' format with 'R' prefix instead of standard 'Rule' format."
+b918cea3f07452e9fcdc4e2eedb9a9f41e0c3e04c3ee1cda46bc5a2758aabb20,"Structure B document: I. IDENTIFYING INFO, II. METHODOLOGY (not ALLEGATION), III. RECOMMENDATION. Uses 'APPLICABLE RULE' format in Section II. Parser searches for rules after 'III' but rules are in Section II, resulting in 0 rules extracted instead of 3."
