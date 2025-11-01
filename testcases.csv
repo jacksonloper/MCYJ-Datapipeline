@@ -1,0 +1,2 @@
+sha256,notes
+388895d6bed6a4b8dbd5021c28f425aa1afbf053ef1a9076e4e40b15c89c21b6,"No Investigation # field anywhere in document. Parser incorrectly extracted 'Report' from 'SPECIAL INVESTIGATION REPORT' header due to overly broad fallback regex pattern."
