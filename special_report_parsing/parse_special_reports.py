@@ -227,8 +227,8 @@ def get_rule_codes(text):
     section_text = section_match.group(1).strip()
 
     # Check which format is used
-    if "applicable rule" in section_text.lower():
-        # APPLICABLE RULE format (Structure B)
+    if "applicable rule" in section_text.lower() or "applicable policy" in section_text.lower():
+        # APPLICABLE RULE/POLICY format (Structure B)
         return _extract_applicable_rule_format(section_text)
     else:
         # Rule Code format (Structure A)
@@ -236,8 +236,8 @@ def get_rule_codes(text):
 
 
 def _extract_applicable_rule_format(text):
-    """Extract rules in 'APPLICABLE RULE' format."""
-    indices = [m.start() for m in re.finditer(r"applicable rule", text, re.IGNORECASE)]
+    """Extract rules in 'APPLICABLE RULE' or 'APPLICABLE POLICY' format."""
+    indices = [m.start() for m in re.finditer(r"applicable (?:rule|policy)", text, re.IGNORECASE)]
 
     # Find end of each rule section (typically "analysis" or "conclusion")
     end_indices = []
@@ -258,11 +258,18 @@ def _extract_applicable_rule_format(text):
     rule_codes = []
     descriptions = []
     for i, e in zip(indices, end_indices):
-        # Extract rule code (look for pattern like "400.xxxx" or "R 400.xxxx")
+        # Extract rule code (look for pattern like "400.xxxx", "R 400.xxxx", or "FOM 722-03D")
+        # Try Rule 400.xxx format first
         rule_match = re.search(r"(?:R\s+)?(\d{3}\.\d+)", text[i:e])
         if rule_match:
             rule_codes.append(rule_match.group(1))
             descriptions.append(text[i:e].strip())
+        else:
+            # Try FOM format
+            fom_match = re.search(r"FOM\s+(\d+-\d+[A-Z]?)", text[i:e], re.IGNORECASE)
+            if fom_match:
+                rule_codes.append("FOM " + fom_match.group(1))
+                descriptions.append(text[i:e].strip())
 
     return rule_codes, descriptions
 
