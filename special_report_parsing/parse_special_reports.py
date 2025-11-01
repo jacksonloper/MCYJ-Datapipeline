@@ -194,41 +194,124 @@ def extract_allegation_investigation_analysis_conclusion(text):
 
 
 def get_rule_codes(text):
-    match = re.search(r"(?:III|lll)(.*)", text, flags=re.DOTALL)
-    if match:
-        text = match.group(1).strip()
+    """
+    Extract rule codes and descriptions from SIR documents.
 
-    if "applicable rule" in text.lower():
-        start_tag = "applicable rule"
-        end_tag = "analysis"
-        case_sensitive = False
-    else:
-        start_tag = "Rule Code"
-        end_tag = "Violation"
-        case_sensitive = True
+    Handles two document structures:
+    - Structure A: Rules in Section III with "Rule Code & <ABBREV> Rule 400.xxx" format
+    - Structure B: Rules in Section II with "APPLICABLE RULE" format
+    """
 
-    if case_sensitive:
-        indices = [m.start() for m in re.finditer(start_tag, text)]
-        end_indices = [i + text[i:].find(end_tag) for i in indices]
+    # Detect document structure
+    # Structure B: Has "II. METHODOLOGY" AND does NOT have "III. INVESTIGATION"
+    # Structure A: Has "III. INVESTIGATION" OR has "II. ALLEGATION(S)" (most common)
+
+    has_section_III_investigation = bool(re.search(r'\bIII\.\s+INVESTIGATION', text, re.IGNORECASE))
+    section_II_match = re.search(r'\bII\.\s+([A-Z]+)', text)
+    has_section_II_methodology = section_II_match and section_II_match.group(1).startswith('METHODOLOGY')
+
+    # Structure B is only when we have II. METHODOLOGY but NO III. INVESTIGATION
+    is_structure_B = has_section_II_methodology and not has_section_III_investigation
+
+    # Extract the correct section based on structure
+    if is_structure_B:
+        # Structure B: Extract Section II (between "II." and "III.")
+        section_match = re.search(r"(?:II|ll)(.*?)(?:III|lll|\Z)", text, flags=re.DOTALL)
     else:
-        indices = [m.start() for m in re.finditer(start_tag, text, re.IGNORECASE)]
-        try:
-            end_indices = [i + re.search(end_tag, text[i:], re.IGNORECASE).start() for i in indices]
-        except:
-            try:
-                end_indices = [i + re.search("anaylsis", text[i:], re.IGNORECASE).start() for i in indices]
-            except:
-                return [], []
+        # Structure A: Extract Section III (between "III" and "IV")
+        section_match = re.search(r"(?:III|lll)(.*?)(?:IV|lV|\Z)", text, flags=re.DOTALL)
+
+    if not section_match:
+        return [], []
+
+    section_text = section_match.group(1).strip()
+
+    # Check which format is used
+    if "applicable rule" in section_text.lower():
+        # APPLICABLE RULE format (Structure B)
+        return _extract_applicable_rule_format(section_text)
+    else:
+        # Rule Code format (Structure A)
+        return _extract_rule_code_format(section_text)
+
+
+def _extract_applicable_rule_format(text):
+    """Extract rules in 'APPLICABLE RULE' format."""
+    indices = [m.start() for m in re.finditer(r"applicable rule", text, re.IGNORECASE)]
+
+    # Find end of each rule section (typically "analysis" or "conclusion")
+    end_indices = []
+    for i in indices:
+        # Try to find "analysis" or "conclusion" after this index
+        analysis_match = re.search(r"analysis|conclusion", text[i:], re.IGNORECASE)
+        if analysis_match:
+            end_indices.append(i + analysis_match.start())
+        else:
+            # If not found, try "anaylsis" (common typo)
+            typo_match = re.search(r"anaylsis", text[i:], re.IGNORECASE)
+            if typo_match:
+                end_indices.append(i + typo_match.start())
+            else:
+                # Default to 500 chars if no delimiter found
+                end_indices.append(i + 500)
+
     rule_codes = []
     descriptions = []
     for i, e in zip(indices, end_indices):
-        rule_code = ""
-        digit_idx = re.search(r"\d", text[i:]).start()
-        while (not text[digit_idx + i].isalpha()) or (not text[digit_idx + i].isupper()):
-            rule_code += text[digit_idx + i]
-            digit_idx += 1
-        rule_codes.append(str(rule_code.replace("\r\n", "").strip()))
-        descriptions.append(text[i:e].strip())
+        # Extract rule code (look for pattern like "400.xxxx" or "R 400.xxxx")
+        rule_match = re.search(r"(?:R\s+)?(\d{3}\.\d+)", text[i:e])
+        if rule_match:
+            rule_codes.append(rule_match.group(1))
+            descriptions.append(text[i:e].strip())
+
+    return rule_codes, descriptions
+
+
+def _extract_rule_code_format(text):
+    """Extract rules in 'Rule Code & <ABBREV> Rule 400.xxx' format."""
+
+    # Use regex pattern to match actual rule codes, not column headers
+    # Pattern matches: "Rule Code [& ][ABBREV ](Rule|R) 400.xxxx"
+    # But NOT: "Rule Code Placement", "Rule Code Sufficiency of staff", etc.
+
+    # Pattern explanation:
+    # - "Rule Code" literal text
+    # - \s+ one or more spaces
+    # - (?:&\s+)? optional ampersand and spaces
+    # - (?:[A-Z]{2,4}\s+)? optional 2-4 letter abbreviation (CCI, CPA, COF, etc.)
+    # - (?:Rule|R) either "Rule" or "R"
+    # - \s+ spaces
+    # - (\d{3}\.\d+) the actual rule number (captured)
+
+    pattern = r"Rule Code\s+(?:&\s+)?(?:[A-Z]{2,4}\s+)?(?:Rule|R)\s+(\d{3}\.\d+)"
+
+    matches = list(re.finditer(pattern, text))
+
+    if not matches:
+        # Fallback: try simpler pattern for edge cases
+        # This matches "R 400.xxxx" without "Rule Code" prefix
+        pattern_fallback = r"\bR\s+(\d{3}\.\d+)"
+        matches = list(re.finditer(pattern_fallback, text))
+
+    rule_codes = []
+    descriptions = []
+
+    for match in matches:
+        rule_code = match.group(1)
+        start_idx = match.start()
+
+        # Find end of this rule section (look for "Violation" or next rule)
+        remaining_text = text[start_idx:]
+        end_match = re.search(r"Violation|Rule Code", remaining_text[20:])  # Skip first 20 chars
+
+        if end_match:
+            end_idx = start_idx + 20 + end_match.start()
+        else:
+            end_idx = min(start_idx + 500, len(text))
+
+        rule_codes.append(rule_code)
+        descriptions.append(text[start_idx:end_idx].strip())
+
     return rule_codes, descriptions
 
 
@@ -274,7 +357,7 @@ def parse_single_record(record: dict) -> dict:
             or extract(r"Investigation\s*Number\s*:?\s*([0-9A-Z]+)", text, flags=re.DOTALL | re.IGNORECASE)
             or extract(r"SI\s*Number\s*:?\s*([0-9A-Z]+)", text, flags=re.DOTALL | re.IGNORECASE)
             or extract(r"SIR\s*Number\s*:?\s*([0-9A-Z]+)", text, flags=re.DOTALL | re.IGNORECASE)
-            or extract(r"Investigation\s*:?\s*([0-9A-Z]+)", text, flags=re.DOTALL | re.IGNORECASE),
+            or "",  # Removed overly broad fallback that matched "INVESTIGATION REPORT"
         "Final Report Date": extract_final_report_date(text),
         "Administrator": admin,
         "Licensee Designee": designee,
