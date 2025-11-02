@@ -15,7 +15,8 @@ def extract_roman_numeral_structure(text):
     """
     # Find all Roman numeral sections at the start of lines
     # Pattern: I., II., III., IV., V., etc. followed by heading text
-    pattern = r'^\s*([IVX]+)\.\s+([A-Z][A-Z\s]+?)(?:\s*$|\n)'
+    # Include parentheses, hyphens, and other common punctuation in headings
+    pattern = r'^\s*([IVX]+)\.\s+([A-Z][A-Z\s\(\)\-/]+?)(?:\s*$|\n)'
 
     matches = re.findall(pattern, text, re.MULTILINE)
 

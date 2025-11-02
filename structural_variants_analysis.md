@@ -2,18 +2,20 @@
 
 Analysis of 1,708 Special Investigation Report documents to identify structural diversity.
 
+**CORRECTED VERSION** - Original analysis had regex bug that missed "II. ALLEGATION(S)" due to parentheses.
+
 ## Summary Statistics
 
 - **Total SIR documents**: 1,708
-- **Unique structural patterns**: 16
+- **Unique structural patterns**: 18
 - **Section III variants**:
   - 63.8% use "III. INVESTIGATION"
   - 35.2% use "III. METHODOLOGY"
   - 0.6% use "III. RECOMMENDATION(S)" (numbering errors)
 
-## Major Structure Types
+## Major Structure Types (91.2% of documents)
 
-### Structure Type 1: Standard Format (63.6% - 1,086 documents)
+### Structure Type A: Methodology with Embedded Allegation (63.6% - 1,086 documents)
 
 ```
 I. IDENTIFYING INFORMATION
@@ -28,7 +30,7 @@ IV. RECOMMENDATION(S)
 
 **Example SHA**: 61d8519dc19bc955...
 
-**Where allegation appears**:
+**Where allegation appears** (embedded table in Section I):
 ```
 Violation | Potential Rule | Violation Type | Allegation
 --------- | -------------- | -------------- | ----------
@@ -37,33 +39,7 @@ Violation | Potential Rule | Violation Type | Allegation
 
 ---
 
-### Structure Type 2: No Section II (26.5% - 453 documents)
-
-```
-I. IDENTIFYING INFORMATION
-   └─ Contains allegation as embedded field
-III. METHODOLOGY
-     └─ Contains rules
-IV. RECOMMENDATION(S)
-```
-
-**Key characteristic**: Skips Section II entirely, jumps from I to III.
-
----
-
-### Structure Type 3: Minimal Header (5.2% - 88 documents)
-
-```
-III. METHODOLOGY
-     └─ Contains rules
-IV. RECOMMENDATION(S)
-```
-
-**Key characteristic**: No Section I or II, starts directly with III.
-
----
-
-### Structure Type 4: Dedicated Allegation Section (2.3% - 39 documents)
+### Structure Type B: Dedicated Allegation Section (27.6% - 471 documents)
 
 ```
 I. IDENTIFYING INFORMATION
@@ -74,25 +50,54 @@ III. METHODOLOGY
 IV. RECOMMENDATION(S)
 ```
 
-**Key characteristic**: Has separate "II. ALLEGATION(S)" section, not just embedded field.
+**Key characteristic**: Has separate "II. ALLEGATION(S)" section as a major heading.
 
-**Example SHA**: 81f8c85b18909108... (previously called "Structure C")
+**Example SHA**: 81f8c85b18909108... (the "Structure C" example)
 
-**This is the minority format!** Only 2.3% of documents use this structure.
+**This is the SECOND most common format**, not a rare variant!
 
 ---
 
-### Structure Type 5: Classic Investigation Section (0.7% - 10 documents)
+### Structure Type C: No Identifying Section (5.3% - 91 documents)
+
+```
+II. ALLEGATION(S)
+III. METHODOLOGY
+     └─ Contains rules
+IV. RECOMMENDATION(S)
+```
+
+**Key characteristic**: No Section I, starts directly with II. ALLEGATION(S).
+
+---
+
+## Minor Structures (< 2% each)
+
+### Skip Section II (1.2% - 21 documents)
+
+```
+I. IDENTIFYING INFORMATION
+III. METHODOLOGY
+     └─ Contains rules
+IV. RECOMMENDATION(S)
+```
+
+**Key characteristic**: Jumps from Section I to Section III, skipping II entirely.
+
+---
+
+### No Section IV (0.5% - 8 documents)
 
 ```
 I. IDENTIFYING INFORMATION
 II. METHODOLOGY
+     └─ Contains rules
 III. RECOMMENDATION(S)
 ```
 
-**Key characteristic**: No Section IV, recommendations are in Section III. Rules must be in Section II.
+**Key characteristic**: Recommendations in Section III instead of IV. Rules must be in Section II.
 
-**Example SHA**: b918cea3f07452e9... (previously called "Structure B")
+**Example SHA**: b918cea3f07452e9...
 
 ---
 
@@ -172,11 +177,24 @@ The current parser is **location-based**, not structure-based:
 
 4. **Document edge cases**: The malformed documents (<1%) should be noted but not drive parser design
 
-## Key Insight
+## Key Insights
 
-**Original assumption was wrong**: We thought "Structure A" (I → II. ALLEGATION → III. INVESTIGATION → IV) was standard, but actually:
-- Only **2.3%** have dedicated "II. ALLEGATION(S)" section
-- **63.6%** embed allegations in Section I as labeled fields
-- The parser correctly handles both by searching for "Allegation:" label anywhere
+1. **Two main structures** account for 91.2% of documents:
+   - **Type A (63.6%)**: Allegation embedded in Section I, "II. METHODOLOGY", "III. INVESTIGATION"
+   - **Type B (27.6%)**: Dedicated "II. ALLEGATION(S)" section, "III. METHODOLOGY" with nested INVESTIGATION
 
-The structure diversity is real, but the parser's flexible approach (search by label, not by section number) makes it resilient to most variants.
+2. **Initial regex bug** in analysis script:
+   - Pattern `[A-Z\s]+?` missed parentheses in "II. ALLEGATION(S)"
+   - This caused massive undercounting of Type B structures (27.6% actual vs 2.3% initially reported)
+   - Fixed by adding parentheses to pattern: `[A-Z\s\(\)\-/]+?`
+
+3. **Parser resilience**: The parser correctly handles both major structures by:
+   - Searching for "Allegation:" label anywhere (handles both embedded and dedicated sections)
+   - Using location logic (Section II vs III) for rule extraction, not rigid structure assumptions
+
+4. **Section III variance**:
+   - 63.8% use "III. INVESTIGATION"
+   - 35.2% use "III. METHODOLOGY"
+   - Parser handles both by searching Section III regardless of label
+
+The structural diversity is real (18 unique patterns), but the parser's flexible label-based approach makes it resilient to most variants.
