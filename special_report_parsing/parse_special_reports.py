@@ -195,131 +195,148 @@ def extract_allegation_investigation_analysis_conclusion(text):
 
 def get_rule_codes(text):
     """
-    Extract rule codes and descriptions from SIR documents.
+    Extract rule codes, descriptions, conclusions, and violation status from SIR documents.
 
-    Handles two document structures:
-    - Structure A: Rules in Section III with "Rule Code & <ABBREV> Rule 400.xxx" format
-    - Structure B: Rules in Section II with "APPLICABLE RULE" format
+    Uses structure-agnostic approach that searches entire document for rule patterns
+    instead of relying on Roman numeral sections.
+
+    Returns:
+        - rule_codes: List of unique rule codes
+        - descriptions: List of descriptions (aligned with rule_codes)
+        - conclusions: List of conclusion texts (aligned with rule_codes)
+        - violation_established: List of violation status (aligned with rule_codes)
+        - duplicates: Dict mapping rule_code -> count of how many times it appeared
     """
 
-    # Detect document structure
-    # Structure B: Has "II. METHODOLOGY" AND does NOT have "III. INVESTIGATION"
-    # Structure A: Has "III. INVESTIGATION" OR has "II. ALLEGATION(S)" (most common)
+    all_rules = []  # List of (rule_code, description, conclusion, violation_status) tuples
 
-    has_section_III_investigation = bool(re.search(r'\bIII\.\s+INVESTIGATION', text, re.IGNORECASE))
-    section_II_match = re.search(r'\bII\.\s+([A-Z]+)', text)
-    has_section_II_methodology = section_II_match and section_II_match.group(1).startswith('METHODOLOGY')
+    # Method 1: Extract "APPLICABLE RULE" / "APPLICABLE POLICY" format (has conclusions)
+    applicable_rules = _extract_applicable_rule_format(text)
+    all_rules.extend(applicable_rules)
 
-    # Structure B is only when we have II. METHODOLOGY but NO III. INVESTIGATION
-    is_structure_B = has_section_II_methodology and not has_section_III_investigation
+    # Method 2: Extract "Rule Code & [ABBREV] Rule 400.xxx" format (no conclusions)
+    rule_code_rules = _extract_rule_code_format(text)
+    all_rules.extend(rule_code_rules)
 
-    # Extract the correct section based on structure
-    if is_structure_B:
-        # Structure B: Extract Section II (between "II." and "III.")
-        section_match = re.search(r"(?:II|ll)(.*?)(?:III|lll|\Z)", text, flags=re.DOTALL)
-    else:
-        # Structure A: Extract Section III (between "III" and "IV")
-        section_match = re.search(r"(?:III|lll)(.*?)(?:IV|lV|\Z)", text, flags=re.DOTALL)
+    # Count duplicates before deduping
+    duplicates = {}
+    for rule_code, _, _, _ in all_rules:
+        duplicates[rule_code] = duplicates.get(rule_code, 0) + 1
 
-    if not section_match:
-        return [], []
+    # Deduplicate while preserving order
+    seen = set()
+    unique_rules = []
+    unique_descriptions = []
+    unique_conclusions = []
+    unique_violations = []
 
-    section_text = section_match.group(1).strip()
+    for rule_code, description, conclusion, violation in all_rules:
+        if rule_code not in seen:
+            seen.add(rule_code)
+            unique_rules.append(rule_code)
+            unique_descriptions.append(description)
+            unique_conclusions.append(conclusion)
+            unique_violations.append(violation)
 
-    # Check which format is used
-    if "applicable rule" in section_text.lower() or "applicable policy" in section_text.lower():
-        # APPLICABLE RULE/POLICY format (Structure B)
-        return _extract_applicable_rule_format(section_text)
-    else:
-        # Rule Code format (Structure A)
-        return _extract_rule_code_format(section_text)
+    return unique_rules, unique_descriptions, unique_conclusions, unique_violations, duplicates
 
 
 def _extract_applicable_rule_format(text):
-    """Extract rules in 'APPLICABLE RULE' or 'APPLICABLE POLICY' format."""
+    """
+    Extract rules in 'APPLICABLE RULE' or 'APPLICABLE POLICY' format.
+    Searches entire document, not just specific sections.
+    Returns tuples of (rule_code, description, conclusion, violation_established)
+    """
     indices = [m.start() for m in re.finditer(r"applicable (?:rule|policy)", text, re.IGNORECASE)]
 
-    # Find end of each rule section (typically "analysis" or "conclusion")
-    end_indices = []
-    for i in indices:
-        # Try to find "analysis" or "conclusion" after this index
-        analysis_match = re.search(r"analysis|conclusion", text[i:], re.IGNORECASE)
-        if analysis_match:
-            end_indices.append(i + analysis_match.start())
+    # For each APPLICABLE RULE, find the full section including conclusion
+    rules = []
+    for idx, start_pos in enumerate(indices):
+        # Find end of this rule section (start of next APPLICABLE RULE, or far ahead)
+        if idx + 1 < len(indices):
+            end_pos = indices[idx + 1]
         else:
-            # If not found, try "anaylsis" (common typo)
-            typo_match = re.search(r"anaylsis", text[i:], re.IGNORECASE)
-            if typo_match:
-                end_indices.append(i + typo_match.start())
-            else:
-                # Default to 500 chars if no delimiter found
-                end_indices.append(i + 500)
+            end_pos = min(len(text), start_pos + 2000)
 
-    rule_codes = []
-    descriptions = []
-    for i, e in zip(indices, end_indices):
+        section_text = text[start_pos:end_pos]
+
         # Extract rule code (look for pattern like "400.xxxx", "R 400.xxxx", or "FOM 722-03D")
-        # Try Rule 400.xxx format first
-        rule_match = re.search(r"(?:R\s+)?(\d{3}\.\d+)", text[i:e])
+        rule_code = None
+        rule_match = re.search(r"(?:R\s+)?(\d{3}\.\d+)", section_text)
         if rule_match:
-            rule_codes.append(rule_match.group(1))
-            descriptions.append(text[i:e].strip())
+            rule_code = rule_match.group(1)
         else:
             # Try FOM format
-            fom_match = re.search(r"FOM\s+(\d+-\d+[A-Z]?)", text[i:e], re.IGNORECASE)
+            fom_match = re.search(r"FOM\s+(\d+-\d+[A-Z]?)", section_text, re.IGNORECASE)
             if fom_match:
-                rule_codes.append("FOM " + fom_match.group(1))
-                descriptions.append(text[i:e].strip())
+                rule_code = "FOM " + fom_match.group(1)
 
-    return rule_codes, descriptions
+        if not rule_code:
+            continue
+
+        # Extract description (from APPLICABLE RULE to ANALYSIS/CONCLUSION)
+        desc_match = re.search(r'APPLICABLE (?:RULE|POLICY)(.*?)(?=ANALYSIS|CONCLUSION|$)', section_text, re.DOTALL | re.IGNORECASE)
+        description = desc_match.group(1).strip() if desc_match else section_text[:200].strip()
+
+        # Extract conclusion
+        conclusion_match = re.search(r'CONCLUSION:\s*(.*?)(?=APPLICABLE|$)', section_text, re.DOTALL | re.IGNORECASE)
+        if conclusion_match:
+            conclusion = conclusion_match.group(1).strip()
+        else:
+            conclusion = "N/A"
+
+        # Determine violation status from conclusion
+        if conclusion == "N/A":
+            violation_established = "N/A"
+        elif "not" in conclusion.lower() and "established" in conclusion.lower():
+            violation_established = "No"
+        elif "established" in conclusion.lower():
+            violation_established = "Yes"
+        else:
+            violation_established = "N/A"
+
+        rules.append((rule_code, description, conclusion, violation_established))
+
+    return rules
 
 
 def _extract_rule_code_format(text):
-    """Extract rules in 'Rule Code & <ABBREV> Rule 400.xxx' format."""
+    """
+    Extract rules in 'Rule Code & <ABBREV> Rule 400.xxx' format.
+    Searches entire document, not just specific sections.
+    Returns tuples of (rule_code, description, conclusion, violation_established)
+    Note: This format doesn't have per-rule conclusions, so those are "N/A"
+    """
 
     # Use regex pattern to match actual rule codes, not column headers
     # Pattern matches: "Rule Code [& ][ABBREV ](Rule|R) 400.xxxx"
     # But NOT: "Rule Code Placement", "Rule Code Sufficiency of staff", etc.
 
-    # Pattern explanation:
-    # - "Rule Code" literal text
-    # - \s+ one or more spaces
-    # - (?:&\s+)? optional ampersand and spaces
-    # - (?:[A-Z]{2,4}\s+)? optional 2-4 letter abbreviation (CCI, CPA, COF, etc.)
-    # - (?:Rule|R) either "Rule" or "R"
-    # - \s+ spaces
-    # - (\d{3}\.\d+) the actual rule number (captured)
-
     pattern = r"Rule Code\s+(?:&\s+)?(?:[A-Z]{2,4}\s+)?(?:Rule|R)\s+(\d{3}\.\d+)"
-
     matches = list(re.finditer(pattern, text))
 
-    if not matches:
-        # Fallback: try simpler pattern for edge cases
-        # This matches "R 400.xxxx" without "Rule Code" prefix
-        pattern_fallback = r"\bR\s+(\d{3}\.\d+)"
-        matches = list(re.finditer(pattern_fallback, text))
-
-    rule_codes = []
-    descriptions = []
-
+    rules = []
     for match in matches:
         rule_code = match.group(1)
-        start_idx = match.start()
+        # Get some context around the match
+        start = max(0, match.start() - 50)
+        end = min(len(text), match.end() + 200)
+        description = text[start:end].strip()
+        # Rule Code format doesn't have per-rule conclusions
+        rules.append((rule_code, description, "N/A", "N/A"))
 
-        # Find end of this rule section (look for "Violation" or next rule)
-        remaining_text = text[start_idx:]
-        end_match = re.search(r"Violation|Rule Code", remaining_text[20:])  # Skip first 20 chars
+    # Fallback: try simpler pattern for edge cases
+    if not rules:
+        pattern_fallback = r"\bR\s+(\d{3}\.\d+)"
+        matches_fallback = list(re.finditer(pattern_fallback, text))
+        for match in matches_fallback:
+            rule_code = match.group(1)
+            start = max(0, match.start() - 50)
+            end = min(len(text), match.end() + 200)
+            description = text[start:end].strip()
+            rules.append((rule_code, description, "N/A", "N/A"))
 
-        if end_match:
-            end_idx = start_idx + 20 + end_match.start()
-        else:
-            end_idx = min(start_idx + 500, len(text))
-
-        rule_codes.append(rule_code)
-        descriptions.append(text[start_idx:end_idx].strip())
-
-    return rule_codes, descriptions
+    return rules
 
 
 def format_time(seconds: float) -> str:
@@ -400,18 +417,17 @@ def parse_single_record(record: dict) -> dict:
         })
 
     # Extract rules
-    rule_codes, descriptions = get_rule_codes(text)
+    rule_codes, descriptions, rule_conclusions, violations, duplicates = get_rule_codes(text)
 
     rules_data = []
-    for i, (code, desc) in enumerate(zip(rule_codes, descriptions), 1):
-        # Get corresponding conclusion if available
-        concl = conclusions[i-1] if i <= len(conclusions) else "N/A"
+    for i, (code, desc, concl, viol) in enumerate(zip(rule_codes, descriptions, rule_conclusions, violations), 1):
         rules_data.append({
             "number": i,
             "rule_code": code,
             "description": desc,
             "conclusion": concl,
-            "violation_established": "No" if "not" in concl.lower() else "Yes" if concl != "N/A" else "N/A"
+            "violation_established": viol,
+            "duplicate_count": duplicates.get(code, 1)  # How many times this rule was mentioned
         })
 
     return {
