@@ -218,10 +218,25 @@ def get_rule_codes(text):
     rule_code_rules = _extract_rule_code_format(text)
     all_rules.extend(rule_code_rules)
 
-    # Count duplicates before deduping
+    # Count duplicates and check for inconsistent statuses
     duplicates = {}
-    for rule_code, _, _, _ in all_rules:
+    status_conflicts = {}  # Maps rule_code -> list of statuses found
+
+    for rule_code, _, _, violation in all_rules:
         duplicates[rule_code] = duplicates.get(rule_code, 0) + 1
+
+        # Track all statuses for this rule
+        if rule_code not in status_conflicts:
+            status_conflicts[rule_code] = []
+        if violation != "N/A":  # Only track actual Yes/No statuses
+            status_conflicts[rule_code].append(violation)
+
+    # Detect conflicts: same rule with both "Yes" and "No" statuses
+    conflicts = {}
+    for rule_code, statuses in status_conflicts.items():
+        unique_statuses = set(statuses)
+        if len(unique_statuses) > 1:  # Has both "Yes" and "No"
+            conflicts[rule_code] = statuses
 
     # Deduplicate while preserving order
     seen = set()
@@ -229,6 +244,7 @@ def get_rule_codes(text):
     unique_descriptions = []
     unique_conclusions = []
     unique_violations = []
+    unique_conflicts = []  # Track if this rule has conflicting statuses
 
     for rule_code, description, conclusion, violation in all_rules:
         if rule_code not in seen:
@@ -237,8 +253,9 @@ def get_rule_codes(text):
             unique_descriptions.append(description)
             unique_conclusions.append(conclusion)
             unique_violations.append(violation)
+            unique_conflicts.append(rule_code in conflicts)
 
-    return unique_rules, unique_descriptions, unique_conclusions, unique_violations, duplicates
+    return unique_rules, unique_descriptions, unique_conclusions, unique_violations, duplicates, unique_conflicts
 
 
 def _extract_applicable_rule_format(text):
@@ -278,8 +295,8 @@ def _extract_applicable_rule_format(text):
         desc_match = re.search(r'APPLICABLE (?:RULE|POLICY)(.*?)(?=ANALYSIS|CONCLUSION|$)', section_text, re.DOTALL | re.IGNORECASE)
         description = desc_match.group(1).strip() if desc_match else section_text[:200].strip()
 
-        # Extract conclusion
-        conclusion_match = re.search(r'CONCLUSION:\s*(.*?)(?=APPLICABLE|$)', section_text, re.DOTALL | re.IGNORECASE)
+        # Extract conclusion (stop at section markers to avoid including unrelated text)
+        conclusion_match = re.search(r'CONCLUSION:\s*(.*?)(?=ADDITIONAL FINDINGS|APPLICABLE|ALLEGATION|$)', section_text, re.DOTALL | re.IGNORECASE)
         if conclusion_match:
             conclusion = conclusion_match.group(1).strip()
         else:
@@ -417,17 +434,18 @@ def parse_single_record(record: dict) -> dict:
         })
 
     # Extract rules
-    rule_codes, descriptions, rule_conclusions, violations, duplicates = get_rule_codes(text)
+    rule_codes, descriptions, rule_conclusions, violations, duplicates, conflicts = get_rule_codes(text)
 
     rules_data = []
-    for i, (code, desc, concl, viol) in enumerate(zip(rule_codes, descriptions, rule_conclusions, violations), 1):
+    for i, (code, desc, concl, viol, has_conflict) in enumerate(zip(rule_codes, descriptions, rule_conclusions, violations, conflicts), 1):
         rules_data.append({
             "number": i,
             "rule_code": code,
             "description": desc,
             "conclusion": concl,
             "violation_established": viol,
-            "duplicate_count": duplicates.get(code, 1)  # How many times this rule was mentioned
+            "duplicate_count": duplicates.get(code, 1),  # How many times this rule was mentioned
+            "has_status_conflict": has_conflict  # Whether duplicate mentions have inconsistent Yes/No statuses
         })
 
     return {
