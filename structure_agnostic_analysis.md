@@ -5,9 +5,11 @@ Analysis comparing a structure-agnostic parser (ignores Roman numerals) vs the c
 ## Executive Summary
 
 **The structure-agnostic approach works better**:
-- ✅ 97.5% exact match with current parser
-- ✅ **In all 42 differences, found MORE rules** (never fewer)
+- ✅ 97.4% exact match with current parser on rule codes
+- ✅ **In 43 of 44 differences, found MORE rules** (only 1 case with fewer)
 - ✅ **Fixes critical bug** where current parser matches "IV" inside "HIV/AIDS"
+- ✅ **Correctly extracts violation status** when allegation/rule counts differ
+- ✅ **Current parser shows wrong violation status** (N/A instead of Yes/No) when counts mismatch
 - ✅ Simpler, more maintainable code
 - ✅ Tracks duplicate rule mentions (33% of documents have duplicates)
 
@@ -32,9 +34,9 @@ Analysis comparing a structure-agnostic parser (ignores Roman numerals) vs the c
   - Referenced multiple times in investigation narrative
   - Listed in both allegation and findings sections
 
-## Critical Bug Found in Current Parser
+## Critical Bugs Found in Current Parser
 
-### The "HIV/AIDS" Bug
+### Bug 1: The "HIV/AIDS" Section Termination Bug
 
 **Bug**: Current parser's pattern `(?:IV|lV|\Z)` matches "IV" inside words like "H**IV**/AIDS"
 
@@ -58,6 +60,55 @@ Result: 0 rules extracted instead of 4
 - Doesn't rely on section boundaries
 - Searches entire document for rule patterns
 - Not affected by "IV" appearing in words
+
+---
+
+### Bug 2: The Index-Based Violation Status Bug
+
+**Bug**: Current parser matches conclusions to rules by index position, assuming 1 allegation = 1 conclusion = 1 rule
+
+**Example**: SHA 81f8c85b18909108...
+
+```
+Document has:
+- 1 allegation (prone restraint)
+- 3 rules violated (400.4160, 400.4159, 400.4161)
+- 3 separate CONCLUSION sections (one per rule)
+
+Current parser behavior:
+1. Extracts allegations → gets 1 allegation with 1 conclusion
+2. Extracts rules → gets 3 rule codes
+3. Matches by index: rule[0]→conclusion[0], rule[1]→conclusion[1], rule[2]→conclusion[2]
+4. conclusions list only has 1 item, so rule[1] and rule[2] get "N/A"
+
+Result:
+  Rule 1 (400.4160): Violation = No ✓ (correct)
+  Rule 2 (400.4159): Violation = N/A ✗ (actually: REPEAT VIOLATION ESTABLISHED)
+  Rule 3 (400.4161): Violation = N/A ✗ (actually: REPEAT VIOLATION ESTABLISHED)
+```
+
+**Actual document content**:
+```
+APPLICABLE RULE
+R 400.4160 Emergency restraint...
+CONCLUSION: VIOLATION NOT ESTABLISHED
+
+APPLICABLE RULE
+R 400.4159 Youth restraint; prohibited restraints...
+CONCLUSION: REPEAT VIOLATION ESTABLISHED
+
+APPLICABLE RULE
+R 400.4161 Mechanical restraint; prohibitions...
+CONCLUSION: REPEAT VIOLATION ESTABLISHED
+```
+
+**Why agnostic parser doesn't have this bug**:
+- Extracts CONCLUSION from each APPLICABLE RULE section directly
+- Doesn't rely on index matching between allegations and rules
+- Each rule has its own conclusion, stored together as a tuple
+- Works correctly whether there's 1 allegation → 3 rules, or 3 allegations → 1 rule
+
+**Impact**: Affects **every document** where allegation count ≠ rule count (15.9% of documents = 271 SIRs)
 
 ## Approach Comparison
 
@@ -171,9 +222,17 @@ Knowing a rule was mentioned multiple times can indicate:
 The structure-agnostic parser can be integrated by:
 
 1. Replace `get_rule_codes()` function with `extract_rules_agnostic()`
-2. Update callers to handle the new return format: `(rule_codes, descriptions, duplicates)`
-3. Add duplicate count to output schema (optional metadata)
-4. Remove structure detection logic (simplification)
+2. Update callers to handle the new return format:
+   ```python
+   rule_codes, descriptions, conclusions, violation_established, duplicates = extract_rules_agnostic(text)
+   ```
+3. Update rules_data structure to use extracted conclusions instead of index-matched ones
+4. Add duplicate count to output schema (optional metadata)
+5. Remove structure detection logic (simplification)
+
+**Key difference**: Current parser returns `(rule_codes, descriptions)` and matches conclusions by index.
+Agnostic parser returns `(rule_codes, descriptions, conclusions, violation_established, duplicates)`
+with conclusions properly aligned to each rule.
 
 ## Code Size Comparison
 
