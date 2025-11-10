@@ -1,0 +1,41 @@
+name: Check Unique SHA256 Hashes
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pdf_parsing/parquet_files/*.parquet'
+      - 'pdf_parsing/check_unique_hashes.py'
+      - '.github/workflows/check-unique-hashes.yml'
+
+jobs:
+  check-hashes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: '**/pyproject.toml'
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system pandas pyarrow
+
+      - name: Check for duplicate SHA256 hashes
+        run: |
+          python3 pdf_parsing/check_unique_hashes.py
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ All SHA256 hashes across parquet files are unique!"

@@ -1,0 +1,10 @@
+[project]
+name = "mcyj-datapipeline"
+version = "0.1.0"
+description = "MCYJ data pipeline for PDF parsing and special report processing"
+requires-python = ">=3.11"
+dependencies = [
+    "pdfplumber>=0.11.0",
+    "regex>=2023.10.0",
+    "flask>=3.0.0",
+]
