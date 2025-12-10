@@ -1,7 +1,8 @@
 [build]
   # Run the build script
+  base = "website"
   command = "bash build.sh"
-  publish = "dist"
+  publish = "../dist"
   
 [build.environment]
   # Python version

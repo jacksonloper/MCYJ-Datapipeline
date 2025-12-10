@@ -196,7 +196,7 @@ def main():
     )
     parser.add_argument(
         "--output-dir",
-        default="website/public/data",
+        default="public/data",
         help="Output directory for JSON files"
     )
     

@@ -109,6 +109,7 @@ A lightweight web dashboard is included to visualize agency information, violati
 The website can be built with a single command:
 
 ```bash
+cd website
 ./build.sh
 ```
 
@@ -123,6 +124,7 @@ The built website will be in the `dist/` directory.
 
 ```bash
 # Install dependencies
+cd website
 npm install
 
 # Start development server
@@ -133,9 +135,9 @@ npm run dev
 
 The site is configured for automatic deployment on Netlify:
 - Push changes to your repository
-- Netlify will automatically run `build.sh` to generate data and build the site
+- Netlify will automatically run the build process from the `website` directory
 - The site will be deployed from the `dist/` directory
 
-Configuration is in `netlify.toml`.
+Configuration is in `website/netlify.toml`.
 
 See [website/README.md](website/README.md) for more details about the dashboard.

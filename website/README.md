@@ -71,26 +71,26 @@ The `netlify.toml` file configures:
 
 The dashboard uses data from:
 
-- **Parquet Files**: PDF text extracts in `pdf_parsing/parquet_files/`
-- **Agency CSV**: Agency information from `metadata_output/*_agency_info.csv`
-- **Documents CSV**: Document listings from `metadata_output/*_combined_pdf_content_details.csv`
+- **Parquet Files**: PDF text extracts in `../pdf_parsing/parquet_files/`
+- **Agency CSV**: Agency information from `../metadata_output/*_agency_info.csv`
+- **Documents CSV**: Document listings from `../metadata_output/*_combined_pdf_content_details.csv`
 - **Violations CSV**: Generated from parquet files via `parse_parquet_violations.py`
 
 ## Project Structure
 
 ```
-.
-├── website/
-│   ├── index.html           # Main HTML file
-│   ├── src/
-│   │   └── main.js          # JavaScript application logic
-│   └── public/
-│       └── data/            # Generated JSON data files (git-ignored)
+website/
+├── index.html               # Main HTML file
+├── src/
+│   └── main.js              # JavaScript application logic
+├── public/
+│   └── data/                # Generated JSON data files (git-ignored)
 ├── generate_website_data.py # Script to generate JSON from CSVs
 ├── build.sh                 # Build script for the entire site
-├── vite.config.js          # Vite configuration
-├── netlify.toml            # Netlify deployment configuration
-└── package.json            # Node.js dependencies and scripts
+├── vite.config.js           # Vite configuration
+├── netlify.toml             # Netlify deployment configuration
+├── package.json             # Node.js dependencies and scripts
+└── README.md                # This file
 ```
 
 ## Scripts
@@ -102,20 +102,23 @@ The dashboard uses data from:
 
 ## Data Generation
 
-To regenerate the data:
+To regenerate the data manually:
 
 ```bash
+# From the website directory
+cd website
+
 # Generate violations CSV from parquet files
-python3 parse_parquet_violations.py \
-  --parquet-dir pdf_parsing/parquet_files \
-  -o violations_output.csv
+python3 ../parse_parquet_violations.py \
+  --parquet-dir ../pdf_parsing/parquet_files \
+  -o ../violations_output.csv
 
 # Generate JSON files for website
 python3 generate_website_data.py \
-  --violations-csv violations_output.csv \
-  --agency-csv metadata_output/YYYY-MM-DD_agency_info.csv \
-  --documents-csv metadata_output/YYYY-MM-DD_combined_pdf_content_details.csv \
-  --output-dir website/public/data
+  --violations-csv ../violations_output.csv \
+  --agency-csv ../metadata_output/YYYY-MM-DD_agency_info.csv \
+  --documents-csv ../metadata_output/YYYY-MM-DD_combined_pdf_content_details.csv \
+  --output-dir public/data
 ```
 
 ## License

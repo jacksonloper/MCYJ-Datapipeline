@@ -5,16 +5,16 @@
 set -e  # Exit on error
 
 echo "==> Step 1: Generating violations CSV from parquet files..."
-python3 parse_parquet_violations.py \
-  --parquet-dir pdf_parsing/parquet_files \
-  -o violations_output.csv
+python3 ../parse_parquet_violations.py \
+  --parquet-dir ../pdf_parsing/parquet_files \
+  -o ../violations_output.csv
 
 echo ""
 echo "==> Step 2: Finding latest metadata files..."
 
 # Find the latest agency and documents CSV files
-AGENCY_CSV=$(find metadata_output -name "*_agency_info.csv" 2>/dev/null | sort -r | head -1)
-DOCUMENTS_CSV=$(find metadata_output -name "*_combined_pdf_content_details.csv" 2>/dev/null | sort -r | head -1)
+AGENCY_CSV=$(find ../metadata_output -name "*_agency_info.csv" 2>/dev/null | sort -r | head -1)
+DOCUMENTS_CSV=$(find ../metadata_output -name "*_combined_pdf_content_details.csv" 2>/dev/null | sort -r | head -1)
 
 if [ -z "$AGENCY_CSV" ]; then
   echo "Warning: No agency CSV file found in metadata_output/"
@@ -34,15 +34,15 @@ echo ""
 echo "==> Step 3: Generating JSON data for website..."
 if [ -n "$DOCUMENTS_CSV" ]; then
   python3 generate_website_data.py \
-    --violations-csv violations_output.csv \
+    --violations-csv ../violations_output.csv \
     --agency-csv "$AGENCY_CSV" \
     --documents-csv "$DOCUMENTS_CSV" \
-    --output-dir website/public/data
+    --output-dir public/data
 else
   python3 generate_website_data.py \
-    --violations-csv violations_output.csv \
+    --violations-csv ../violations_output.csv \
     --agency-csv "$AGENCY_CSV" \
-    --output-dir website/public/data
+    --output-dir public/data
 fi
 
 echo ""
