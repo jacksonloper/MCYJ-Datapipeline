@@ -81,4 +81,21 @@ The output CSV contains:
 - Inspection/report date
 - List of policies/rules violated (excluding "not violated" entries)
 
+## 6. Investigate violations
+
+After running the violations script, you can investigate random documents to see the original text alongside the parsed annotations:
+
+```bash
+cd pdf_parsing
+python3 investigate_violations.py --category violation
+```
+
+Categories:
+- `noviolation` - Documents with 0 violations
+- `violation` - Documents with 1-9 violations
+- `manyviolation` - Documents with 10+ violations
+- `all` - Any document (default)
+
+The script displays a random document from the specified category, showing both the annotation (parsed violations) and the full document text from the parquet file.
+
 See [pdf_parsing/README.md](pdf_parsing/README.md) for more details.
