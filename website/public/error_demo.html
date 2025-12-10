@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .modal-error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px auto;
+            max-width: 600px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h2>Enhanced Error Message Example</h2>
+    <div class="modal-error">SHA256 not found: abc123def456
+
+Diagnostic Information:
+- Files checked: 5/5
+- Files accessible: 0
+- Total rows scanned: 0
+
+Fetch Errors:
+  • /parquet/20251103_133347_pdf_text.parquet: HTTP 404: Not Found
+  • /parquet/20251103_133526_pdf_text.parquet: HTTP 404: Not Found
+  • /parquet/20251103_133758_pdf_text.parquet: HTTP 404: Not Found
+  • /parquet/20251103_134410_pdf_text.parquet: HTTP 404: Not Found
+  • /parquet/20251103_142412_pdf_text.parquet: HTTP 404: Not Found
+
+⚠️ No parquet files were accessible. Check if parquet files are copied to dist/parquet/ during build.</div>
+</body>
+</html>
