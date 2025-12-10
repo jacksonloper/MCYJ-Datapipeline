@@ -30,6 +30,7 @@ dist/
 
 # Build artifacts
 website/public/data/
+website/public/parquet/
 metadata_output/
 *.egg-info/
 build/

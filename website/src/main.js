@@ -1,9 +1,59 @@
 // Main application logic
+import * as duckdb from '@duckdb/duckdb-wasm';
+
 let allAgencies = [];
 let filteredAgencies = [];
+let db = null;
+let conn = null;
+let isInitializingDuckDB = false;
+let duckDBInitialized = false;
+
+// Initialize DuckDB WASM (lazy - only when first report is clicked)
+async function initDuckDB() {
+    if (duckDBInitialized) {
+        return true;
+    }
+    
+    if (isInitializingDuckDB) {
+        // Wait for ongoing initialization
+        while (isInitializingDuckDB) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        return duckDBInitialized;
+    }
+    
+    isInitializingDuckDB = true;
+    
+    try {
+        console.log('Initializing DuckDB WASM...');
+        const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+        const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+        
+        const worker_url = URL.createObjectURL(
+            new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' })
+        );
+        
+        const worker = new Worker(worker_url);
+        const logger = new duckdb.ConsoleLogger();
+        db = new duckdb.AsyncDuckDB(logger, worker);
+        await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+        URL.revokeObjectURL(worker_url);
+        
+        conn = await db.connect();
+        console.log('DuckDB WASM initialized successfully');
+        duckDBInitialized = true;
+        return true;
+    } catch (error) {
+        console.error('Error initializing DuckDB:', error);
+        return false;
+    } finally {
+        isInitializingDuckDB = false;
+    }
+}
 
 // Load and display data
 async function init() {
+    
     try {
         // Fetch the agency data
         const response = await fetch('/data/agencies_data.json');
@@ -18,6 +68,7 @@ async function init() {
         displayStats();
         displayAgencies(allAgencies);
         setupSearch();
+        setupModal();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -105,6 +156,14 @@ function displayAgencies(agencies) {
     // Add click handlers to expand/collapse details
     document.querySelectorAll('.agency-card').forEach(card => {
         card.addEventListener('click', (e) => {
+            // Don't toggle details if clicking on the view report button
+            if (e.target.classList.contains('view-report-btn')) {
+                e.stopPropagation();
+                const sha256 = e.target.dataset.sha256;
+                viewReport(sha256);
+                return;
+            }
+            
             const agencyId = card.dataset.agencyId;
             const details = document.getElementById(`details-${agencyId}`);
             details.classList.toggle('visible');
@@ -143,6 +202,9 @@ function renderViolations(violations) {
                 ` : `
                     <div style="color: #27ae60;">✓ No violations found</div>
                 `}
+                <button class="view-report-btn" data-sha256="${escapeHtml(v.sha256)}">
+                    📄 View Full Report
+                </button>
             </div>
         `;
     }).join('');
@@ -181,6 +243,126 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Setup modal functionality
+function setupModal() {
+    const modal = document.getElementById('reportModal');
+    const closeBtn = document.getElementById('closeModal');
+    
+    // Close modal when clicking close button
+    closeBtn.addEventListener('click', () => {
+        modal.classList.remove('visible');
+    });
+    
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('visible');
+        }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('visible')) {
+            modal.classList.remove('visible');
+        }
+    });
+}
+
+// View report text from parquet files
+async function viewReport(sha256) {
+    const modal = document.getElementById('reportModal');
+    const modalLoading = document.getElementById('modalLoading');
+    const modalError = document.getElementById('modalError');
+    const modalText = document.getElementById('modalText');
+    
+    // Show modal and loading state
+    modal.classList.add('visible');
+    modalLoading.style.display = 'block';
+    modalError.style.display = 'none';
+    modalText.style.display = 'none';
+    
+    try {
+        // Lazy initialize DuckDB if not already done
+        if (!duckDBInitialized) {
+            const initialized = await initDuckDB();
+            if (!initialized) {
+                throw new Error('Failed to initialize database');
+            }
+        }
+        
+        if (!conn) {
+            throw new Error('Database connection not available');
+        }
+        
+        // Get list of parquet files
+        const parquetFiles = [
+            '/parquet/20251103_133347_pdf_text.parquet',
+            '/parquet/20251103_133526_pdf_text.parquet',
+            '/parquet/20251103_133758_pdf_text.parquet',
+            '/parquet/20251103_134410_pdf_text.parquet',
+            '/parquet/20251103_142412_pdf_text.parquet'
+        ];
+        
+        let reportText = null;
+        
+        // Search through parquet files
+        for (const file of parquetFiles) {
+            try {
+                const query = `
+                    SELECT text 
+                    FROM read_parquet('${file}')
+                    WHERE sha256 = '${sha256}'
+                    LIMIT 1
+                `;
+                
+                const result = await conn.query(query);
+                const rows = result.toArray();
+                
+                if (rows.length > 0) {
+                    reportText = rows[0].text;
+                    break;
+                }
+            } catch (err) {
+                console.warn(`Error reading ${file}:`, err);
+                continue;
+            }
+        }
+        
+        if (!reportText) {
+            throw new Error('Report not found in parquet files');
+        }
+        
+        // Parse the text if it's stored as a string representation of an array
+        let fullText = '';
+        try {
+            // The text might be stored as a string representation of a list
+            const textPages = typeof reportText === 'string' && reportText.startsWith('[') 
+                ? JSON.parse(reportText.replace(/'/g, '"')) 
+                : reportText;
+            
+            if (Array.isArray(textPages)) {
+                fullText = textPages.join('\n\n--- Page Break ---\n\n');
+            } else {
+                fullText = String(reportText);
+            }
+        } catch (parseError) {
+            console.warn('Error parsing text:', parseError);
+            fullText = String(reportText);
+        }
+        
+        // Display the text
+        modalLoading.style.display = 'none';
+        modalText.style.display = 'block';
+        modalText.textContent = fullText;
+        
+    } catch (error) {
+        console.error('Error loading report:', error);
+        modalLoading.style.display = 'none';
+        modalError.style.display = 'block';
+        modalError.textContent = `Failed to load report: ${error.message}`;
+    }
 }
 
 // Initialize the application

@@ -30,6 +30,11 @@ python3 generate_website_data.py \
   --output-dir public/data
 
 echo ""
+echo "==> Step 2.5: Copying parquet files to public directory..."
+mkdir -p public/parquet
+cp ../pdf_parsing/parquet_files/*.parquet public/parquet/
+
+echo ""
 echo "==> Step 3: Building website with Vite..."
 npm run build
 
