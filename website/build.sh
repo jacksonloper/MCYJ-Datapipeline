@@ -4,8 +4,13 @@
 
 set -e  # Exit on error
 
-echo "==> Installing uv..."
-pip install uv
+echo "==> Installing uv if needed..."
+if ! command -v uv &> /dev/null; then
+    echo "uv not found, installing..."
+    pip install uv
+else
+    echo "uv is already installed"
+fi
 
 echo "==> Installing Python dependencies with uv..."
 cd ..
