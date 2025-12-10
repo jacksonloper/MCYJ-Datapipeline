@@ -11,13 +11,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 echo "==> Installing uv if needed..."
 if ! command -v uv &> /dev/null; then
     echo "uv not found, installing..."
-    if pip install uv 2>/dev/null; then
+    if pip install --user uv 2>/dev/null && command -v uv &> /dev/null; then
         echo "uv installed successfully with pip"
     else
         echo "Failed to install uv with pip, trying official installer..."
         curl -LsSf https://astral.sh/uv/install.sh | sh
         # Add to PATH for this session
-        export PATH="$HOME/.cargo/bin:$PATH"
+        export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
         # Verify uv is now available
         if ! command -v uv &> /dev/null; then
             echo "ERROR: Failed to install uv"
