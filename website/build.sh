@@ -12,9 +12,9 @@ else
     echo "uv is already installed"
 fi
 
-echo "==> Installing Python dependencies with uv..."
+echo "==> Installing Python dependencies from pyproject.toml..."
 cd ..
-uv pip install --system pandas>=2.0.0 pyarrow>=14.0.0 pdfplumber>=0.11.0 regex>=2023.10.0
+uv pip install --system .
 cd website
 
 echo ""
