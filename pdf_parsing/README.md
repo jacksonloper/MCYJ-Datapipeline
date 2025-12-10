@@ -62,6 +62,16 @@ This will:
 
 Spot checking exits with code 0 if all checks pass, or code 1 if any fail.
 
+### Quick sampling of extracted text
+
+Inspect a handful of stored parquet rows and pull out rule references, dates, and identifiers:
+
+```bash
+uv run pdf_parsing/parse_parquet_rules.py --num-records 5
+```
+
+Use `--parquet-dir` to point at an alternate parquet directory and `--seed` for repeatable sampling.
+
 ## Output Format
 
 The script outputs compressed Parquet files with the following schema:
@@ -77,4 +87,3 @@ The script outputs compressed Parquet files with the following schema:
 Each processing run creates a new file named: `YYYYMMDD_HHMMSS_pdf_text.parquet`
 
 Example: `20251103_143052_pdf_text.parquet`
-
