@@ -81,4 +81,27 @@ The output CSV contains:
 - Inspection/report date
 - List of policies/rules violated (excluding "not violated" entries)
 
+## 6. Investigate violations for errata
+
+After running the violations script, you can investigate the parsed violations against the original parquet files to check for parsing errors (errata):
+
+```bash
+python3 investigate_violations_errata.py --violations-csv violations_output.csv --parquet-dir pdf_parsing/parquet_files --sample-size 10
+```
+
+This script:
+- Reads sample rows from the violations CSV
+- Retrieves the corresponding original documents from parquet files
+- Displays the original text alongside parsed violations
+- Checks for common parsing errors such as:
+  - Violations near "not violated" text
+  - Missing agency IDs or names
+  - Violations not found in original text
+
+Use `--non-interactive` flag to run without pausing between documents. Output can be redirected to a file for detailed review:
+
+```bash
+python3 investigate_violations_errata.py --sample-size 20 --non-interactive > errata_report.txt
+```
+
 See [pdf_parsing/README.md](pdf_parsing/README.md) for more details.
