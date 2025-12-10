@@ -171,23 +171,24 @@ async function viewDocument(sha256, event) {
             throw new Error(`Failed to load document: ${response.statusText}`);
         }
         
-        const document = await response.json();
-        showDocumentModal(document);
+        const docData = await response.json();
+        showDocumentModal(docData);
     } catch (error) {
         console.error('Error loading document:', error);
         alert(`Failed to load document: ${error.message}`);
     }
 }
 
-function showDocumentModal(document) {
+function showDocumentModal(docData) {
     const modal = document.getElementById('documentModal') || createDocumentModal();
     const modalContent = modal.querySelector('.modal-document-content');
     
     // Format the document pages
-    const pagesHtml = document.pages.map((page, index) => {
+    const totalPages = docData.pages.length;
+    const pagesHtml = docData.pages.map((page, index) => {
         return `
             <div class="document-page">
-                <div class="page-number">Page ${index + 1} of ${document.num_pages}</div>
+                <div class="page-number">Page ${index + 1} of ${totalPages}</div>
                 <pre class="page-text">${escapeHtml(page)}</pre>
             </div>
         `;
@@ -199,9 +200,9 @@ function showDocumentModal(document) {
             <button class="close-modal" onclick="closeDocumentModal()">✕</button>
         </div>
         <div class="document-info">
-            <div><strong>SHA256:</strong> ${escapeHtml(document.sha256)}</div>
-            <div><strong>Date Processed:</strong> ${escapeHtml(document.dateprocessed)}</div>
-            <div><strong>Total Pages:</strong> ${document.num_pages}</div>
+            <div><strong>SHA256:</strong> ${escapeHtml(docData.sha256)}</div>
+            <div><strong>Date Processed:</strong> ${escapeHtml(docData.dateprocessed)}</div>
+            <div><strong>Total Pages:</strong> ${totalPages}</div>
         </div>
         <div class="document-pages">
             ${pagesHtml}

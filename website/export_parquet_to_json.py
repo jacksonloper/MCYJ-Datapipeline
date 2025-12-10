@@ -57,11 +57,20 @@ def export_parquet_to_json(parquet_dir: str, output_dir: str) -> None:
                 # Parse text - it's stored as a list or numpy array
                 text_data = row['text']
                 if isinstance(text_data, str):
-                    # If stored as string, parse it
+                    # If stored as string, parse it safely
                     try:
-                        text_pages = ast.literal_eval(text_data)
-                    except (ValueError, SyntaxError):
-                        logger.warning(f"Failed to parse text for document {sha256}")
+                        # Validate that it looks like a list before parsing
+                        if text_data.strip().startswith('[') and text_data.strip().endswith(']'):
+                            text_pages = ast.literal_eval(text_data)
+                            # Ensure result is a list
+                            if not isinstance(text_pages, list):
+                                logger.warning(f"Parsed text is not a list for document {sha256}")
+                                text_pages = []
+                        else:
+                            logger.warning(f"Text data is not in list format for document {sha256}")
+                            text_pages = []
+                    except (ValueError, SyntaxError) as e:
+                        logger.warning(f"Failed to parse text for document {sha256}: {e}")
                         text_pages = []
                 else:
                     # If already a list or array, convert to list
@@ -94,17 +103,20 @@ def export_parquet_to_json(parquet_dir: str, output_dir: str) -> None:
 
 def main():
     """Main entry point."""
+    # Get script directory to make paths relative to script location
+    script_dir = Path(__file__).parent.absolute()
+    
     parser = argparse.ArgumentParser(
         description="Export parquet rows to individual JSON files"
     )
     parser.add_argument(
         "--parquet-dir",
-        default="../pdf_parsing/parquet_files",
+        default=str(script_dir / "../pdf_parsing/parquet_files"),
         help="Directory containing parquet files (default: ../pdf_parsing/parquet_files)"
     )
     parser.add_argument(
         "--output-dir",
-        default="public/documents",
+        default=str(script_dir / "public/documents"),
         help="Output directory for JSON files (default: public/documents)"
     )
     parser.add_argument(
