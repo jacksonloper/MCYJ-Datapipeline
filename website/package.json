@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "vite": "^7.2.7"
+    "@vitest/ui": "^4.0.15",
+    "vite": "^7.2.7",
+    "vitest": "^4.0.15"
   },
   "dependencies": {
     "@bokuweb/zstd-wasm": "^0.0.27",

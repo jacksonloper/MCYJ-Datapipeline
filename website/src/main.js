@@ -17,16 +17,31 @@ async function ensureZstdInitialized() {
 
 // Custom decompressor for hyparquet that supports ZSTD
 async function decompressor(method, data) {
-    if (method === 'ZSTD') {
-        await ensureZstdInitialized();
-        return decompressZstd(new Uint8Array(data));
-    } else if (method === 'GZIP') {
-        return gunzipSync(new Uint8Array(data));
-    } else if (method === 'SNAPPY') {
-        throw new Error(`Unsupported compression: ${method}`);
-    } else {
-        // Uncompressed
-        return data;
+    console.log(`Decompressing with ${method}, input length: ${data?.byteLength || data?.length}`);
+    
+    try {
+        if (method === 'ZSTD') {
+            await ensureZstdInitialized();
+            const input = data instanceof Uint8Array ? data : new Uint8Array(data);
+            const result = decompressZstd(input);
+            console.log(`ZSTD decompressed length: ${result?.length}`);
+            return result;
+        } else if (method === 'GZIP') {
+            const input = data instanceof Uint8Array ? data : new Uint8Array(data);
+            const result = gunzipSync(input);
+            console.log(`GZIP decompressed length: ${result?.length}`);
+            return result;
+        } else if (method === 'SNAPPY') {
+            throw new Error(`Unsupported compression: ${method}`);
+        } else {
+            // Uncompressed - return as Uint8Array
+            const result = data instanceof Uint8Array ? data : new Uint8Array(data);
+            console.log(`Uncompressed length: ${result?.length}`);
+            return result;
+        }
+    } catch (err) {
+        console.error(`Decompression error for ${method}:`, err);
+        throw err;
     }
 }
 
