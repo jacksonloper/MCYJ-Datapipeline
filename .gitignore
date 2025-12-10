@@ -22,3 +22,12 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Build artifacts
+website/public/data/
+metadata_output/
