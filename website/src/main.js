@@ -183,6 +183,12 @@ function showDocumentModal(docData) {
     const modal = document.getElementById('documentModal') || createDocumentModal();
     const modalContent = modal.querySelector('.modal-document-content');
     
+    // Validate document data
+    if (!docData.pages || !Array.isArray(docData.pages)) {
+        console.error('Invalid document data: pages array missing or invalid');
+        return;
+    }
+    
     // Format the document pages
     const totalPages = docData.pages.length;
     const pagesHtml = docData.pages.map((page, index) => {

@@ -80,8 +80,7 @@ def export_parquet_to_json(parquet_dir: str, output_dir: str) -> None:
                 document = {
                     'sha256': sha256,
                     'dateprocessed': str(dateprocessed),
-                    'pages': text_pages,
-                    'num_pages': len(text_pages) if text_pages else 0
+                    'pages': text_pages
                 }
                 
                 # Write to individual JSON file
