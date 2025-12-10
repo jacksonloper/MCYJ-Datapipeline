@@ -4,6 +4,20 @@
 
 set -e  # Exit on error
 
+echo "==> Step 0: Installing Python dependencies with uv..."
+# Install uv if not available
+if ! command -v uv &> /dev/null; then
+  echo "Installing uv..."
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  export PATH="$HOME/.cargo/bin:$PATH"
+fi
+
+# Install dependencies from pyproject.toml
+cd ..
+uv pip install --system -e .
+cd website
+
+echo ""
 echo "==> Step 1: Generating violations CSV from parquet files..."
 python3 ../parse_parquet_violations.py \
   --parquet-dir ../pdf_parsing/parquet_files \
