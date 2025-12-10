@@ -247,26 +247,47 @@ async function viewReport(sha256) {
         ];
         
         let reportText = null;
+        let filesChecked = 0;
+        let filesAccessible = 0;
+        let totalRows = 0;
+        const fetchErrors = [];
+        
+        console.log(`Looking for SHA256: ${sha256}`);
         
         // Search through parquet files using hyparquet
         for (const file of parquetFiles) {
+            filesChecked++;
             try {
-                console.log(`Searching in ${file}...`);
+                console.log(`[${filesChecked}/${parquetFiles.length}] Fetching ${file}...`);
                 
                 // Fetch the parquet file
                 const response = await fetch(file);
-                if (!response.ok) continue;
+                if (!response.ok) {
+                    const error = `HTTP ${response.status}: ${response.statusText}`;
+                    console.warn(`  ✗ Failed to fetch ${file}: ${error}`);
+                    fetchErrors.push(`${file}: ${error}`);
+                    continue;
+                }
+                
+                filesAccessible++;
+                console.log(`  ✓ Fetched ${file} (${(response.headers.get('content-length') / 1024).toFixed(1)} KB)`);
                 
                 const arrayBuffer = await response.arrayBuffer();
                 
                 // Parse the parquet file and search for the sha256
+                let rowsInFile = 0;
                 await parquetRead({
                     file: arrayBuffer,
                     onComplete: (data) => {
+                        rowsInFile = data.length;
+                        totalRows += rowsInFile;
+                        console.log(`  → Scanning ${rowsInFile} rows...`);
+                        
                         // data is an array of row objects
                         for (const row of data) {
                             if (row.sha256 === sha256) {
                                 reportText = row.text;
+                                console.log(`  ✓ Found matching SHA256!`);
                                 break;
                             }
                         }
@@ -278,13 +299,33 @@ async function viewReport(sha256) {
                     break;
                 }
             } catch (err) {
-                console.warn(`Error reading ${file}:`, err);
+                console.warn(`  ✗ Error reading ${file}:`, err);
+                fetchErrors.push(`${file}: ${err.message}`);
                 continue;
             }
         }
         
         if (!reportText) {
-            throw new Error('Report not found in parquet files');
+            // Provide detailed diagnostic information
+            let errorDetails = `SHA256 not found: ${sha256}\n\n`;
+            errorDetails += `Diagnostic Information:\n`;
+            errorDetails += `- Files checked: ${filesChecked}/${parquetFiles.length}\n`;
+            errorDetails += `- Files accessible: ${filesAccessible}\n`;
+            errorDetails += `- Total rows scanned: ${totalRows}\n`;
+            
+            if (fetchErrors.length > 0) {
+                errorDetails += `\nFetch Errors:\n`;
+                fetchErrors.forEach(err => {
+                    errorDetails += `  • ${err}\n`;
+                });
+            }
+            
+            if (filesAccessible === 0) {
+                errorDetails += `\n⚠️ No parquet files were accessible. Check if parquet files are copied to dist/parquet/ during build.`;
+            }
+            
+            console.error(errorDetails);
+            throw new Error(errorDetails);
         }
         
         // Parse the text if it's stored as a string representation of an array
@@ -314,7 +355,10 @@ async function viewReport(sha256) {
         console.error('Error loading report:', error);
         modalLoading.style.display = 'none';
         modalError.style.display = 'block';
-        modalError.textContent = `Failed to load report: ${error.message}`;
+        modalError.style.whiteSpace = 'pre-wrap';
+        modalError.style.fontFamily = 'monospace';
+        modalError.style.fontSize = '12px';
+        modalError.textContent = error.message;
     }
 }
 
