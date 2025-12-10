@@ -1,0 +1,14 @@
+[build]
+  # Run the build script
+  base = "website"
+  command = "bash build.sh"
+  publish = "../dist"
+  
+[build.environment]
+  # Python version
+  PYTHON_VERSION = "3.11"
+  
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

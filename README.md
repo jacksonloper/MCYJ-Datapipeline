@@ -99,3 +99,45 @@ Categories:
 The script displays a random document from the specified category, showing both the annotation (parsed violations) and the full document text from the parquet file.
 
 See [pdf_parsing/README.md](pdf_parsing/README.md) for more details.
+
+## 7. Web Dashboard
+
+A lightweight web dashboard is included to visualize agency violations and reports.
+
+### Building the Website
+
+The website can be built with a single command:
+
+```bash
+cd website
+./build.sh
+```
+
+This will:
+1. Generate violations CSV from parquet files
+2. Create JSON data files from the violations (deriving agency info automatically)
+3. Build the static website with Vite
+
+The built website will be in the `dist/` directory.
+
+### Local Development
+
+```bash
+# Install dependencies
+cd website
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Netlify Deployment
+
+The site is configured for automatic deployment on Netlify:
+- Push changes to your repository
+- Netlify will automatically run the build process from the `website` directory
+- The site will be deployed from the `dist/` directory
+
+Configuration is in `website/netlify.toml`.
+
+See [website/README.md](website/README.md) for more details about the dashboard.
