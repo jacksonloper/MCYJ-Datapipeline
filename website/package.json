@@ -15,7 +15,9 @@
     "vite": "^7.2.7"
   },
   "dependencies": {
+    "fflate": "^0.8.2",
     "hyparquet": "^1.23.0",
-    "parquet-wasm": "^0.7.1"
+    "parquet-wasm": "^0.7.1",
+    "zstd-codec": "^0.1.5"
   }
 }

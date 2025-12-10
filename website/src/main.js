@@ -1,8 +1,50 @@
 // Main application logic
 import { parquetRead } from 'hyparquet';
+import { asyncDecompress } from 'fflate';
+import { ZstdCodec } from 'zstd-codec';
 
 let allAgencies = [];
 let filteredAgencies = [];
+let zstdCodec = null;
+
+// Initialize ZSTD codec
+async function initZstd() {
+    if (!zstdCodec) {
+        zstdCodec = await ZstdCodec.run(zsimple => {
+            return {
+                decompress: (data) => zsimple.decompress(data)
+            };
+        });
+    }
+    return zstdCodec;
+}
+
+// Custom decompressor for hyparquet that supports ZSTD
+function decompressor(method, data) {
+    return new Promise((resolve, reject) => {
+        if (method === 'ZSTD') {
+            initZstd().then(codec => {
+                try {
+                    const decompressed = codec.decompress(new Uint8Array(data));
+                    resolve(decompressed);
+                } catch (err) {
+                    reject(err);
+                }
+            }).catch(reject);
+        } else if (method === 'GZIP') {
+            asyncDecompress(new Uint8Array(data), (err, result) => {
+                if (err) reject(err);
+                else resolve(result);
+            });
+        } else if (method === 'SNAPPY') {
+            // For now, reject SNAPPY as it's not commonly used
+            reject(new Error(`Unsupported compression: ${method}`));
+        } else {
+            // Uncompressed
+            resolve(data);
+        }
+    });
+}
 
 // Load and display data
 async function init() {
