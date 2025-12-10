@@ -12,14 +12,13 @@ Output is saved as a CSV file with one row per document.
 """
 
 import argparse
+import ast
 import csv
-import glob
 import logging
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
@@ -149,7 +148,7 @@ def extract_violations(text: str) -> List[str]:
     return violations
 
 
-def parse_document(text_pages: List[str]) -> Dict[str, any]:
+def parse_document(text_pages: List[str]) -> Dict[str, Any]:
     """Parse a document (list of pages) and extract relevant information."""
     # Combine all pages into a single text for parsing
     full_text = '\n'.join(text_pages)
@@ -202,7 +201,11 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
                 total_documents += 1
                 
                 # Parse text (stored as string representation of list)
-                text_pages = eval(row['text']) if isinstance(row['text'], str) else row['text']
+                try:
+                    text_pages = ast.literal_eval(row['text']) if isinstance(row['text'], str) else row['text']
+                except (ValueError, SyntaxError):
+                    logger.error(f"Failed to parse text for document {row['sha256']}")
+                    continue
                 
                 # Parse document
                 parsed = parse_document(text_pages)
