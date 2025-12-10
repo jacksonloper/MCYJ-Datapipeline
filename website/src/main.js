@@ -1,55 +1,8 @@
 // Main application logic
-import * as duckdb from '@duckdb/duckdb-wasm';
+import { parquetRead } from 'hyparquet';
 
 let allAgencies = [];
 let filteredAgencies = [];
-let db = null;
-let conn = null;
-let isInitializingDuckDB = false;
-let duckDBInitialized = false;
-
-// Initialize DuckDB WASM (lazy - only when first report is clicked)
-async function initDuckDB() {
-    if (duckDBInitialized) {
-        return true;
-    }
-    
-    if (isInitializingDuckDB) {
-        // Wait for ongoing initialization
-        while (isInitializingDuckDB) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return duckDBInitialized;
-    }
-    
-    isInitializingDuckDB = true;
-    
-    try {
-        console.log('Initializing DuckDB WASM...');
-        const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
-        const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
-        
-        const worker_url = URL.createObjectURL(
-            new Blob([`importScripts("${bundle.mainWorker}");`], { type: 'text/javascript' })
-        );
-        
-        const worker = new Worker(worker_url);
-        const logger = new duckdb.ConsoleLogger();
-        db = new duckdb.AsyncDuckDB(logger, worker);
-        await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
-        URL.revokeObjectURL(worker_url);
-        
-        conn = await db.connect();
-        console.log('DuckDB WASM initialized successfully');
-        duckDBInitialized = true;
-        return true;
-    } catch (error) {
-        console.error('Error initializing DuckDB:', error);
-        return false;
-    } finally {
-        isInitializingDuckDB = false;
-    }
-}
 
 // Load and display data
 async function init() {
@@ -270,7 +223,7 @@ function setupModal() {
     });
 }
 
-// View report text from parquet files
+// View report text from parquet files using hyparquet
 async function viewReport(sha256) {
     const modal = document.getElementById('reportModal');
     const modalLoading = document.getElementById('modalLoading');
@@ -284,18 +237,6 @@ async function viewReport(sha256) {
     modalText.style.display = 'none';
     
     try {
-        // Lazy initialize DuckDB if not already done
-        if (!duckDBInitialized) {
-            const initialized = await initDuckDB();
-            if (!initialized) {
-                throw new Error('Failed to initialize database');
-            }
-        }
-        
-        if (!conn) {
-            throw new Error('Database connection not available');
-        }
-        
         // Get list of parquet files
         const parquetFiles = [
             '/parquet/20251103_133347_pdf_text.parquet',
@@ -307,21 +248,33 @@ async function viewReport(sha256) {
         
         let reportText = null;
         
-        // Search through parquet files
+        // Search through parquet files using hyparquet
         for (const file of parquetFiles) {
             try {
-                const query = `
-                    SELECT text 
-                    FROM read_parquet('${file}')
-                    WHERE sha256 = '${sha256}'
-                    LIMIT 1
-                `;
+                console.log(`Searching in ${file}...`);
                 
-                const result = await conn.query(query);
-                const rows = result.toArray();
+                // Fetch the parquet file
+                const response = await fetch(file);
+                if (!response.ok) continue;
                 
-                if (rows.length > 0) {
-                    reportText = rows[0].text;
+                const arrayBuffer = await response.arrayBuffer();
+                
+                // Parse the parquet file and search for the sha256
+                await parquetRead({
+                    file: arrayBuffer,
+                    onComplete: (data) => {
+                        // data is an array of row objects
+                        for (const row of data) {
+                            if (row.sha256 === sha256) {
+                                reportText = row.text;
+                                break;
+                            }
+                        }
+                    }
+                });
+                
+                if (reportText) {
+                    console.log(`Found report in ${file}`);
                     break;
                 }
             } catch (err) {
