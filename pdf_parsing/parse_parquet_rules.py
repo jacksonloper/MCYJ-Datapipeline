@@ -150,8 +150,7 @@ def main() -> None:
     args = parser.parse_args()
 
     data = load_records(args.parquet_dir)
-    if args.seed is not None:
-        random.seed(args.seed)
+    rng = random.Random(args.seed)
     sample_size = min(args.num_records, len(data))
     sampled_records = data.sample(n=sample_size, random_state=args.seed).to_dict(
         orient="records"
@@ -162,7 +161,7 @@ def main() -> None:
             rec for rec in data.to_dict(orient="records") if has_rule_reference(rec.get("text"))
         ]
         if rule_records:
-            random.shuffle(rule_records)
+            rng.shuffle(rule_records)
             sampled_records = rule_records[:sample_size]
 
     summarize_records(sampled_records)
