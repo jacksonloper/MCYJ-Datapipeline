@@ -1,49 +1,33 @@
 // Main application logic
 import { parquetRead } from 'hyparquet';
-import { asyncDecompress } from 'fflate';
-import { ZstdCodec } from 'zstd-codec';
+import { gunzipSync } from 'fflate';
+import { init as initZstd, decompress as decompressZstd } from '@bokuweb/zstd-wasm';
 
 let allAgencies = [];
 let filteredAgencies = [];
-let zstdCodec = null;
+let zstdInitialized = false;
 
-// Initialize ZSTD codec
-async function initZstd() {
-    if (!zstdCodec) {
-        zstdCodec = await ZstdCodec.run(zsimple => {
-            return {
-                decompress: (data) => zsimple.decompress(data)
-            };
-        });
+// Initialize ZSTD (only needs to be done once)
+async function ensureZstdInitialized() {
+    if (!zstdInitialized) {
+        await initZstd();
+        zstdInitialized = true;
     }
-    return zstdCodec;
 }
 
 // Custom decompressor for hyparquet that supports ZSTD
-function decompressor(method, data) {
-    return new Promise((resolve, reject) => {
-        if (method === 'ZSTD') {
-            initZstd().then(codec => {
-                try {
-                    const decompressed = codec.decompress(new Uint8Array(data));
-                    resolve(decompressed);
-                } catch (err) {
-                    reject(err);
-                }
-            }).catch(reject);
-        } else if (method === 'GZIP') {
-            asyncDecompress(new Uint8Array(data), (err, result) => {
-                if (err) reject(err);
-                else resolve(result);
-            });
-        } else if (method === 'SNAPPY') {
-            // For now, reject SNAPPY as it's not commonly used
-            reject(new Error(`Unsupported compression: ${method}`));
-        } else {
-            // Uncompressed
-            resolve(data);
-        }
-    });
+async function decompressor(method, data) {
+    if (method === 'ZSTD') {
+        await ensureZstdInitialized();
+        return decompressZstd(new Uint8Array(data));
+    } else if (method === 'GZIP') {
+        return gunzipSync(new Uint8Array(data));
+    } else if (method === 'SNAPPY') {
+        throw new Error(`Unsupported compression: ${method}`);
+    } else {
+        // Uncompressed
+        return data;
+    }
 }
 
 // Load and display data
@@ -320,6 +304,10 @@ async function viewReport(sha256) {
                 let rowsInFile = 0;
                 await parquetRead({
                     file: arrayBuffer,
+                    compressors: {
+                        ZSTD: (data) => decompressor('ZSTD', data),
+                        GZIP: (data) => decompressor('GZIP', data),
+                    },
                     onComplete: (data) => {
                         rowsInFile = data.length;
                         totalRows += rowsInFile;
