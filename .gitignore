@@ -16,7 +16,7 @@ ENV/
 .vscode/
 .idea/
 *.swp
-*.swo
+.swo
 *~
 
 # OS
@@ -31,3 +31,6 @@ dist/
 # Build artifacts
 website/public/data/
 metadata_output/
+*.egg-info/
+build/
+dist/

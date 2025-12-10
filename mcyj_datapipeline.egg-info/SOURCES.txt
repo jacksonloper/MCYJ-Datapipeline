@@ -1,7 +1,0 @@
-README.md
-pyproject.toml
-mcyj_datapipeline.egg-info/PKG-INFO
-mcyj_datapipeline.egg-info/SOURCES.txt
-mcyj_datapipeline.egg-info/dependency_links.txt
-mcyj_datapipeline.egg-info/requires.txt
-mcyj_datapipeline.egg-info/top_level.txt
