@@ -102,7 +102,7 @@ See [pdf_parsing/README.md](pdf_parsing/README.md) for more details.
 
 ## 7. Web Dashboard
 
-A lightweight web dashboard is included to visualize agency information, violations, and documents.
+A lightweight web dashboard is included to visualize agency violations and reports.
 
 ### Building the Website
 
@@ -115,7 +115,7 @@ cd website
 
 This will:
 1. Generate violations CSV from parquet files
-2. Create JSON data files from the CSVs
+2. Create JSON data files from the violations (deriving agency info automatically)
 3. Build the static website with Vite
 
 The built website will be in the `dist/` directory.

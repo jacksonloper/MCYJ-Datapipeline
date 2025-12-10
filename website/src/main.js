@@ -41,7 +41,6 @@ function displayStats() {
     
     const totalAgencies = allAgencies.length;
     const totalViolations = allAgencies.reduce((sum, a) => sum + a.total_violations, 0);
-    const totalDocuments = allAgencies.reduce((sum, a) => sum + a.total_documents, 0);
     const totalReports = allAgencies.reduce((sum, a) => sum + a.total_reports, 0);
     const agenciesWithViolations = allAgencies.filter(a => a.total_violations > 0).length;
     
@@ -62,10 +61,6 @@ function displayStats() {
             <div class="stat-number">${totalReports}</div>
             <div class="stat-label">Reports/Inspections</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${totalDocuments}</div>
-            <div class="stat-label">Total Documents</div>
-        </div>
     `;
 }
 
@@ -82,51 +77,18 @@ function displayAgencies(agencies) {
     noResultsEl.style.display = 'none';
     
     agenciesEl.innerHTML = agencies.map(agency => {
-        const statusClass = agency.LicenseStatus?.toLowerCase().includes('active') ? 'status-active' : 'status-inactive';
-        
         return `
             <div class="agency-card" data-agency-id="${agency.agencyId}">
                 <div class="agency-header">
                     <div>
                         <div class="agency-name">${escapeHtml(agency.AgencyName || 'Unknown Agency')}</div>
-                        ${agency.LicenseNumber ? `<div style="color: #666; font-size: 0.9em; margin-top: 4px;">License #: ${escapeHtml(agency.LicenseNumber)}</div>` : ''}
+                        <div style="color: #666; font-size: 0.9em; margin-top: 4px;">ID: ${escapeHtml(agency.agencyId)}</div>
                     </div>
-                    <span class="agency-type">${escapeHtml(agency.AgencyType || 'N/A')}</span>
-                </div>
-                
-                <div class="agency-info">
-                    ${agency.City || agency.County ? `
-                        <div class="info-item">
-                            <span class="info-label">Location:</span> 
-                            ${escapeHtml([agency.City, agency.County].filter(Boolean).join(', '))}
-                        </div>
-                    ` : ''}
-                    ${agency.Address ? `
-                        <div class="info-item">
-                            <span class="info-label">Address:</span> 
-                            ${escapeHtml(agency.Address)}
-                        </div>
-                    ` : ''}
-                    ${agency.Phone ? `
-                        <div class="info-item">
-                            <span class="info-label">Phone:</span> 
-                            ${escapeHtml(agency.Phone)}
-                        </div>
-                    ` : ''}
-                    ${agency.LicenseStatus ? `
-                        <div class="info-item">
-                            <span class="info-label">Status:</span> 
-                            <span class="stat-badge ${statusClass}">${escapeHtml(agency.LicenseStatus)}</span>
-                        </div>
-                    ` : ''}
                 </div>
                 
                 <div class="agency-stats">
                     <span class="stat-badge violations-badge">
                         ⚠️ ${agency.total_violations} Violations
-                    </span>
-                    <span class="stat-badge documents-badge">
-                        📄 ${agency.total_documents} Documents
                     </span>
                     <span class="stat-badge reports-badge">
                         📋 ${agency.total_reports} Reports
@@ -135,7 +97,6 @@ function displayAgencies(agencies) {
                 
                 <div class="agency-details" id="details-${agency.agencyId}">
                     ${renderViolations(agency.violations)}
-                    ${renderDocuments(agency.documents)}
                 </div>
             </div>
         `;
@@ -194,42 +155,6 @@ function renderViolations(violations) {
     `;
 }
 
-function renderDocuments(documents) {
-    if (!documents || documents.length === 0) {
-        return `
-            <div class="documents-list">
-                <div class="section-title">Documents</div>
-                <p style="color: #666;">No documents available.</p>
-            </div>
-        `;
-    }
-    
-    // Sort by date (most recent first)
-    const sortedDocs = [...documents].sort((a, b) => {
-        return new Date(b.CreatedDate) - new Date(a.CreatedDate);
-    });
-    
-    const documentItems = sortedDocs.map(doc => {
-        return `
-            <div class="document-item">
-                <div style="font-weight: 500;">${escapeHtml(doc.Title || 'Untitled Document')}</div>
-                <div class="date">
-                    Created: ${escapeHtml(doc.CreatedDate || 'Unknown')} | 
-                    Type: ${escapeHtml(doc.FileExtension || 'Unknown')}
-                </div>
-                ${doc.ContentDocumentId ? `<div style="font-size: 0.85em; color: #999;">ID: ${escapeHtml(doc.ContentDocumentId)}</div>` : ''}
-            </div>
-        `;
-    }).join('');
-    
-    return `
-        <div class="documents-list">
-            <div class="section-title">Documents (${documents.length})</div>
-            ${documentItems}
-        </div>
-    `;
-}
-
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
     
@@ -242,11 +167,7 @@ function setupSearch() {
             filteredAgencies = allAgencies.filter(agency => {
                 return (
                     agency.AgencyName?.toLowerCase().includes(searchTerm) ||
-                    agency.City?.toLowerCase().includes(searchTerm) ||
-                    agency.County?.toLowerCase().includes(searchTerm) ||
-                    agency.LicenseNumber?.toLowerCase().includes(searchTerm) ||
-                    agency.Address?.toLowerCase().includes(searchTerm) ||
-                    agency.AgencyType?.toLowerCase().includes(searchTerm)
+                    agency.agencyId?.toLowerCase().includes(searchTerm)
                 );
             });
         }
