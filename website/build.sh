@@ -4,17 +4,10 @@
 
 set -e  # Exit on error
 
-echo "==> Step 0: Installing Python dependencies with uv..."
-# Install uv if not available
-if ! command -v uv &> /dev/null; then
-  echo "Installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  export PATH="$HOME/.cargo/bin:$PATH"
-fi
-
+echo "==> Step 0: Installing Python dependencies with pip..."
 # Install dependencies from pyproject.toml
 cd ..
-uv pip install --system -e .
+pip install -e .
 cd website
 
 echo ""
