@@ -6,6 +6,7 @@ This script reads concatenated parquet files and extracts:
 - Agency ID (License #)
 - Date (inspection/report date)
 - Agency name
+- Document title (extracted from document content)
 - List of policies/rules considered violated (excluding "not violated" entries)
 
 Output is saved as a CSV file with one row per document.
@@ -60,6 +61,106 @@ def extract_agency_name(text: str) -> Optional[str]:
             # Clean up the name
             name = re.sub(r'\s+', ' ', name)
             return name
+    
+    return None
+
+
+def extract_document_title(text: str) -> Optional[str]:
+    """Extract document title from text.
+    
+    Common document types in Michigan child welfare licensing:
+    - Special Investigation Reports (with Investigation # if present)
+    - Licensing Studies
+    - Renewal Reports
+    - Complaint Investigation Reports
+    - Inspection Reports
+    - Interim Monitoring Reports
+    """
+    # Try to find document titles in the first 3000 characters (extended for SIR detection)
+    header_text = text[:3000]
+    
+    # Check for "Attached is the Special Investigation Report" pattern first
+    # This is common in cover letters for SIR documents
+    if re.search(r'Attached is the Special Investigation Report', header_text, re.IGNORECASE):
+        title = "Special Investigation Report"
+        sir_number = extract_investigation_number(header_text)
+        if sir_number:
+            title = f"{title} #{sir_number}"
+        return title
+    
+    # Look for common document type patterns in the header
+    title_patterns = [
+        # Special Investigation patterns - prioritize "SPECIAL INVESTIGATION REPORT" first
+        r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?SPECIAL INVESTIGATION REPORT',
+        # Licensing Study patterns  
+        r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?LICENSING STUDY',
+        r'LICENSING STUDY REPORT',
+        # Renewal patterns
+        r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?RENEWAL INSPECTION REPORT',
+        r'RENEWAL REPORT',
+        r'RENEWAL INSPECTION',
+        # Complaint patterns
+        r'COMPLAINT INVESTIGATION REPORT',
+        r'COMPLAINT INVESTIGATION',
+        # Inspection patterns
+        r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?INSPECTION REPORT',
+        r'ON-SITE INSPECTION REPORT',
+        r'INTERIM MONITORING REPORT',
+        r'MONITORING REPORT',
+        # General inspection
+        r'INSPECTION CHECKLIST',
+        # Other report types
+        r'CORRECTIVE ACTION PLAN',
+        r'PROVISIONAL LICENSE REPORT',
+    ]
+    
+    for pattern in title_patterns:
+        match = re.search(pattern, header_text, re.IGNORECASE)
+        if match:
+            title = match.group(0).strip()
+            # Normalize spacing
+            title = ' '.join(title.split())
+            # Apply smart title casing - only if text is all uppercase
+            if title.isupper():
+                title = title.title()
+            
+            # For Special Investigation Reports, try to append the Investigation number
+            if 'SPECIAL INVESTIGATION' in title.upper():
+                sir_number = extract_investigation_number(header_text)
+                if sir_number:
+                    title = f"{title} #{sir_number}"
+            
+            return title
+    
+    # If no specific title found, try to extract from first few lines
+    lines = header_text.split('\n')
+    for line in lines[:10]:
+        line = line.strip()
+        # Look for lines that end with "REPORT" or "STUDY"
+        if line and re.search(r'(REPORT|STUDY|INSPECTION|INVESTIGATION)$', line, re.IGNORECASE):
+            if len(line) < 100:  # Reasonable title length
+                title = ' '.join(line.split())
+                # Apply smart title casing - only if text is all uppercase
+                if title.isupper():
+                    title = title.title()
+                return title
+    
+    return None
+
+
+def extract_investigation_number(text: str) -> Optional[str]:
+    """Extract Investigation/SIR number from Special Investigation Reports."""
+    # Look for Investigation # pattern (e.g., "Investigation #: 2019C0114036")
+    patterns = [
+        r'Investigation\s*#\s*:\s*([A-Z0-9]+)',
+        r'SIR\s*#\s*:\s*([A-Z0-9]+)',
+        r'Report\s*#\s*:\s*([A-Z0-9]+)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
     
     return None
 
@@ -156,6 +257,7 @@ def parse_document(text_pages: List[str]) -> Dict[str, Any]:
     # Extract information
     license_number = extract_license_number(full_text)
     agency_name = extract_agency_name(full_text)
+    document_title = extract_document_title(full_text)
     inspection_date = extract_inspection_date(full_text)
     violations = extract_violations(full_text)
     
@@ -163,6 +265,7 @@ def parse_document(text_pages: List[str]) -> Dict[str, Any]:
         'agency_id': license_number,
         'date': inspection_date,
         'agency_name': agency_name,
+        'document_title': document_title,
         'violations': violations,
         'num_violations': len(violations)
     }
@@ -233,7 +336,7 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['agency_id', 'date', 'agency_name', 'violations_list', 'num_violations', 'sha256', 'date_processed']
+            fieldnames = ['agency_id', 'date', 'agency_name', 'document_title', 'violations_list', 'num_violations', 'sha256', 'date_processed']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             
             writer.writeheader()
@@ -243,6 +346,7 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
                     'agency_id': record['agency_id'] or '',
                     'date': record['date'] or '',
                     'agency_name': record['agency_name'] or '',
+                    'document_title': record['document_title'] or '',
                     'violations_list': '; '.join(record['violations']) if record['violations'] else '',
                     'num_violations': record['num_violations'],
                     'sha256': record['sha256'],
