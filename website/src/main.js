@@ -131,10 +131,13 @@ function renderViolations(violations) {
         const hasViolations = v.num_violations > 0;
         const violationClass = hasViolations ? 'has-violations' : '';
         
+        // Use document title if available, otherwise fall back to agency name
+        const displayTitle = v.document_title || v.agency_name || 'Untitled Document';
+        
         return `
             <div class="violation-item ${violationClass}">
+                <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(displayTitle)}</div>
                 <div class="date">${escapeHtml(v.date || 'Date not specified')}</div>
-                ${v.agency_name ? `<div style="font-weight: 500;">${escapeHtml(v.agency_name)}</div>` : ''}
                 ${hasViolations ? `
                     <div class="violations-text">
                         ${v.num_violations} violation${v.num_violations > 1 ? 's' : ''}: 

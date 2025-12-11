@@ -36,6 +36,7 @@ def load_violations_csv(csv_path):
             violation = {
                 'date': row.get('date', ''),
                 'agency_name': agency_name,
+                'document_title': row.get('document_title', ''),
                 'violations_list': row.get('violations_list', ''),
                 'num_violations': int(row.get('num_violations', 0)),
                 'sha256': row.get('sha256', ''),
