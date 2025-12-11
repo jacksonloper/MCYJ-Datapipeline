@@ -289,10 +289,19 @@ function openAgencyCard(agencyId) {
 function handleUrlHash() {
     const hash = window.location.hash.slice(1); // Remove the '#'
     if (hash) {
-        // Wait a bit for the DOM to be ready
-        setTimeout(() => {
+        // Check if the agency card exists before trying to open it
+        const card = document.getElementById(`agency-${hash}`);
+        if (card) {
             openAgencyCard(hash);
-        }, 100);
+        } else {
+            // If DOM is not ready, wait a bit and try again
+            setTimeout(() => {
+                const retryCard = document.getElementById(`agency-${hash}`);
+                if (retryCard) {
+                    openAgencyCard(hash);
+                }
+            }, 100);
+        }
     }
 }
 
@@ -304,18 +313,44 @@ function copyAgencyLink(agencyId, event) {
     const url = `${window.location.origin}${window.location.pathname}#${agencyId}`;
     
     // Copy to clipboard
-    navigator.clipboard.writeText(url).then(() => {
-        // Show feedback
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '✓';
-        setTimeout(() => {
-            btn.textContent = originalText;
-        }, 1000);
-    }).catch(err => {
-        console.error('Failed to copy link:', err);
-        alert('Failed to copy link to clipboard');
-    });
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            // Show feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 1000);
+        }).catch(err => {
+            console.error('Failed to copy link:', err);
+            alert('Failed to copy link to clipboard');
+        });
+    } else {
+        // Fallback for browsers without Clipboard API
+        // Create a temporary textarea element
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            // Show feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 1000);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+            alert('Failed to copy link to clipboard');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
 }
 
 // Make functions available globally
