@@ -1,6 +1,7 @@
 // Main application logic
 let allAgencies = [];
 let filteredAgencies = [];
+let currentOpenAgencyId = null;
 
 // Load and display data
 async function init() {
@@ -18,6 +19,7 @@ async function init() {
         displayStats();
         displayAgencies(allAgencies);
         setupSearch();
+        handleUrlHash();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -78,10 +80,15 @@ function displayAgencies(agencies) {
     
     agenciesEl.innerHTML = agencies.map(agency => {
         return `
-            <div class="agency-card" data-agency-id="${agency.agencyId}">
+            <div class="agency-card" id="agency-${agency.agencyId}" data-agency-id="${agency.agencyId}">
                 <div class="agency-header">
                     <div>
-                        <div class="agency-name">${escapeHtml(agency.AgencyName || 'Unknown Agency')}</div>
+                        <div class="agency-name">
+                            ${escapeHtml(agency.AgencyName || 'Unknown Agency')}
+                            <button class="copy-link-btn" onclick="copyAgencyLink('${agency.agencyId}', event)" title="Copy link to this agency">
+                                🔗
+                            </button>
+                        </div>
                         <div style="color: #666; font-size: 0.9em; margin-top: 4px;">ID: ${escapeHtml(agency.agencyId)}</div>
                     </div>
                 </div>
@@ -105,9 +112,13 @@ function displayAgencies(agencies) {
     // Add click handlers to expand/collapse details
     document.querySelectorAll('.agency-card').forEach(card => {
         card.addEventListener('click', (e) => {
+            // Don't toggle if clicking on the copy link button
+            if (e.target.closest('.copy-link-btn')) {
+                return;
+            }
+            
             const agencyId = card.dataset.agencyId;
-            const details = document.getElementById(`details-${agencyId}`);
-            details.classList.toggle('visible');
+            openAgencyCard(agencyId);
         });
     });
 }
@@ -248,6 +259,71 @@ function closeDocumentModal() {
 // Make viewDocument available globally
 window.viewDocument = viewDocument;
 window.closeDocumentModal = closeDocumentModal;
+
+function openAgencyCard(agencyId) {
+    // Close currently open card if different from the one being opened
+    if (currentOpenAgencyId && currentOpenAgencyId !== agencyId) {
+        const currentDetails = document.getElementById(`details-${currentOpenAgencyId}`);
+        if (currentDetails) {
+            currentDetails.classList.remove('visible');
+        }
+    }
+    
+    // Open the selected card
+    const details = document.getElementById(`details-${agencyId}`);
+    if (details) {
+        details.classList.add('visible');
+        currentOpenAgencyId = agencyId;
+        
+        // Update URL hash without triggering scroll
+        history.replaceState(null, null, `#${agencyId}`);
+        
+        // Scroll to the card
+        const card = document.getElementById(`agency-${agencyId}`);
+        if (card) {
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+}
+
+function handleUrlHash() {
+    const hash = window.location.hash.slice(1); // Remove the '#'
+    if (hash) {
+        // Wait a bit for the DOM to be ready
+        setTimeout(() => {
+            openAgencyCard(hash);
+        }, 100);
+    }
+}
+
+function copyAgencyLink(agencyId, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const url = `${window.location.origin}${window.location.pathname}#${agencyId}`;
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(url).then(() => {
+        // Show feedback
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 1000);
+    }).catch(err => {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link to clipboard');
+    });
+}
+
+// Make functions available globally
+window.copyAgencyLink = copyAgencyLink;
+
+// Listen for hash changes
+window.addEventListener('hashchange', handleUrlHash);
+
 
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
