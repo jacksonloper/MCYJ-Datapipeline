@@ -261,6 +261,11 @@ window.viewDocument = viewDocument;
 window.closeDocumentModal = closeDocumentModal;
 
 function openAgencyCard(agencyId) {
+    // If this card is already open, do nothing
+    if (currentOpenAgencyId === agencyId) {
+        return;
+    }
+    
     // Close currently open card if different from the one being opened
     if (currentOpenAgencyId && currentOpenAgencyId !== agencyId) {
         const currentDetails = document.getElementById(`details-${currentOpenAgencyId}`);
@@ -278,10 +283,10 @@ function openAgencyCard(agencyId) {
         // Update URL hash without triggering scroll
         history.replaceState(null, null, `#${agencyId}`);
         
-        // Scroll to the card
+        // Scroll to the card - position top of card at top of viewport
         const card = document.getElementById(`agency-${agencyId}`);
         if (card) {
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 }
