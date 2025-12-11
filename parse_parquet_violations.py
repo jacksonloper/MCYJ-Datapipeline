@@ -110,10 +110,11 @@ def extract_document_title(text: str) -> Optional[str]:
         match = re.search(pattern, header_text, re.IGNORECASE)
         if match:
             title = match.group(0).strip()
-            # Normalize spacing and capitalization
+            # Normalize spacing
             title = ' '.join(title.split())
-            # Title case for better readability
-            title = title.title()
+            # Apply smart title casing - only if text is all uppercase
+            if title.isupper():
+                title = title.title()
             return title
     
     # If no specific title found, try to extract from first few lines
@@ -124,7 +125,10 @@ def extract_document_title(text: str) -> Optional[str]:
         if line and re.search(r'(REPORT|STUDY|INSPECTION|INVESTIGATION)$', line, re.IGNORECASE):
             if len(line) < 100:  # Reasonable title length
                 title = ' '.join(line.split())
-                return title.title()
+                # Apply smart title casing - only if text is all uppercase
+                if title.isupper():
+                    title = title.title()
+                return title
     
     return None
 
