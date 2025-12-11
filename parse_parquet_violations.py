@@ -200,10 +200,11 @@ def extract_violations(text: str) -> List[str]:
     for match in rule_matches:
         rule_ref = match.group(1).strip()
         # Get context around this rule to check if it's violated
-        # Some documents have very long investigation sections (up to 50,000 chars)
-        # between the rule reference and conclusion, so we search the entire remaining text
+        # Some documents have very long investigation sections (up to ~48,000 chars)
+        # between the rule reference and conclusion, so we search far ahead
         start_pos = match.start()
-        context = text[start_pos:]  # Search from rule to end of document
+        end_pos = min(start_pos + 50000, len(text))  # Look ahead up to 50,000 chars
+        context = text[start_pos:end_pos]
         
         # Check if this rule is marked as violated
         if re.search(r'Conclusion\s+Violation Established', context, re.IGNORECASE):
@@ -221,7 +222,7 @@ def extract_violations(text: str) -> List[str]:
     for match in applicable_matches:
         rule_ref = f"R {match.group(1).strip()}"
         # Get context around this rule to check if it's violated
-        # In SIRs, CONCLUSION can be far from APPLICABLE RULE (up to 2000+ chars)
+        # In SIRs, CONCLUSION can be far from APPLICABLE RULE (typically up to 3000 chars)
         start_pos = match.start()
         end_pos = min(start_pos + 3000, len(text))  # Look ahead up to 3000 chars
         context = text[start_pos:end_pos]
