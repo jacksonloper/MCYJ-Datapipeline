@@ -78,6 +78,7 @@ python3 parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o v
 The output CSV contains:
 - Agency ID (License #)
 - Agency name
+- Document title (extracted from document content, e.g., "Special Investigation Report", "Renewal Inspection Report")
 - Inspection/report date
 - List of policies/rules violated (excluding "not violated" entries)
 
