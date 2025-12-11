@@ -1,6 +1,6 @@
 # Michigan Child Welfare Licensing Dashboard
 
-A lightweight web dashboard built with Vite to display Michigan Child Welfare agency violations and reports.
+A lightweight web dashboard built with Vite to display Michigan Child Welfare agency violations and reports.  Live [here](https://scintillating-licorice-0dd1c4.netlify.app/).
 
 ## Features
 
