@@ -230,6 +230,9 @@ function showDocumentModal(docData) {
     `;
     
     modal.style.display = 'flex';
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
 }
 
 function createDocumentModal() {
@@ -253,6 +256,9 @@ function closeDocumentModal() {
     const modal = document.getElementById('documentModal');
     if (modal) {
         modal.style.display = 'none';
+        
+        // Re-enable body scroll when modal is closed
+        document.body.style.overflow = '';
     }
 }
 
