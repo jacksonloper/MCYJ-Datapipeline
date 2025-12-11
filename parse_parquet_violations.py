@@ -69,7 +69,7 @@ def extract_document_title(text: str) -> Optional[str]:
     """Extract document title from text.
     
     Common document types in Michigan child welfare licensing:
-    - Special Investigation Reports
+    - Special Investigation Reports (with Investigation # if present)
     - Licensing Studies
     - Renewal Reports
     - Complaint Investigation Reports
@@ -81,9 +81,8 @@ def extract_document_title(text: str) -> Optional[str]:
     
     # Look for common document type patterns
     title_patterns = [
-        # Special Investigation patterns
+        # Special Investigation patterns - prioritize "SPECIAL INVESTIGATION REPORT" first
         r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?SPECIAL INVESTIGATION REPORT',
-        r'SPECIAL INVESTIGATION',
         # Licensing Study patterns  
         r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?LICENSING STUDY',
         r'LICENSING STUDY REPORT',
@@ -115,6 +114,13 @@ def extract_document_title(text: str) -> Optional[str]:
             # Apply smart title casing - only if text is all uppercase
             if title.isupper():
                 title = title.title()
+            
+            # For Special Investigation Reports, try to append the Investigation number
+            if 'SPECIAL INVESTIGATION' in title.upper():
+                sir_number = extract_investigation_number(header_text)
+                if sir_number:
+                    title = f"{title} #{sir_number}"
+            
             return title
     
     # If no specific title found, try to extract from first few lines
@@ -129,6 +135,23 @@ def extract_document_title(text: str) -> Optional[str]:
                 if title.isupper():
                     title = title.title()
                 return title
+    
+    return None
+
+
+def extract_investigation_number(text: str) -> Optional[str]:
+    """Extract Investigation/SIR number from Special Investigation Reports."""
+    # Look for Investigation # pattern (e.g., "Investigation #: 2019C0114036")
+    patterns = [
+        r'Investigation\s*#\s*:\s*([A-Z0-9]+)',
+        r'SIR\s*#\s*:\s*([A-Z0-9]+)',
+        r'Report\s*#\s*:\s*([A-Z0-9]+)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
     
     return None
 
