@@ -76,10 +76,19 @@ def extract_document_title(text: str) -> Optional[str]:
     - Inspection Reports
     - Interim Monitoring Reports
     """
-    # Try to find document titles in the first 2000 characters
-    header_text = text[:2000]
+    # Try to find document titles in the first 3000 characters (extended for SIR detection)
+    header_text = text[:3000]
     
-    # Look for common document type patterns
+    # Check for "Attached is the Special Investigation Report" pattern first
+    # This is common in cover letters for SIR documents
+    if re.search(r'Attached is the Special Investigation Report', header_text, re.IGNORECASE):
+        title = "Special Investigation Report"
+        sir_number = extract_investigation_number(header_text)
+        if sir_number:
+            title = f"{title} #{sir_number}"
+        return title
+    
+    # Look for common document type patterns in the header
     title_patterns = [
         # Special Investigation patterns - prioritize "SPECIAL INVESTIGATION REPORT" first
         r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?SPECIAL INVESTIGATION REPORT',
