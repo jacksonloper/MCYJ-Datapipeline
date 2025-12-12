@@ -148,7 +148,14 @@ function renderViolations(violations) {
         
         return `
             <div class="violation-item ${violationClass}">
-                <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(displayTitle)}</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">
+                    ${escapeHtml(displayTitle)}
+                    ${v.sha256 ? `
+                        <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document">
+                            🔗
+                        </button>
+                    ` : ''}
+                </div>
                 <div class="date">${escapeHtml(v.date || 'Date not specified')}</div>
                 ${hasViolations ? `
                     <div class="violations-text">
@@ -161,9 +168,6 @@ function renderViolations(violations) {
                 ${v.sha256 ? `
                     <button class="view-document-btn" onclick="viewDocument('${v.sha256}', event)">
                         📄 View Full Document
-                    </button>
-                    <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document">
-                        🔗
                     </button>
                 ` : ''}
             </div>
@@ -190,14 +194,30 @@ async function viewDocument(sha256, event) {
         }
         
         const docData = await response.json();
-        showDocumentModal(docData);
+        
+        // Find document metadata from agencies data
+        let docMetadata = null;
+        for (const agency of allAgencies) {
+            if (agency.violations && Array.isArray(agency.violations)) {
+                const violation = agency.violations.find(v => v.sha256 === sha256);
+                if (violation) {
+                    docMetadata = {
+                        title: violation.document_title || violation.agency_name || 'Untitled Document',
+                        num_violations: violation.num_violations || 0
+                    };
+                    break;
+                }
+            }
+        }
+        
+        showDocumentModal(docData, docMetadata);
     } catch (error) {
         console.error('Error loading document:', error);
         alert(`Failed to load document: ${error.message}`);
     }
 }
 
-function showDocumentModal(docData) {
+function showDocumentModal(docData, docMetadata) {
     const modal = document.getElementById('documentModal') || createDocumentModal();
     const modalContent = modal.querySelector('.modal-document-content');
     
@@ -224,9 +244,14 @@ function showDocumentModal(docData) {
             <button class="close-modal" onclick="closeDocumentModal()">✕</button>
         </div>
         <div class="document-info">
-            <div>
-                <strong>SHA256:</strong> ${escapeHtml(docData.sha256)}
-                <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document" style="margin-left: 8px;">
+            ${docMetadata ? `
+                <div><strong>Title:</strong> ${escapeHtml(docMetadata.title)}</div>
+                <div><strong>Violations:</strong> ${docMetadata.num_violations}</div>
+            ` : ''}
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <strong>SHA256:</strong>
+                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; flex: 1; max-width: 400px;">${escapeHtml(docData.sha256)}</span>
+                <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
                     🔗
                 </button>
             </div>
