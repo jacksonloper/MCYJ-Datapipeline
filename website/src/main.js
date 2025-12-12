@@ -1,7 +1,13 @@
 // Main application logic
+import { initDB, storeQuery, getQueriesForDocument, findExistingQuery } from './indexedDB.js';
+import { getApiKey } from './encryption.js';
+import { queryDeepSeek } from './apiService.js';
+
 let allAgencies = [];
 let filteredAgencies = [];
 let currentOpenAgencyId = null;
+let currentDocumentData = null; // Store current document for queries
+let apiKey = null; // Store decrypted API key
 
 // Filter state
 let filters = {
@@ -13,6 +19,9 @@ let filters = {
 // Load and display data
 async function init() {
     try {
+        // Initialize IndexedDB
+        await initDB();
+        
         // Fetch the agency data
         const response = await fetch('/data/agencies_data.json');
         if (!response.ok) {
@@ -263,12 +272,27 @@ function renderViolations(violations) {
                     <div style="color: #27ae60;">✓ No violations found</div>
                 `}
                 ${v.sha256 ? `
-                    <button class="view-document-btn" onclick="viewDocument('${v.sha256}', event)">
-                        📄 View Full Document
-                    </button>
+                    <div style="margin-top: 8px;">
+                        <button class="view-document-btn" onclick="viewDocument('${v.sha256}', event)">
+                            📄 View Full Document
+                        </button>
+                        <div id="query-count-${v.sha256}" style="margin-top: 8px; font-size: 0.85em; color: #666; font-style: italic;">
+                            <span class="query-count-placeholder" data-sha="${v.sha256}">Loading query history...</span>
+                        </div>
+                    </div>
                 ` : ''}
             </div>
         `;
+    }).join('');
+    
+    // After rendering, load query counts for each document
+    setTimeout(() => {
+        sortedViolations.forEach(v => {
+            if (v.sha256) {
+                loadQueryCount(v.sha256);
+            }
+        });
+    }, 0);
     }).join('');
     
     return `
@@ -366,6 +390,9 @@ function findTextPositions(text, pattern, flags = 'gi') {
 function showDocumentModal(docData, docMetadata) {
     const modal = document.getElementById('documentModal') || createDocumentModal();
     const modalContent = modal.querySelector('.modal-document-content');
+    
+    // Store current document data for queries
+    currentDocumentData = docData;
     
     // Validate document data
     if (!docData.pages || !Array.isArray(docData.pages)) {
@@ -478,6 +505,64 @@ function showDocumentModal(docData, docMetadata) {
             <div><strong>Date Processed:</strong> ${escapeHtml(docData.dateprocessed)}</div>
             <div><strong>Total Pages:</strong> ${totalPages}</div>
         </div>
+        
+        <!-- AI Query Section -->
+        <div id="aiQuerySection" style="padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ecf0f1;">
+            <div style="margin-bottom: 15px;">
+                <h3 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 1.1em;">🤖 Ask AI About This Document</h3>
+                <p style="margin: 0; color: #666; font-size: 0.9em;">Query DeepSeek v3.2 about this document. Responses are saved in your browser.</p>
+            </div>
+            
+            <div id="apiKeyPrompt" style="margin-bottom: 15px;">
+                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                    <input 
+                        type="password" 
+                        id="secretPassInput" 
+                        placeholder="Enter secret password to unlock AI queries..."
+                        style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                    />
+                    <button 
+                        id="unlockApiBtn"
+                        onclick="unlockApiKey()"
+                        style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;"
+                    >
+                        🔓 Unlock
+                    </button>
+                </div>
+                <div id="apiKeyError" style="color: #e74c3c; font-size: 0.9em; margin-top: 8px; display: none;"></div>
+            </div>
+            
+            <div id="queryInterface" style="display: none;">
+                <div style="margin-bottom: 15px;">
+                    <textarea 
+                        id="aiQueryInput" 
+                        placeholder="Ask a question about this document..."
+                        style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; resize: vertical; font-family: inherit;"
+                    ></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button 
+                        id="submitQueryBtn"
+                        onclick="submitAiQuery()"
+                        style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;"
+                    >
+                        🚀 Submit Query
+                    </button>
+                    <div id="querySpinner" style="display: none;">
+                        <span style="font-size: 24px; animation: spin 1s linear infinite; display: inline-block;">⏳</span>
+                        <span style="margin-left: 10px; color: #666;">Processing...</span>
+                    </div>
+                    <div id="queryStatus" style="color: #666; font-size: 0.9em;"></div>
+                </div>
+            </div>
+            
+            <!-- Query History -->
+            <div id="queryHistory" style="margin-top: 20px; display: none;">
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 1em;">Query History</h4>
+                <div id="queryHistoryList"></div>
+            </div>
+        </div>
+        
         <div class="document-pages">
             ${pagesHtml}
         </div>
@@ -487,6 +572,14 @@ function showDocumentModal(docData, docMetadata) {
     
     // Prevent body scroll when modal is open
     document.body.style.overflow = 'hidden';
+    
+    // Load and display query history
+    loadQueryHistory(docData.sha256);
+    
+    // Check if API key is already unlocked
+    if (apiKey) {
+        showQueryInterface();
+    }
 }
 
 function createDocumentModal() {
@@ -810,6 +903,274 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+/**
+ * Load and display query count for a document in the agency card
+ */
+async function loadQueryCount(sha256) {
+    try {
+        const queries = await getQueriesForDocument(sha256);
+        const placeholder = document.querySelector(`.query-count-placeholder[data-sha="${sha256}"]`);
+        
+        if (placeholder) {
+            if (queries.length === 0) {
+                placeholder.textContent = '🤖 No AI queries yet';
+            } else {
+                placeholder.innerHTML = `🤖 ${queries.length} AI ${queries.length === 1 ? 'query' : 'queries'} saved`;
+                placeholder.style.color = '#3498db';
+                placeholder.style.fontWeight = '500';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading query count:', error);
+        const placeholder = document.querySelector(`.query-count-placeholder[data-sha="${sha256}"]`);
+        if (placeholder) {
+            placeholder.textContent = '';
+        }
+    }
+}
+
+/**
+ * Unlock API key with user's secret password
+ */
+async function unlockApiKey() {
+    const secretPassInput = document.getElementById('secretPassInput');
+    const apiKeyError = document.getElementById('apiKeyError');
+    const unlockBtn = document.getElementById('unlockApiBtn');
+    
+    const secretPass = secretPassInput.value.trim();
+    
+    if (!secretPass) {
+        apiKeyError.textContent = 'Please enter the secret password';
+        apiKeyError.style.display = 'block';
+        return;
+    }
+    
+    // Disable button and show loading
+    unlockBtn.disabled = true;
+    unlockBtn.textContent = '🔄 Unlocking...';
+    apiKeyError.style.display = 'none';
+    
+    try {
+        // Try to decrypt the API key
+        apiKey = await getApiKey(secretPass);
+        
+        // Success - show query interface
+        showQueryInterface();
+        
+        // Clear the password input
+        secretPassInput.value = '';
+        
+    } catch (error) {
+        console.error('Failed to unlock API key:', error);
+        apiKeyError.textContent = 'Invalid password. Please try again.';
+        apiKeyError.style.display = 'block';
+        
+        // Re-enable button
+        unlockBtn.disabled = false;
+        unlockBtn.textContent = '🔓 Unlock';
+    }
+}
+
+/**
+ * Show the query interface after successful API key unlock
+ */
+function showQueryInterface() {
+    const apiKeyPrompt = document.getElementById('apiKeyPrompt');
+    const queryInterface = document.getElementById('queryInterface');
+    
+    if (apiKeyPrompt) {
+        apiKeyPrompt.style.display = 'none';
+    }
+    if (queryInterface) {
+        queryInterface.style.display = 'block';
+    }
+}
+
+/**
+ * Submit an AI query about the current document
+ */
+async function submitAiQuery() {
+    if (!currentDocumentData || !apiKey) {
+        alert('Document or API key not available');
+        return;
+    }
+    
+    const queryInput = document.getElementById('aiQueryInput');
+    const submitBtn = document.getElementById('submitQueryBtn');
+    const spinner = document.getElementById('querySpinner');
+    const statusDiv = document.getElementById('queryStatus');
+    
+    const query = queryInput.value.trim();
+    
+    if (!query) {
+        alert('Please enter a query');
+        return;
+    }
+    
+    // Check if this exact query already exists
+    try {
+        const existingQuery = await findExistingQuery(currentDocumentData.sha256, query);
+        if (existingQuery) {
+            // Show the existing result
+            displayQueryResult(existingQuery);
+            statusDiv.textContent = 'Loaded from cache';
+            setTimeout(() => {
+                statusDiv.textContent = '';
+            }, 3000);
+            return;
+        }
+    } catch (error) {
+        console.error('Error checking for existing query:', error);
+    }
+    
+    // Disable input and button
+    queryInput.disabled = true;
+    submitBtn.disabled = true;
+    spinner.style.display = 'flex';
+    spinner.style.alignItems = 'center';
+    statusDiv.textContent = '';
+    
+    try {
+        // Concatenate all pages
+        const documentText = currentDocumentData.pages.join('\n\n');
+        
+        // Submit query to API
+        const result = await queryDeepSeek(apiKey, query, documentText);
+        
+        // Store the result in IndexedDB
+        await storeQuery(
+            currentDocumentData.sha256,
+            query,
+            result.response,
+            result.inputTokens,
+            result.outputTokens,
+            result.durationMs,
+            result.cost
+        );
+        
+        // Display the result
+        displayQueryResult({
+            query,
+            response: result.response,
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+            durationMs: result.durationMs,
+            cost: result.cost,
+            timestamp: Date.now()
+        });
+        
+        // Clear input and reload history
+        queryInput.value = '';
+        await loadQueryHistory(currentDocumentData.sha256);
+        
+        statusDiv.textContent = 'Query completed successfully!';
+        statusDiv.style.color = '#27ae60';
+        setTimeout(() => {
+            statusDiv.textContent = '';
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error submitting query:', error);
+        statusDiv.textContent = `Error: ${error.message}`;
+        statusDiv.style.color = '#e74c3c';
+    } finally {
+        // Re-enable input and button
+        queryInput.disabled = false;
+        submitBtn.disabled = false;
+        spinner.style.display = 'none';
+    }
+}
+
+/**
+ * Display a query result in a modal or section
+ */
+function displayQueryResult(queryData) {
+    // Create a result display element
+    const resultHtml = `
+        <div style="background: white; padding: 20px; border: 2px solid #3498db; border-radius: 8px; margin-top: 15px;">
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #2c3e50;">Query:</strong>
+                <div style="background: #f8f9fa; padding: 10px; margin-top: 5px; border-radius: 4px; white-space: pre-wrap;">${escapeHtml(queryData.query)}</div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong style="color: #2c3e50;">Response:</strong>
+                <div style="background: #e8f4f8; padding: 15px; margin-top: 5px; border-radius: 4px; white-space: pre-wrap; line-height: 1.6;">${escapeHtml(queryData.response)}</div>
+            </div>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85em; color: #666;">
+                <span>📊 Input tokens: ${queryData.inputTokens}</span>
+                <span>📊 Output tokens: ${queryData.outputTokens}</span>
+                <span>⏱️ Duration: ${(queryData.durationMs / 1000).toFixed(2)}s</span>
+                ${queryData.cost ? `<span>💰 Cost: $${queryData.cost.toFixed(4)}</span>` : ''}
+                <span>🕐 ${new Date(queryData.timestamp).toLocaleString()}</span>
+            </div>
+        </div>
+    `;
+    
+    // Find the query history section and prepend the result
+    const historyList = document.getElementById('queryHistoryList');
+    if (historyList) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = resultHtml;
+        historyList.insertBefore(tempDiv.firstElementChild, historyList.firstChild);
+        
+        // Show history section
+        const historySection = document.getElementById('queryHistory');
+        if (historySection) {
+            historySection.style.display = 'block';
+        }
+    }
+}
+
+/**
+ * Load and display query history for a document
+ */
+async function loadQueryHistory(sha256) {
+    const historySection = document.getElementById('queryHistory');
+    const historyList = document.getElementById('queryHistoryList');
+    
+    if (!historySection || !historyList) {
+        return;
+    }
+    
+    try {
+        const queries = await getQueriesForDocument(sha256);
+        
+        if (queries.length === 0) {
+            historySection.style.display = 'none';
+            return;
+        }
+        
+        // Display queries
+        historyList.innerHTML = queries.map(q => `
+            <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: #2c3e50;">Query:</strong>
+                    <div style="background: #f8f9fa; padding: 8px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap;">${escapeHtml(q.query)}</div>
+                </div>
+                <div style="margin-bottom: 10px;">
+                    <strong style="color: #2c3e50;">Response:</strong>
+                    <div style="background: #e8f4f8; padding: 10px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(q.response)}</div>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.8em; color: #666;">
+                    <span>📊 ${q.inputTokens} in / ${q.outputTokens} out</span>
+                    <span>⏱️ ${(q.durationMs / 1000).toFixed(2)}s</span>
+                    ${q.cost ? `<span>💰 $${q.cost.toFixed(4)}</span>` : ''}
+                    <span>🕐 ${new Date(q.timestamp).toLocaleString()}</span>
+                </div>
+            </div>
+        `).join('');
+        
+        historySection.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading query history:', error);
+    }
+}
+
+// Make AI query functions available globally
+window.unlockApiKey = unlockApiKey;
+window.submitAiQuery = submitAiQuery;
 
 // Initialize the application
 init();
