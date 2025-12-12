@@ -1090,6 +1090,11 @@ async function submitAiQuery() {
  * Display a query result in a modal or section
  */
 function displayQueryResult(queryData) {
+    // Calculate estimated cost: $0.25 per million input tokens, $0.38 per million output tokens
+    const inputCost = (queryData.inputTokens / 1000000) * 0.25;
+    const outputCost = (queryData.outputTokens / 1000000) * 0.38;
+    const estimatedCost = inputCost + outputCost;
+    
     // Create a result display element
     const resultHtml = `
         <div style="background: white; padding: 20px; border: 2px solid #3498db; border-radius: 8px; margin-top: 15px;">
@@ -1105,7 +1110,7 @@ function displayQueryResult(queryData) {
                 <span>📊 Input tokens: ${queryData.inputTokens}</span>
                 <span>📊 Output tokens: ${queryData.outputTokens}</span>
                 <span>⏱️ Duration: ${(queryData.durationMs / 1000).toFixed(2)}s</span>
-                ${queryData.cost ? `<span>💰 Cost: $${queryData.cost.toFixed(4)}</span>` : ''}
+                <span>💰 Estimated Cost: ~$${estimatedCost.toFixed(6)}</span>
                 <span>🕐 ${new Date(queryData.timestamp).toLocaleString()}</span>
             </div>
         </div>
@@ -1146,24 +1151,31 @@ async function loadQueryHistory(sha256) {
         }
         
         // Display queries
-        historyList.innerHTML = queries.map(q => `
-            <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
-                <div style="margin-bottom: 10px;">
-                    <strong style="color: #2c3e50;">Query:</strong>
-                    <div style="background: #f8f9fa; padding: 8px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap;">${escapeHtml(q.query)}</div>
+        historyList.innerHTML = queries.map(q => {
+            // Calculate estimated cost: $0.25 per million input tokens, $0.38 per million output tokens
+            const inputCost = (q.inputTokens / 1000000) * 0.25;
+            const outputCost = (q.outputTokens / 1000000) * 0.38;
+            const estimatedCost = inputCost + outputCost;
+            
+            return `
+                <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
+                    <div style="margin-bottom: 10px;">
+                        <strong style="color: #2c3e50;">Query:</strong>
+                        <div style="background: #f8f9fa; padding: 8px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap;">${escapeHtml(q.query)}</div>
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong style="color: #2c3e50;">Response:</strong>
+                        <div style="background: #e8f4f8; padding: 10px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(q.response)}</div>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.8em; color: #666;">
+                        <span>📊 ${q.inputTokens} in / ${q.outputTokens} out</span>
+                        <span>⏱️ ${(q.durationMs / 1000).toFixed(2)}s</span>
+                        <span>💰 ~$${estimatedCost.toFixed(6)}</span>
+                        <span>🕐 ${new Date(q.timestamp).toLocaleString()}</span>
+                    </div>
                 </div>
-                <div style="margin-bottom: 10px;">
-                    <strong style="color: #2c3e50;">Response:</strong>
-                    <div style="background: #e8f4f8; padding: 10px; margin-top: 5px; border-radius: 4px; font-size: 0.9em; white-space: pre-wrap; line-height: 1.5;">${escapeHtml(q.response)}</div>
-                </div>
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.8em; color: #666;">
-                    <span>📊 ${q.inputTokens} in / ${q.outputTokens} out</span>
-                    <span>⏱️ ${(q.durationMs / 1000).toFixed(2)}s</span>
-                    ${q.cost ? `<span>💰 $${q.cost.toFixed(4)}</span>` : ''}
-                    <span>🕐 ${new Date(q.timestamp).toLocaleString()}</span>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
         historySection.style.display = 'block';
         
@@ -1245,6 +1257,12 @@ async function loadAllQueriesForManager() {
             
             docQueries.forEach(q => {
                 const date = new Date(q.timestamp).toLocaleString();
+                
+                // Calculate estimated cost: $0.25 per million input tokens, $0.38 per million output tokens
+                const inputCost = (q.inputTokens / 1000000) * 0.25;
+                const outputCost = (q.outputTokens / 1000000) * 0.38;
+                const estimatedCost = inputCost + outputCost;
+                
                 html += `
                     <div class="query-manager-item">
                         <div class="query-manager-item-header">
@@ -1267,7 +1285,7 @@ async function loadAllQueriesForManager() {
                             <span>📊 Input: ${q.inputTokens} tokens</span>
                             <span>📊 Output: ${q.outputTokens} tokens</span>
                             <span>⏱️ Duration: ${(q.durationMs / 1000).toFixed(2)}s</span>
-                            ${q.cost ? `<span>💰 Cost: $${q.cost.toFixed(4)}</span>` : ''}
+                            <span>💰 Estimated Cost: $${estimatedCost.toFixed(6)}</span>
                         </div>
                     </div>
                 `;
