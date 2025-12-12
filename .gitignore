@@ -37,3 +37,7 @@ metadata_output/
 *.egg-info/
 build/
 dist/
+
+# Test and demo files
+website/test.html
+website/demo.html
