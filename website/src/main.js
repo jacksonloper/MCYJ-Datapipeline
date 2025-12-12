@@ -250,7 +250,7 @@ function showDocumentModal(docData, docMetadata) {
             ` : ''}
             <div style="display: flex; align-items: center; gap: 8px;">
                 <strong>SHA256:</strong>
-                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; flex: 1; max-width: 400px;">${escapeHtml(docData.sha256)}</span>
+                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; max-width: 35%; flex-shrink: 0;">${escapeHtml(docData.sha256)}</span>
                 <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
                     🔗
                 </button>
