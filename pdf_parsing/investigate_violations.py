@@ -4,6 +4,7 @@ Investigate violations output by displaying random parquet rows with their annot
 
 This script displays a random parquet row text along with the parsed violation annotations.
 It can filter by category:
+- sir: Special Investigation Reports only (default)
 - noviolation: Documents with 0 violations
 - violation: Documents with 1-9 violations
 - manyviolation: Documents with 10+ violations
@@ -62,12 +63,14 @@ def display_document(violation_record: Dict, original_doc: Dict) -> None:
     print("\n" + "="*80)
     print("RANDOM DOCUMENT SAMPLE")
     print("="*80)
-    
+
     print("\n--- ANNOTATION ---")
     print(f"SHA256: {violation_record['sha256']}")
     print(f"Agency ID: {violation_record['agency_id']}")
     print(f"Agency Name: {violation_record['agency_name']}")
+    print(f"Document Title: {violation_record.get('document_title', 'N/A')}")
     print(f"Date: {violation_record['date']}")
+    print(f"Special Investigation Report: {'Yes' if violation_record.get('is_special_investigation') else 'No'}")
     print(f"Number of Violations: {violation_record['num_violations']}")
     if violation_record['violations_list'] and not pd.isna(violation_record['violations_list']):
         violations = violation_record['violations_list'].split('; ')
@@ -107,15 +110,18 @@ def display_document(violation_record: Dict, original_doc: Dict) -> None:
     print("\n" + "="*80)
 
 
-def show_random_document(violations_csv: str, parquet_dir: str, category: str = "all") -> None:
+def show_random_document(violations_csv: str, parquet_dir: str, category: str = "sir") -> None:
     """Show a random document from the specified category."""
     # Load violations CSV
     logger.info(f"Loading violations CSV from: {violations_csv}")
     df = pd.read_csv(violations_csv)
     logger.info(f"Loaded {len(df)} records")
-    
+
     # Filter by category
-    if category == "noviolation":
+    if category == "sir":
+        filtered_df = df[df['is_special_investigation'] == True]
+        category_name = "Special Investigation Reports"
+    elif category == "noviolation":
         filtered_df = df[df['num_violations'] == 0]
         category_name = "no violations"
     elif category == "violation":
@@ -127,21 +133,23 @@ def show_random_document(violations_csv: str, parquet_dir: str, category: str = 
     else:  # "all"
         filtered_df = df
         category_name = "all categories"
-    
+
     if len(filtered_df) == 0:
         print(f"No documents found in category: {category}")
         return
-    
+
     logger.info(f"Found {len(filtered_df)} documents in category '{category_name}'")
-    
+
     # Select a random document
     random_row = filtered_df.sample(n=1).iloc[0]
-    
+
     violation_record = {
         'sha256': random_row['sha256'],
         'agency_id': random_row['agency_id'],
         'agency_name': random_row['agency_name'],
+        'document_title': random_row.get('document_title', 'N/A'),
         'date': random_row['date'],
+        'is_special_investigation': random_row.get('is_special_investigation', False),
         'num_violations': random_row['num_violations'],
         'violations_list': random_row['violations_list']
     }
@@ -164,12 +172,16 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Categories:
+  sir            - Special Investigation Reports only (default)
   noviolation    - Documents with 0 violations
   violation      - Documents with 1-9 violations
   manyviolation  - Documents with 10+ violations
-  all            - Any document (default)
+  all            - Any document
 
 Examples:
+  # Show a random Special Investigation Report (default)
+  python3 investigate_violations.py
+
   # Show a random document with no violations
   python3 investigate_violations.py --category noviolation
 
@@ -178,6 +190,9 @@ Examples:
 
   # Show a random document with 1-9 violations
   python3 investigate_violations.py --category violation
+
+  # Show any document regardless of type
+  python3 investigate_violations.py --category all
         """
     )
     parser.add_argument(
@@ -192,9 +207,9 @@ Examples:
     )
     parser.add_argument(
         "--category",
-        choices=["noviolation", "violation", "manyviolation", "all"],
-        default="all",
-        help="Category of documents to show (default: all)"
+        choices=["sir", "noviolation", "violation", "manyviolation", "all"],
+        default="sir",
+        help="Category of documents to show (default: sir)"
     )
     parser.add_argument(
         "--verbose",

@@ -88,14 +88,15 @@ After running the violations script, you can investigate random documents to see
 
 ```bash
 cd pdf_parsing
-python3 investigate_violations.py --category violation
+python3 investigate_violations.py
 ```
 
 Categories:
+- `sir` - Special Investigation Reports only (default)
 - `noviolation` - Documents with 0 violations
 - `violation` - Documents with 1-9 violations
 - `manyviolation` - Documents with 10+ violations
-- `all` - Any document (default)
+- `all` - Any document
 
 The script displays a random document from the specified category, showing both the annotation (parsed violations) and the full document text from the parquet file.
 

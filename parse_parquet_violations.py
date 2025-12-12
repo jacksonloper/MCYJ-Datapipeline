@@ -7,6 +7,7 @@ This script reads concatenated parquet files and extracts:
 - Date (inspection/report date)
 - Agency name
 - Document title (extracted from document content)
+- Special investigation indicator (whether document is a Special Investigation Report)
 - List of policies/rules considered violated (excluding "not violated" entries)
 
 Output is saved as a CSV file with one row per document.
@@ -188,15 +189,38 @@ def extract_inspection_date(text: str) -> Optional[str]:
     return None
 
 
+def is_special_investigation(text: str) -> bool:
+    """Determine if the document is a special investigation report.
+
+    Returns True if the document appears to be a Special Investigation Report (SIR).
+    """
+    # Check for "Attached is the Special Investigation Report" pattern
+    # This is common in cover letters for SIR documents
+    if re.search(r'Attached is the Special Investigation Report', text[:3000], re.IGNORECASE):
+        return True
+
+    # Check for "SPECIAL INVESTIGATION REPORT" pattern in header
+    if re.search(r'(?:BUREAU OF CHILDREN AND ADULT LICENSING\s+)?SPECIAL INVESTIGATION REPORT',
+                 text[:3000], re.IGNORECASE):
+        return True
+
+    # Check for Investigation # which is specific to SIRs
+    if extract_investigation_number(text[:3000]) is not None:
+        return True
+
+    return False
+
+
 def extract_violations(text: str) -> List[str]:
     """Extract list of violated policies/rules from text."""
     violations = []
     
     # Look for specific violation sections
     # Pattern 1: Look for "Rule Code & Section" with "Violation Established" or "Violation" conclusion
-    rule_pattern = r'Rule Code & CPA Rule\s+(\d+\.\d+[^\n]*)'
+    # Matches both "CPA Rule" and "CCI Rule" (Child Protective Agency and Child Caring Institution)
+    rule_pattern = r'Rule Code & (?:CPA|CCI) Rule\s+(\d+\.\d+[^\n]*)'
     rule_matches = re.finditer(rule_pattern, text, re.IGNORECASE)
-    
+
     for match in rule_matches:
         rule_ref = match.group(1).strip()
         # Get context around this rule to check if it's violated
@@ -205,14 +229,15 @@ def extract_violations(text: str) -> List[str]:
         start_pos = match.start()
         end_pos = min(start_pos + 50000, len(text))  # Look ahead up to 50,000 chars
         context = text[start_pos:end_pos]
-        
+
         # Check if this rule is marked as violated
-        if re.search(r'Conclusion\s+Violation Established', context, re.IGNORECASE):
-            violations.append(f"CPA Rule {rule_ref}")
+        # Match both "Violation Established" and "Repeat Violation Established"
+        if re.search(r'Conclusion\s+(?:Repeat\s+)?Violation Established', context, re.IGNORECASE):
+            violations.append(f"Rule {rule_ref}")
         elif re.search(r'Analysis.*?violation', context, re.IGNORECASE | re.DOTALL):
             # Check if analysis mentions violation
             if not re.search(r'is not violated|not in violation|no violation', context, re.IGNORECASE):
-                violations.append(f"CPA Rule {rule_ref}")
+                violations.append(f"Rule {rule_ref}")
     
     # Pattern 1b: Look for "APPLICABLE RULE" sections in SIRs with "CONCLUSION: VIOLATION ESTABLISHED"
     # This pattern handles Special Investigation Reports format
@@ -273,21 +298,23 @@ def parse_document(text_pages: List[str]) -> Dict[str, Any]:
     """Parse a document (list of pages) and extract relevant information."""
     # Combine all pages into a single text for parsing
     full_text = '\n'.join(text_pages)
-    
+
     # Extract information
     license_number = extract_license_number(full_text)
     agency_name = extract_agency_name(full_text)
     document_title = extract_document_title(full_text)
     inspection_date = extract_inspection_date(full_text)
     violations = extract_violations(full_text)
-    
+    is_sir = is_special_investigation(full_text)
+
     return {
         'agency_id': license_number,
         'date': inspection_date,
         'agency_name': agency_name,
         'document_title': document_title,
         'violations': violations,
-        'num_violations': len(violations)
+        'num_violations': len(violations),
+        'is_special_investigation': is_sir
     }
 
 
@@ -356,9 +383,9 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         
         with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
-            fieldnames = ['agency_id', 'date', 'agency_name', 'document_title', 'violations_list', 'num_violations', 'sha256', 'date_processed']
+            fieldnames = ['agency_id', 'date', 'agency_name', 'document_title', 'is_special_investigation', 'violations_list', 'num_violations', 'sha256', 'date_processed']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            
+
             writer.writeheader()
             for record in all_records:
                 # Convert violations list to string for CSV
@@ -367,6 +394,7 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
                     'date': record['date'] or '',
                     'agency_name': record['agency_name'] or '',
                     'document_title': record['document_title'] or '',
+                    'is_special_investigation': record['is_special_investigation'],
                     'violations_list': '; '.join(record['violations']) if record['violations'] else '',
                     'num_violations': record['num_violations'],
                     'sha256': record['sha256'],

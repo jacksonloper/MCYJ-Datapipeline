@@ -131,6 +131,8 @@ The CSV contains the following columns:
 | `agency_id` | License number | CB250296641, CA110200973 |
 | `date` | Inspection or report date | February 14, 2020 |
 | `agency_name` | Name of the licensed agency | Child & Family Services - Northeast Michigan |
+| `document_title` | Type of document | Special Investigation Report #2019C0114036 |
+| `is_special_investigation` | Whether document is a Special Investigation Report | True, False |
 | `violations_list` | Semicolon-separated list of violated rules | R 400.12421; R 400.12418 |
 | `num_violations` | Count of violations | 2 |
 | `sha256` | SHA256 hash of the source PDF | abc123... |
@@ -139,10 +141,10 @@ The CSV contains the following columns:
 ### Example Output
 
 ```csv
-agency_id,date,agency_name,violations_list,num_violations,sha256,date_processed
-CB040201041,February 14, 2020,Child & Family Services - Northeast Michigan,R 400.12324,1,2731d75f...,2025-11-03T13:33:47.274306
-CB040201041,October 25, 2021,Child Family Services of NE Michigan,R 400.12421; R 400.12418,2,d29a479d...,2025-11-03T13:33:47.470767
-CA110200973,04/28/2022,Berrien County Trial Court-Family Division,,0,38b0a4d0...,2025-11-03T13:33:47.750253
+agency_id,date,agency_name,document_title,is_special_investigation,violations_list,num_violations,sha256,date_processed
+CB040201041,February 14, 2020,Child & Family Services - Northeast Michigan,Special Investigation Report #2019C0114036,True,R 400.12324,1,2731d75f...,2025-11-03T13:33:47.274306
+CB040201041,October 25, 2021,Child Family Services of NE Michigan,Renewal Inspection Report,False,R 400.12421; R 400.12418,2,d29a479d...,2025-11-03T13:33:47.470767
+CA110200973,04/28/2022,Berrien County Trial Court-Family Division,Licensing Study,False,,0,38b0a4d0...,2025-11-03T13:33:47.750253
 ```
 
 ### Violation Detection
@@ -167,6 +169,64 @@ When run on the existing parquet files:
 - Documents with violations: 976
 - Documents without violations: 2534
 
+## Investigate Violations Tool
+
+The `investigate_violations.py` script helps you inspect random documents from the parsed violations data, showing both the extracted annotations and the original document text.
+
+### Usage
+
+**Note**: Run from the `pdf_parsing/` directory.
+
+#### Basic Usage
+
+Show a random Special Investigation Report (default):
+
+```bash
+python3 investigate_violations.py
+```
+
+#### Filter by Category
+
+Show documents from specific categories:
+
+```bash
+# Show Special Investigation Reports only (default)
+python3 investigate_violations.py --category sir
+
+# Show documents with no violations
+python3 investigate_violations.py --category noviolation
+
+# Show documents with 1-9 violations
+python3 investigate_violations.py --category violation
+
+# Show documents with 10+ violations
+python3 investigate_violations.py --category manyviolation
+
+# Show any document regardless of type
+python3 investigate_violations.py --category all
+```
+
+### Categories
+
+- **`sir`**: Special Investigation Reports only (default)
+- **`noviolation`**: Documents with 0 violations
+- **`violation`**: Documents with 1-9 violations
+- **`manyviolation`**: Documents with 10+ violations
+- **`all`**: Any document
+
+### Output
+
+The script displays:
+- Document metadata (agency ID, name, date, document title)
+- Whether it's a Special Investigation Report
+- Number of violations and list of violated rules
+- Full document text from the parquet file
+
+This is useful for:
+- Verifying that violations are being correctly extracted
+- Understanding the document structure
+- Quality checking the parsing logic
+
 ## Complete Workflow
 
 1. **Extract PDF text**: Use `extract_pdf_text.py` to process PDFs and create parquet files
@@ -179,7 +239,13 @@ When run on the existing parquet files:
    python3 parse_parquet_violations.py
    ```
 
-3. **Analyze results**: Use the CSV output for analysis, reporting, or further processing
+3. **Investigate results**: Use `investigate_violations.py` to inspect random documents
+   ```bash
+   cd pdf_parsing
+   python3 investigate_violations.py
+   ```
+
+4. **Analyze results**: Use the CSV output for analysis, reporting, or further processing
 
 ## Requirements
 
