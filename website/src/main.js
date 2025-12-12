@@ -419,7 +419,7 @@ function copyDocumentLink(sha256, event) {
     // Helper function to show feedback on button
     const showCopyFeedback = (btn) => {
         const originalText = btn.textContent;
-        btn.textContent = '✓ Copied';
+        btn.textContent = '✓';
         setTimeout(() => {
             btn.textContent = originalText;
         }, 1500);
