@@ -20,6 +20,7 @@ async function init() {
         displayAgencies(allAgencies);
         setupSearch();
         handleUrlHash();
+        handleQueryStringDocument();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -160,6 +161,9 @@ function renderViolations(violations) {
                 ${v.sha256 ? `
                     <button class="view-document-btn" onclick="viewDocument('${v.sha256}', event)">
                         📄 View Full Document
+                    </button>
+                    <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document" style="margin-left: 8px; padding: 8px 16px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
+                        🔗 Copy Link
                     </button>
                 ` : ''}
             </div>
@@ -316,6 +320,44 @@ function handleUrlHash() {
     }
 }
 
+async function handleQueryStringDocument() {
+    // Parse query string for sha parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const sha = urlParams.get('sha');
+    
+    if (!sha) {
+        return;
+    }
+    
+    try {
+        // Find the agency that contains this document
+        let foundAgency = null;
+        let foundViolation = null;
+        
+        for (const agency of allAgencies) {
+            if (agency.violations && Array.isArray(agency.violations)) {
+                const violation = agency.violations.find(v => v.sha256 === sha);
+                if (violation) {
+                    foundAgency = agency;
+                    foundViolation = violation;
+                    break;
+                }
+            }
+        }
+        
+        // If we found the agency, open it and scroll to it
+        if (foundAgency) {
+            openAgencyCard(foundAgency.agencyId);
+        }
+        
+        // Open the document modal
+        await viewDocument(sha);
+    } catch (error) {
+        console.error('Error handling query string document:', error);
+        showError(`Failed to load document with SHA: ${sha}. ${error.message}`);
+    }
+}
+
 function copyAgencyLink(agencyId, event) {
     if (event) {
         event.stopPropagation();
@@ -364,8 +406,55 @@ function copyAgencyLink(agencyId, event) {
     }
 }
 
+function copyDocumentLink(sha256, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const url = `${window.location.origin}${window.location.pathname}?sha=${sha256}`;
+    
+    // Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            // Show feedback
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 1500);
+        }).catch(err => {
+            console.error('Failed to copy link:', err);
+            alert('Failed to copy link to clipboard');
+        });
+    } else {
+        // Fallback for browsers without Clipboard API
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied';
+            setTimeout(() => {
+                btn.textContent = originalText;
+            }, 1500);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+            alert('Failed to copy link to clipboard');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
+}
+
 // Make functions available globally
 window.copyAgencyLink = copyAgencyLink;
+window.copyDocumentLink = copyDocumentLink;
 
 // Listen for hash changes
 window.addEventListener('hashchange', handleUrlHash);
