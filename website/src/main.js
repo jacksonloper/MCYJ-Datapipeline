@@ -162,8 +162,8 @@ function renderViolations(violations) {
                     <button class="view-document-btn" onclick="viewDocument('${v.sha256}', event)">
                         📄 View Full Document
                     </button>
-                    <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document" style="margin-left: 8px; padding: 8px 16px; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; transition: background 0.2s;">
-                        🔗 Copy Link
+                    <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document">
+                        🔗
                     </button>
                 ` : ''}
             </div>
@@ -224,7 +224,12 @@ function showDocumentModal(docData) {
             <button class="close-modal" onclick="closeDocumentModal()">✕</button>
         </div>
         <div class="document-info">
-            <div><strong>SHA256:</strong> ${escapeHtml(docData.sha256)}</div>
+            <div>
+                <strong>SHA256:</strong> ${escapeHtml(docData.sha256)}
+                <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document" style="margin-left: 8px;">
+                    🔗
+                </button>
+            </div>
             <div><strong>Date Processed:</strong> ${escapeHtml(docData.dateprocessed)}</div>
             <div><strong>Total Pages:</strong> ${totalPages}</div>
         </div>
