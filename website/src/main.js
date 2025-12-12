@@ -293,7 +293,6 @@ function renderViolations(violations) {
             }
         });
     }, 0);
-    }).join('');
     
     return `
         <div class="violations-list">
