@@ -146,3 +146,43 @@ export async function deleteQuery(queryId) {
         request.onerror = () => reject(request.error);
     });
 }
+
+/**
+ * Get all queries across all documents
+ */
+export async function getAllQueries() {
+    if (!db) {
+        await initDB();
+    }
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.getAll();
+
+        request.onsuccess = () => {
+            // Sort by timestamp descending (most recent first)
+            const results = request.result.sort((a, b) => b.timestamp - a.timestamp);
+            resolve(results);
+        };
+        request.onerror = () => reject(request.error);
+    });
+}
+
+/**
+ * Clear all queries from IndexedDB
+ */
+export async function clearAllQueries() {
+    if (!db) {
+        await initDB();
+    }
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const objectStore = transaction.objectStore(STORE_NAME);
+        const request = objectStore.clear();
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+    });
+}

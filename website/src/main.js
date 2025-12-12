@@ -1,5 +1,5 @@
 // Main application logic
-import { initDB, storeQuery, getQueriesForDocument, findExistingQuery } from './indexedDB.js';
+import { initDB, storeQuery, getQueriesForDocument, findExistingQuery, getAllQueries, clearAllQueries, deleteQuery } from './indexedDB.js';
 import { getApiKey } from './encryption.js';
 import { queryDeepSeek } from './apiService.js';
 
@@ -1175,6 +1175,199 @@ async function loadQueryHistory(sha256) {
 // Make AI query functions available globally
 window.unlockApiKey = unlockApiKey;
 window.submitAiQuery = submitAiQuery;
+
+/**
+ * Open the query manager modal
+ */
+async function openQueryManager() {
+    const modal = document.getElementById('queryManagerModal');
+    modal.style.display = 'flex';
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    
+    // Load and display all queries
+    await loadAllQueriesForManager();
+}
+
+/**
+ * Close the query manager modal
+ */
+function closeQueryManager() {
+    const modal = document.getElementById('queryManagerModal');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Re-enable body scroll
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Load and display all queries in the manager
+ */
+async function loadAllQueriesForManager() {
+    const statDiv = document.getElementById('queryManagerStats');
+    const listDiv = document.getElementById('queryManagerList');
+    const clearBtn = document.getElementById('clearAllQueriesBtn');
+    
+    try {
+        const queries = await getAllQueries();
+        
+        // Update stats
+        statDiv.textContent = `Total queries: ${queries.length}`;
+        
+        // Enable/disable clear button
+        clearBtn.disabled = queries.length === 0;
+        
+        if (queries.length === 0) {
+            listDiv.innerHTML = '<div class="no-queries-message">No AI queries stored yet. Start by asking questions about documents!</div>';
+            return;
+        }
+        
+        // Group queries by document for better organization
+        const queriesByDoc = {};
+        queries.forEach(q => {
+            if (!queriesByDoc[q.sha256]) {
+                queriesByDoc[q.sha256] = [];
+            }
+            queriesByDoc[q.sha256].push(q);
+        });
+        
+        // Display queries
+        let html = '';
+        for (const [sha, docQueries] of Object.entries(queriesByDoc)) {
+            html += `<div style="margin-bottom: 30px;">`;
+            html += `<h3 style="color: #2c3e50; font-size: 1em; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #3498db;">`;
+            html += `📄 Document: <span class="query-manager-item-doc">${escapeHtml(sha)}</span>`;
+            html += `<span style="color: #666; font-size: 0.9em; margin-left: 10px;">(${docQueries.length} ${docQueries.length === 1 ? 'query' : 'queries'})</span>`;
+            html += `</h3>`;
+            
+            docQueries.forEach(q => {
+                const date = new Date(q.timestamp).toLocaleString();
+                html += `
+                    <div class="query-manager-item">
+                        <div class="query-manager-item-header">
+                            <div class="query-manager-item-meta">
+                                🕐 ${date}
+                            </div>
+                            <button class="delete-query-btn" onclick="deleteQueryFromManager(${q.id})">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                        <div>
+                            <strong style="color: #2c3e50;">Query:</strong>
+                            <div class="query-manager-query">${escapeHtml(q.query)}</div>
+                        </div>
+                        <div>
+                            <strong style="color: #2c3e50;">Response:</strong>
+                            <div class="query-manager-response">${escapeHtml(q.response)}</div>
+                        </div>
+                        <div class="query-manager-metadata">
+                            <span>📊 Input: ${q.inputTokens} tokens</span>
+                            <span>📊 Output: ${q.outputTokens} tokens</span>
+                            <span>⏱️ Duration: ${(q.durationMs / 1000).toFixed(2)}s</span>
+                            ${q.cost ? `<span>💰 Cost: $${q.cost.toFixed(4)}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+        }
+        
+        listDiv.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error loading queries:', error);
+        listDiv.innerHTML = `<div class="no-queries-message" style="color: #e74c3c;">Error loading queries: ${escapeHtml(error.message)}</div>`;
+    }
+}
+
+/**
+ * Delete a specific query
+ */
+async function deleteQueryFromManager(queryId) {
+    if (!confirm('Are you sure you want to delete this query?')) {
+        return;
+    }
+    
+    try {
+        await deleteQuery(queryId);
+        
+        // Reload the query list
+        await loadAllQueriesForManager();
+        
+        // Also refresh any open document's query history
+        if (currentDocumentData) {
+            await loadQueryHistory(currentDocumentData.sha256);
+        }
+        
+        // Refresh query counts in agency cards
+        const placeholders = document.querySelectorAll('.query-count-placeholder');
+        placeholders.forEach(placeholder => {
+            const sha = placeholder.dataset.sha;
+            if (sha) {
+                loadQueryCount(sha);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error deleting query:', error);
+        alert(`Failed to delete query: ${error.message}`);
+    }
+}
+
+/**
+ * Confirm and clear all queries
+ */
+async function confirmClearAllQueries() {
+    const queries = await getAllQueries();
+    
+    if (queries.length === 0) {
+        return;
+    }
+    
+    const confirmation = confirm(
+        `Are you sure you want to delete all ${queries.length} queries?\n\n` +
+        'This action cannot be undone. All your AI query history will be permanently removed from your browser.'
+    );
+    
+    if (!confirmation) {
+        return;
+    }
+    
+    try {
+        await clearAllQueries();
+        
+        // Reload the query list
+        await loadAllQueriesForManager();
+        
+        // Also refresh any open document's query history
+        if (currentDocumentData) {
+            await loadQueryHistory(currentDocumentData.sha256);
+        }
+        
+        // Refresh all query counts in agency cards
+        const placeholders = document.querySelectorAll('.query-count-placeholder');
+        placeholders.forEach(placeholder => {
+            const sha = placeholder.dataset.sha;
+            if (sha) {
+                loadQueryCount(sha);
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error clearing all queries:', error);
+        alert(`Failed to clear queries: ${error.message}`);
+    }
+}
+
+// Make query manager functions available globally
+window.openQueryManager = openQueryManager;
+window.closeQueryManager = closeQueryManager;
+window.deleteQueryFromManager = deleteQueryFromManager;
+window.confirmClearAllQueries = confirmClearAllQueries;
 
 // Initialize the application
 init();
