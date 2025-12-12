@@ -40,7 +40,7 @@ When the user enters a password that doesn't match the one used to encrypt the A
 When the `ENCRYPTED_API_KEY` constant doesn't have exactly 3 colon-separated parts (salt:iv:encrypted), the decryption fails.
 
 **Technical Details:**
-- Checked at lines 10-13 in `encryption.js`
+- Checked at lines 10-12 in `encryption.js`
 - Expected format: `salt:iv:encrypted` where each part is hex-encoded
 - If `parts.length !== 3`, throws: `Error('Invalid encrypted data format')`
 
@@ -55,7 +55,7 @@ When any part of the encrypted data (salt, IV, or encrypted data) contains inval
 
 **Technical Details:**
 - The `hexToUint8Array()` function at lines 58-64 in `encryption.js` converts hex strings to byte arrays
-- `parseInt(hexString.substring(i, i + 2), 16)` will return `NaN` for invalid hex
+- The hex parsing logic at lines 60-62 uses `parseInt(hexString.substring(i, i + 2), 16)` which returns `NaN` for invalid hex
 - This results in corrupted byte arrays that cause decryption to fail
 
 **When This Occurs:**
@@ -152,4 +152,4 @@ To determine the actual cause of the error:
 
 - `/website/src/main.js` - UI and error display (line 965)
 - `/website/src/encryption.js` - Decryption logic (lines 9-76)
-- `/website/AI_QUERY_FEATURE.md` - User-facing documentation (line 125-127)
+- `/website/AI_QUERY_FEATURE.md` - User-facing documentation (lines 125-128)
