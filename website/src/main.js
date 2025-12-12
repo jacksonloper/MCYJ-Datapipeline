@@ -6,7 +6,7 @@ let currentOpenAgencyId = null;
 // Filter state
 let filters = {
     sirOnly: false,
-    violationsOnly: false,
+    violationsFilter: 'all', // 'all', 'with', 'without'
     complianceStatus: 'all' // 'all', 'not_in_compliance', 'in_compliance', 'neither'
 };
 
@@ -94,8 +94,11 @@ function applyFilters() {
                 return false;
             }
             
-            // Filter by violations only
-            if (filters.violationsOnly && v.num_violations === 0) {
+            // Filter by violations
+            if (filters.violationsFilter === 'with' && v.num_violations === 0) {
+                return false;
+            }
+            if (filters.violationsFilter === 'without' && v.num_violations > 0) {
                 return false;
             }
             
@@ -138,11 +141,15 @@ function setupFilters() {
         applyFilters();
     });
     
-    // Violations only filter
-    const violationsOnlyCheckbox = document.getElementById('filterViolationsOnly');
-    violationsOnlyCheckbox.addEventListener('change', (e) => {
-        filters.violationsOnly = e.target.checked;
-        applyFilters();
+    // Violations filter
+    const violationsRadios = document.querySelectorAll('input[name="violationsFilter"]');
+    violationsRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                filters.violationsFilter = e.target.value;
+                applyFilters();
+            }
+        });
     });
     
     // Compliance status filter
