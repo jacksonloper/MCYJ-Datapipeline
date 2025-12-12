@@ -1239,7 +1239,7 @@ async function loadAllQueriesForManager() {
         for (const [sha, docQueries] of Object.entries(queriesByDoc)) {
             html += `<div style="margin-bottom: 30px;">`;
             html += `<h3 style="color: #2c3e50; font-size: 1em; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #3498db;">`;
-            html += `📄 Document: <span class="query-manager-item-doc">${escapeHtml(sha)}</span>`;
+            html += `📄 Document: <a href="?sha=${encodeURIComponent(sha)}" class="query-manager-item-doc" style="color: #3498db; text-decoration: none; cursor: pointer;">${escapeHtml(sha)}</a>`;
             html += `<span style="color: #666; font-size: 0.9em; margin-left: 10px;">(${docQueries.length} ${docQueries.length === 1 ? 'query' : 'queries'})</span>`;
             html += `</h3>`;
             
