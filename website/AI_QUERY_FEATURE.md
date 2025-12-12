@@ -125,6 +125,7 @@ Potential improvements:
 ### "Invalid password" error
 - Verify you're using the correct secret password
 - The password is case-sensitive
+- For detailed information about all conditions that trigger this error, see [PASSWORD_ERROR_CONDITIONS.md](PASSWORD_ERROR_CONDITIONS.md)
 
 ### Query not appearing in history
 - Check browser console for IndexedDB errors
