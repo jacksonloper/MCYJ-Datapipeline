@@ -249,20 +249,22 @@ function showDocumentModal(docData, docMetadata) {
             ${docMetadata ? `
                 <div><strong>Title:</strong> ${escapeHtml(docMetadata.title)}</div>
                 ${docMetadata.num_violations > 0 ? `
-                    <div><strong>Violations Found:</strong> ${escapeHtml(docMetadata.violations_list)}</div>
+                    <div style="word-break: break-word; overflow-wrap: break-word;"><strong>Violations Found:</strong> ${escapeHtml(docMetadata.violations_list)}</div>
                 ` : `
                     <div style="color: #27ae60;"><strong>Violations:</strong> ✓ No violations found</div>
                 `}
             ` : ''}
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <strong>SHA256:</strong>
-                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; max-width: 35%; flex-shrink: 0;">${escapeHtml(docData.sha256)}</span>
-                <button class="copy-link-btn" onclick="copySHA('${docData.sha256}', event)" title="Copy SHA256">
-                    📋
-                </button>
-                <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
-                    🔗
-                </button>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <strong style="flex-shrink: 0;">SHA256:</strong>
+                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; flex: 1; min-width: 0;">${escapeHtml(docData.sha256)}</span>
+                <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                    <button class="copy-link-btn" onclick="copySHA('${docData.sha256}', event)" title="Copy SHA256">
+                        📋
+                    </button>
+                    <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
+                        🔗
+                    </button>
+                </div>
             </div>
             <div><strong>Date Processed:</strong> ${escapeHtml(docData.dateprocessed)}</div>
             <div><strong>Total Pages:</strong> ${totalPages}</div>
