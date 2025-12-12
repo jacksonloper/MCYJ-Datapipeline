@@ -113,8 +113,6 @@ export async function findExistingQuery(sha256, query) {
         await initDB();
     }
 
-    const queryHash = hashQuery(query);
-
     return new Promise((resolve, reject) => {
         const transaction = db.transaction([STORE_NAME], 'readonly');
         const objectStore = transaction.objectStore(STORE_NAME);

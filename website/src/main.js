@@ -285,14 +285,14 @@ function renderViolations(violations) {
         `;
     }).join('');
     
-    // After rendering, load query counts for each document
-    setTimeout(() => {
+    // After rendering, load query counts for each document using microtask
+    queueMicrotask(() => {
         sortedViolations.forEach(v => {
             if (v.sha256) {
                 loadQueryCount(v.sha256);
             }
         });
-    }, 0);
+    });
     
     return `
         <div class="violations-list">
@@ -990,20 +990,26 @@ function showQueryInterface() {
  * Submit an AI query about the current document
  */
 async function submitAiQuery() {
-    if (!currentDocumentData || !apiKey) {
-        alert('Document or API key not available');
-        return;
-    }
-    
     const queryInput = document.getElementById('aiQueryInput');
     const submitBtn = document.getElementById('submitQueryBtn');
     const spinner = document.getElementById('querySpinner');
     const statusDiv = document.getElementById('queryStatus');
     
+    if (!currentDocumentData) {
+        statusDiv.innerHTML = '<div style="color: #e74c3c; padding: 10px; background: #fee; border-radius: 4px; margin-top: 10px;">Document not available</div>';
+        return;
+    }
+    
+    if (!apiKey) {
+        statusDiv.innerHTML = '<div style="color: #e74c3c; padding: 10px; background: #fee; border-radius: 4px; margin-top: 10px;">Please unlock API access first</div>';
+        return;
+    }
+    
     const query = queryInput.value.trim();
     
     if (!query) {
-        alert('Please enter a query');
+        statusDiv.innerHTML = '<div style="color: #e74c3c; padding: 10px; background: #fee; border-radius: 4px; margin-top: 10px;">Please enter a query</div>';
+        setTimeout(() => statusDiv.innerHTML = '', 3000);
         return;
     }
     
@@ -1071,8 +1077,7 @@ async function submitAiQuery() {
         
     } catch (error) {
         console.error('Error submitting query:', error);
-        statusDiv.textContent = `Error: ${error.message}`;
-        statusDiv.style.color = '#e74c3c';
+        statusDiv.innerHTML = `<div style="color: #e74c3c; padding: 10px; background: #fee; border-radius: 4px; margin-top: 10px;">Error: ${escapeHtml(error.message)}</div>`;
     } finally {
         // Re-enable input and button
         queryInput.disabled = false;
