@@ -332,14 +332,12 @@ async function handleQueryStringDocument() {
     try {
         // Find the agency that contains this document
         let foundAgency = null;
-        let foundViolation = null;
         
         for (const agency of allAgencies) {
             if (agency.violations && Array.isArray(agency.violations)) {
                 const violation = agency.violations.find(v => v.sha256 === sha);
                 if (violation) {
                     foundAgency = agency;
-                    foundViolation = violation;
                     break;
                 }
             }
@@ -350,7 +348,7 @@ async function handleQueryStringDocument() {
             openAgencyCard(foundAgency.agencyId);
         }
         
-        // Open the document modal
+        // Open the document modal (this will handle errors if document doesn't exist)
         await viewDocument(sha);
     } catch (error) {
         console.error('Error handling query string document:', error);
@@ -413,16 +411,19 @@ function copyDocumentLink(sha256, event) {
     
     const url = `${window.location.origin}${window.location.pathname}?sha=${sha256}`;
     
+    // Helper function to show feedback on button
+    const showCopyFeedback = (btn) => {
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copied';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 1500);
+    };
+    
     // Copy to clipboard
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(url).then(() => {
-            // Show feedback
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = '✓ Copied';
-            setTimeout(() => {
-                btn.textContent = originalText;
-            }, 1500);
+            showCopyFeedback(event.target);
         }).catch(err => {
             console.error('Failed to copy link:', err);
             alert('Failed to copy link to clipboard');
@@ -437,12 +438,7 @@ function copyDocumentLink(sha256, event) {
         textarea.select();
         try {
             document.execCommand('copy');
-            const btn = event.target;
-            const originalText = btn.textContent;
-            btn.textContent = '✓ Copied';
-            setTimeout(() => {
-                btn.textContent = originalText;
-            }, 1500);
+            showCopyFeedback(event.target);
         } catch (err) {
             console.error('Failed to copy link:', err);
             alert('Failed to copy link to clipboard');
