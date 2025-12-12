@@ -251,6 +251,9 @@ function showDocumentModal(docData, docMetadata) {
             <div style="display: flex; align-items: center; gap: 8px;">
                 <strong>SHA256:</strong>
                 <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; max-width: 35%; flex-shrink: 0;">${escapeHtml(docData.sha256)}</span>
+                <button class="copy-link-btn" onclick="copySHA('${docData.sha256}', event)" title="Copy SHA256">
+                    📋
+                </button>
                 <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
                     🔗
                 </button>
@@ -478,9 +481,52 @@ function copyDocumentLink(sha256, event) {
     }
 }
 
+function copySHA(sha256, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    // Helper function to show feedback on button
+    const showCopyFeedback = (btn) => {
+        const originalText = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 1500);
+    };
+    
+    // Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sha256).then(() => {
+            showCopyFeedback(event.target);
+        }).catch(err => {
+            console.error('Failed to copy SHA:', err);
+            alert('Failed to copy SHA to clipboard');
+        });
+    } else {
+        // Fallback for browsers without Clipboard API
+        const textarea = document.createElement('textarea');
+        textarea.value = sha256;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showCopyFeedback(event.target);
+        } catch (err) {
+            console.error('Failed to copy SHA:', err);
+            alert('Failed to copy SHA to clipboard');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
+}
+
 // Make functions available globally
 window.copyAgencyLink = copyAgencyLink;
 window.copyDocumentLink = copyDocumentLink;
+window.copySHA = copySHA;
 
 // Listen for hash changes
 window.addEventListener('hashchange', handleUrlHash);
