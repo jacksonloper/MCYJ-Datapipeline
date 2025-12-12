@@ -19,7 +19,9 @@ async function init() {
         displayStats();
         displayAgencies(allAgencies);
         setupSearch();
+        setupShaLookup();
         handleUrlHash();
+        checkShaQueryParam();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -390,6 +392,38 @@ function setupSearch() {
         
         displayAgencies(filteredAgencies);
     });
+}
+
+function setupShaLookup() {
+    const shaInput = document.getElementById('shaLookupInput');
+    const shaBtn = document.getElementById('shaLookupBtn');
+    
+    const performLookup = () => {
+        const sha = shaInput.value.trim();
+        if (sha) {
+            // Update URL with SHA query parameter
+            const newUrl = `${window.location.pathname}?sha=${encodeURIComponent(sha)}`;
+            window.location.href = newUrl;
+        }
+    };
+    
+    shaBtn.addEventListener('click', performLookup);
+    
+    shaInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performLookup();
+        }
+    });
+}
+
+function checkShaQueryParam() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const sha = urlParams.get('sha');
+    
+    if (sha) {
+        // Automatically view the document for this SHA
+        viewDocument(sha, null);
+    }
 }
 
 function escapeHtml(text) {
