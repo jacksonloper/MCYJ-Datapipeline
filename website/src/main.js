@@ -204,7 +204,8 @@ async function viewDocument(sha256, event) {
                 if (violation) {
                     docMetadata = {
                         title: violation.document_title || violation.agency_name || 'Untitled Document',
-                        num_violations: violation.num_violations || 0
+                        num_violations: violation.num_violations || 0,
+                        violations_list: violation.violations_list || ''
                     };
                     break;
                 }
@@ -247,7 +248,11 @@ function showDocumentModal(docData, docMetadata) {
         <div class="document-info">
             ${docMetadata ? `
                 <div><strong>Title:</strong> ${escapeHtml(docMetadata.title)}</div>
-                <div><strong>Violations:</strong> ${docMetadata.num_violations}</div>
+                ${docMetadata.num_violations > 0 ? `
+                    <div><strong>Violations Found:</strong> ${escapeHtml(docMetadata.violations_list)}</div>
+                ` : `
+                    <div style="color: #27ae60;"><strong>Violations:</strong> ✓ No violations found</div>
+                `}
             ` : ''}
             <div style="display: flex; align-items: center; gap: 8px;">
                 <strong>SHA256:</strong>
