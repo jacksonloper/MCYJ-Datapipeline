@@ -21,7 +21,7 @@ async function init() {
         setupSearch();
         setupShaLookup();
         handleUrlHash();
-        checkShaQueryParam();
+        handleQueryStringDocument();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -149,7 +149,14 @@ function renderViolations(violations) {
         
         return `
             <div class="violation-item ${violationClass}">
-                <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(displayTitle)}</div>
+                <div style="font-weight: 600; margin-bottom: 4px;">
+                    ${escapeHtml(displayTitle)}
+                    ${v.sha256 ? `
+                        <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document">
+                            🔗
+                        </button>
+                    ` : ''}
+                </div>
                 <div class="date">${escapeHtml(v.date || 'Date not specified')}</div>
                 ${hasViolations ? `
                     <div class="violations-text">
@@ -188,14 +195,30 @@ async function viewDocument(sha256, event) {
         }
         
         const docData = await response.json();
-        showDocumentModal(docData);
+        
+        // Find document metadata from agencies data
+        let docMetadata = null;
+        for (const agency of allAgencies) {
+            if (agency.violations && Array.isArray(agency.violations)) {
+                const violation = agency.violations.find(v => v.sha256 === sha256);
+                if (violation) {
+                    docMetadata = {
+                        title: violation.document_title || violation.agency_name || 'Untitled Document',
+                        num_violations: violation.num_violations || 0
+                    };
+                    break;
+                }
+            }
+        }
+        
+        showDocumentModal(docData, docMetadata);
     } catch (error) {
         console.error('Error loading document:', error);
         alert(`Failed to load document: ${error.message}`);
     }
 }
 
-function showDocumentModal(docData) {
+function showDocumentModal(docData, docMetadata) {
     const modal = document.getElementById('documentModal') || createDocumentModal();
     const modalContent = modal.querySelector('.modal-document-content');
     
@@ -222,7 +245,20 @@ function showDocumentModal(docData) {
             <button class="close-modal" onclick="closeDocumentModal()">✕</button>
         </div>
         <div class="document-info">
-            <div><strong>SHA256:</strong> ${escapeHtml(docData.sha256)}</div>
+            ${docMetadata ? `
+                <div><strong>Title:</strong> ${escapeHtml(docMetadata.title)}</div>
+                <div><strong>Violations:</strong> ${docMetadata.num_violations}</div>
+            ` : ''}
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <strong>SHA256:</strong>
+                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; max-width: 35%; flex-shrink: 0;">${escapeHtml(docData.sha256)}</span>
+                <button class="copy-link-btn" onclick="copySHA('${docData.sha256}', event)" title="Copy SHA256">
+                    📋
+                </button>
+                <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
+                    🔗
+                </button>
+            </div>
             <div><strong>Date Processed:</strong> ${escapeHtml(docData.dateprocessed)}</div>
             <div><strong>Total Pages:</strong> ${totalPages}</div>
         </div>
@@ -318,6 +354,42 @@ function handleUrlHash() {
     }
 }
 
+async function handleQueryStringDocument() {
+    // Parse query string for sha parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const sha = urlParams.get('sha');
+    
+    if (!sha) {
+        return;
+    }
+    
+    try {
+        // Find the agency that contains this document
+        let foundAgency = null;
+        
+        for (const agency of allAgencies) {
+            if (agency.violations && Array.isArray(agency.violations)) {
+                const violation = agency.violations.find(v => v.sha256 === sha);
+                if (violation) {
+                    foundAgency = agency;
+                    break;
+                }
+            }
+        }
+        
+        // If we found the agency, open it and scroll to it
+        if (foundAgency) {
+            openAgencyCard(foundAgency.agencyId);
+        }
+        
+        // Open the document modal (this will handle errors if document doesn't exist)
+        await viewDocument(sha);
+    } catch (error) {
+        console.error('Error handling query string document:', error);
+        showError(`Failed to load document with SHA: ${sha}. ${error.message}`);
+    }
+}
+
 function copyAgencyLink(agencyId, event) {
     if (event) {
         event.stopPropagation();
@@ -366,8 +438,96 @@ function copyAgencyLink(agencyId, event) {
     }
 }
 
+function copyDocumentLink(sha256, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    const url = `${window.location.origin}${window.location.pathname}?sha=${sha256}`;
+    
+    // Helper function to show feedback on button
+    const showCopyFeedback = (btn) => {
+        const originalText = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 1500);
+    };
+    
+    // Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+            showCopyFeedback(event.target);
+        }).catch(err => {
+            console.error('Failed to copy link:', err);
+            alert('Failed to copy link to clipboard');
+        });
+    } else {
+        // Fallback for browsers without Clipboard API
+        const textarea = document.createElement('textarea');
+        textarea.value = url;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showCopyFeedback(event.target);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+            alert('Failed to copy link to clipboard');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
+}
+
+function copySHA(sha256, event) {
+    if (event) {
+        event.stopPropagation();
+    }
+    
+    // Helper function to show feedback on button
+    const showCopyFeedback = (btn) => {
+        const originalText = btn.textContent;
+        btn.textContent = '✓';
+        setTimeout(() => {
+            btn.textContent = originalText;
+        }, 1500);
+    };
+    
+    // Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(sha256).then(() => {
+            showCopyFeedback(event.target);
+        }).catch(err => {
+            console.error('Failed to copy SHA:', err);
+            alert('Failed to copy SHA to clipboard');
+        });
+    } else {
+        // Fallback for browsers without Clipboard API
+        const textarea = document.createElement('textarea');
+        textarea.value = sha256;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            showCopyFeedback(event.target);
+        } catch (err) {
+            console.error('Failed to copy SHA:', err);
+            alert('Failed to copy SHA to clipboard');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
+}
+
 // Make functions available globally
 window.copyAgencyLink = copyAgencyLink;
+window.copyDocumentLink = copyDocumentLink;
+window.copySHA = copySHA;
 
 // Listen for hash changes
 window.addEventListener('hashchange', handleUrlHash);
