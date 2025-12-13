@@ -24,15 +24,30 @@ catch (error) {
 
 When the user enters a password that doesn't match the one used to encrypt the API key, the AES-CBC decryption will fail.
 
+**What "Incorrect" Means:**
+
+An "incorrect" password means any password that differs from the one originally used to encrypt the API key. There is no way to verify a password is correct *before* attempting decryption - the system only knows the password is wrong when decryption fails.
+
+**How the System Detects an Incorrect Password:**
+
+1. User enters a password (correct or incorrect)
+2. System uses PBKDF2 to derive an AES-256 key from that password
+3. System attempts to decrypt the encrypted API key using the derived key
+4. **If password is correct:** Decryption succeeds, returns valid API key string
+5. **If password is incorrect:** Decryption fails with an error (the decrypted data is garbage, causing `TextDecoder().decode()` to fail at line 52 in `encryption.js`, or `crypto.subtle.decrypt()` itself throws an error)
+
+The error is detected when the decryption process throws an exception. AES-CBC doesn't have built-in authentication, so the only way to know the password was wrong is when decryption produces invalid data.
+
 **Technical Details:**
 - The password is used with PBKDF2 (100,000 iterations, SHA-256) to derive an AES-256 key
-- If the wrong password is used, the derived key won't match the encryption key
-- The `crypto.subtle.decrypt()` call at line 43-50 in `encryption.js` will throw an error
+- Each different password produces a completely different derived key
+- If the derived key doesn't match the original encryption key, decryption produces garbage data
+- The `crypto.subtle.decrypt()` call at lines 43-50 in `encryption.js` or the `TextDecoder().decode()` at line 52 will throw an error
 - This is the intended behavior for password verification
 
 **User Experience:**
 - Password is case-sensitive
-- Any character difference will cause this error
+- Any character difference (even a single character) will cause this error
 - Leading or trailing spaces are trimmed automatically by the code (line 940 in main.js)
 
 ### 2. **Invalid Encrypted Data Format**
