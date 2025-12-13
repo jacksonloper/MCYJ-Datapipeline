@@ -228,7 +228,7 @@ Examples:
     # Check if files exist
     if not Path(args.violations_csv).exists():
         logger.error(f"Violations CSV not found: {args.violations_csv}")
-        logger.info("Run: python3 parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o violations_output.csv")
+        logger.info("Run: python3 pdf_parsing/parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o violations_output.csv")
         sys.exit(1)
     
     if not Path(args.parquet_dir).exists():

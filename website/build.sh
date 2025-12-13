@@ -12,7 +12,7 @@ cd website
 
 echo ""
 echo "==> Step 1: Generating violations CSV from parquet files..."
-python3 ../parse_parquet_violations.py \
+python3 ../pdf_parsing/parse_parquet_violations.py \
   --parquet-dir ../pdf_parsing/parquet_files \
   -o ../violations_output.csv
 

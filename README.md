@@ -72,7 +72,7 @@ python3 pdf_parsing/extract_pdf_text.py --pdf-dir Downloads --parquet-dir pdf_pa
 Parse parquet files to extract violation information to CSV:
 
 ```bash
-python3 parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o violations_output.csv
+python3 pdf_parsing/parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o violations_output.csv
 ```
 
 The output CSV contains:
@@ -105,12 +105,12 @@ The script displays a random document from the specified category, showing both 
 To investigate a specific document by its SHA256 hash:
 
 ```bash
-python3 investigate_sha.py <sha256>
+python3 pdf_parsing/investigate_sha.py <sha256>
 ```
 
 Example:
 ```bash
-python3 investigate_sha.py 6e5b899cf078b4bf0829e4dce8113aaac61edfa5bc0958efa725ae8607008f68
+python3 pdf_parsing/investigate_sha.py 6e5b899cf078b4bf0829e4dce8113aaac61edfa5bc0958efa725ae8607008f68
 ```
 
 This will display:

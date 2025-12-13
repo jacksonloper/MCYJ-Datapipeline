@@ -236,7 +236,7 @@ This is useful for:
 
 2. **Parse violations**: Use `parse_parquet_violations.py` to extract violation information
    ```bash
-   python3 parse_parquet_violations.py
+   python3 pdf_parsing/parse_parquet_violations.py
    ```
 
 3. **Investigate results**: Use `investigate_violations.py` to inspect random documents

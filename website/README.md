@@ -54,7 +54,7 @@ The built files will be in the `dist/` directory.
 
 The site is configured for automatic deployment on Netlify. The build process:
 
-1. Runs `parse_parquet_violations.py` to generate violations from parquet files
+1. Runs `pdf_parsing/parse_parquet_violations.py` to generate violations from parquet files
 2. Runs `generate_website_data.py` to create JSON files from violations CSV
 3. Builds the static site with Vite
 
@@ -71,7 +71,7 @@ The `netlify.toml` file configures:
 The dashboard uses data from:
 
 - **Parquet Files**: PDF text extracts in `../pdf_parsing/parquet_files/`
-- **Violations CSV**: Generated from parquet files via `parse_parquet_violations.py`
+- **Violations CSV**: Generated from parquet files via `pdf_parsing/parse_parquet_violations.py`
 
 The dashboard derives all agency information directly from the violations data (no separate facility metadata required).
 
@@ -108,7 +108,7 @@ To regenerate the data manually:
 cd website
 
 # Generate violations CSV from parquet files
-python3 ../parse_parquet_violations.py \
+python3 ../pdf_parsing/parse_parquet_violations.py \
   --parquet-dir ../pdf_parsing/parquet_files \
   -o ../violations_output.csv
 
