@@ -1,0 +1,44 @@
+# Generated output files
+violations_output.csv
+violations_output_*.csv
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+dist/
+*.local
+
+# Build artifacts
+website/public/data/
+website/public/documents/
+website/test_output/
+metadata_output/
+*.egg-info/
+build/
+dist/
+
+# Test and demo files
+website/test.html
+website/demo.html
+website/demo-manager.html
