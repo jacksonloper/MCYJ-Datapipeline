@@ -36,7 +36,7 @@ An "incorrect" password means any password that differs from the one originally 
 4. **If password is correct:** Decryption succeeds, returns valid API key string
 5. **If password is incorrect:** Decryption fails with an error (the decrypted data is garbage, causing `TextDecoder().decode()` to fail at line 52 in `encryption.js`, or `crypto.subtle.decrypt()` itself throws an error)
 
-The error is detected when the decryption process throws an exception. AES-CBC doesn't have built-in authentication, so the only way to know the password was wrong is when decryption produces invalid data.
+The error is detected when the decryption process throws an exception. With AES-CBC encryption, the only way to know the password was wrong is when decryption produces invalid data that causes an error.
 
 **Technical Details:**
 - The password is used with PBKDF2 (100,000 iterations, SHA-256) to derive an AES-256 key
