@@ -45,6 +45,11 @@ def load_violations_csv(csv_path):
                 in_compliance_pages = []
             
             try:
+                provisional_license_pages = json.loads(row.get('provisional_license_pages', '[]'))
+            except (json.JSONDecodeError, TypeError):
+                provisional_license_pages = []
+            
+            try:
                 violations_detailed = json.loads(row.get('violations_detailed', '[]'))
             except (json.JSONDecodeError, TypeError):
                 violations_detailed = []
@@ -60,6 +65,8 @@ def load_violations_csv(csv_path):
                 'has_in_compliance': row.get('has_in_compliance', 'False').lower() in ('true', '1', 'yes'),
                 'not_in_compliance_pages': not_in_compliance_pages,
                 'in_compliance_pages': in_compliance_pages,
+                'has_provisional_license': row.get('has_provisional_license', 'False').lower() in ('true', '1', 'yes'),
+                'provisional_license_pages': provisional_license_pages,
                 'violations_detailed': violations_detailed,
                 'sha256': row.get('sha256', ''),
                 'date_processed': row.get('date_processed', '')

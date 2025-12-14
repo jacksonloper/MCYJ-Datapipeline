@@ -259,6 +259,28 @@ def find_compliance_phrases(text_pages: List[str]) -> Dict[str, Any]:
     return result
 
 
+def find_provisional_license(text_pages: List[str]) -> Dict[str, Any]:
+    """Find provisional license phrases and their page locations.
+    
+    Returns dict with:
+    - has_provisional_license: bool
+    - provisional_license_pages: list of page indices
+    """
+    result = {
+        'has_provisional_license': False,
+        'provisional_license_pages': []
+    }
+    
+    for page_idx, page_text in enumerate(text_pages):
+        # Look for "provisional license" phrase (case-insensitive)
+        if re.search(r'provisional\s+license', page_text, re.IGNORECASE):
+            result['has_provisional_license'] = True
+            if page_idx not in result['provisional_license_pages']:
+                result['provisional_license_pages'].append(page_idx)
+    
+    return result
+
+
 def extract_violations_detailed(text_pages: List[str]) -> Dict[str, Any]:
     """Extract violations with detailed location information.
     
@@ -512,6 +534,9 @@ def parse_document(text_pages: List[str]) -> Dict[str, Any]:
     
     # Find compliance phrases
     compliance_info = find_compliance_phrases(text_pages)
+    
+    # Find provisional license phrases
+    provisional_license_info = find_provisional_license(text_pages)
 
     return {
         'agency_id': license_number,
@@ -525,7 +550,9 @@ def parse_document(text_pages: List[str]) -> Dict[str, Any]:
         'has_not_in_compliance': compliance_info['has_not_in_compliance'],
         'has_in_compliance': compliance_info['has_in_compliance'],
         'not_in_compliance_pages': compliance_info['not_in_compliance_pages'],
-        'in_compliance_pages': compliance_info['in_compliance_pages']
+        'in_compliance_pages': compliance_info['in_compliance_pages'],
+        'has_provisional_license': provisional_license_info['has_provisional_license'],
+        'provisional_license_pages': provisional_license_info['provisional_license_pages']
     }
 
 
@@ -599,6 +626,7 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
                 'is_special_investigation', 'violations_list', 'num_violations', 
                 'has_not_in_compliance', 'has_in_compliance',
                 'not_in_compliance_pages', 'in_compliance_pages',
+                'has_provisional_license', 'provisional_license_pages',
                 'violations_detailed',
                 'sha256', 'date_processed'
             ]
@@ -619,6 +647,8 @@ def process_parquet_files(parquet_dir: str, output_csv: str) -> None:
                     'has_in_compliance': record.get('has_in_compliance', False),
                     'not_in_compliance_pages': json.dumps(record.get('not_in_compliance_pages', [])),
                     'in_compliance_pages': json.dumps(record.get('in_compliance_pages', [])),
+                    'has_provisional_license': record.get('has_provisional_license', False),
+                    'provisional_license_pages': json.dumps(record.get('provisional_license_pages', [])),
                     'violations_detailed': json.dumps(record.get('violations_detailed', [])),
                     'sha256': record['sha256'],
                     'date_processed': record['date_processed']

@@ -13,7 +13,8 @@ let apiKey = null; // Store decrypted API key
 let filters = {
     sirOnly: false,
     violationsFilter: 'all', // 'all', 'with', 'without'
-    complianceStatus: 'all' // 'all', 'not_in_compliance', 'in_compliance', 'neither'
+    complianceStatus: 'all', // 'all', 'not_in_compliance', 'in_compliance', 'neither'
+    provisionalLicense: 'all' // 'all', 'is_present', 'is_not_present'
 };
 
 // Load and display data
@@ -122,6 +123,14 @@ function applyFilters() {
                 return false;
             }
             
+            // Filter by provisional license
+            if (filters.provisionalLicense === 'is_present' && !v.has_provisional_license) {
+                return false;
+            }
+            if (filters.provisionalLicense === 'is_not_present' && v.has_provisional_license) {
+                return false;
+            }
+            
             return true;
         });
         
@@ -167,6 +176,17 @@ function setupFilters() {
         radio.addEventListener('change', (e) => {
             if (e.target.checked) {
                 filters.complianceStatus = e.target.value;
+                applyFilters();
+            }
+        });
+    });
+    
+    // Provisional license filter
+    const provisionalLicenseRadios = document.querySelectorAll('input[name="provisionalLicenseFilter"]');
+    provisionalLicenseRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                filters.provisionalLicense = e.target.value;
                 applyFilters();
             }
         });
@@ -425,6 +445,17 @@ function showDocumentModal(docData, docMetadata) {
                 highlightRanges.push({
                     ...pos,
                     className: 'highlight-in-compliance'
+                });
+            });
+        }
+        
+        // Highlight provisional license phrases
+        if (highlighting.provisional_license_pages && highlighting.provisional_license_pages.includes(pageIndex)) {
+            const positions = findTextPositions(page, 'provisional\\s+license', 'gi');
+            positions.forEach(pos => {
+                highlightRanges.push({
+                    ...pos,
+                    className: 'highlight-provisional-license'
                 });
             });
         }

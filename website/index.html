@@ -411,6 +411,12 @@
             font-weight: bold;
         }
         
+        .highlight-provisional-license {
+            background-color: #ffeaa7;
+            color: #d63031;
+            font-weight: bold;
+        }
+        
         .highlight-rule {
             background-color: #fff3cd;
             color: #856404;
@@ -708,6 +714,30 @@
                         <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                             <input type="radio" name="complianceFilter" value="neither" style="cursor: pointer;">
                             <span>Neither Phrase Found</span>
+                        </label>
+                    </div>
+                </div>
+                <div style="margin-top: 8px;">
+                    <label style="font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        Provisional License:
+                        <a href="https://legislature.mi.gov/Laws/MCL?objectName=mcl-722-117a" target="_blank" rel="noopener noreferrer" 
+                           style="font-size: 0.85em; color: #3498db; text-decoration: none; font-weight: normal;"
+                           title="View MCL 722.117a - Provisional license requirements">
+                            📘 MCL 722.117a
+                        </a>
+                    </label>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="radio" name="provisionalLicenseFilter" value="all" checked style="cursor: pointer;">
+                            <span>No Filter</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="radio" name="provisionalLicenseFilter" value="is_present" style="cursor: pointer;">
+                            <span>Is Present</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                            <input type="radio" name="provisionalLicenseFilter" value="is_not_present" style="cursor: pointer;">
+                            <span>Is Not Present</span>
                         </label>
                     </div>
                 </div>
