@@ -273,6 +273,8 @@ def find_provisional_license(text_pages: List[str]) -> Dict[str, Any]:
     
     for page_idx, page_text in enumerate(text_pages):
         # Look for "provisional license" phrase (case-insensitive)
+        # Pattern matches "provisional license" with one or more whitespace characters between words
+        # This handles normal spaces, multiple spaces, tabs, or newlines between the words
         if re.search(r'provisional\s+license', page_text, re.IGNORECASE):
             result['has_provisional_license'] = True
             if page_idx not in result['provisional_license_pages']:

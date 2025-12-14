@@ -450,6 +450,8 @@ function showDocumentModal(docData, docMetadata) {
         }
         
         // Highlight provisional license phrases
+        // Pattern matches "provisional license" case-insensitively with any whitespace between words
+        // This is consistent with the backend detection pattern in parse_parquet_violations.py
         if (highlighting.provisional_license_pages && highlighting.provisional_license_pages.includes(pageIndex)) {
             const positions = findTextPositions(page, 'provisional\\s+license', 'gi');
             positions.forEach(pos => {
