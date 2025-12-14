@@ -325,7 +325,8 @@ def extract_violations_detailed(text_pages: List[str]) -> Dict[str, Any]:
             status = violation_match.group(1)
             status_page = char_position_to_page(text_pages, start_pos + violation_match.start())
             
-            if 'VIOLATION ESTABLISHED' in status.upper():
+            # Use case-insensitive comparison since the regex uses re.IGNORECASE
+            if 'violation established' in status.lower():
                 if rule_ref not in [v for v in violations if rule_ref in v]:
                     violations.append(rule_ref)
                     violations_detailed.append({
