@@ -1,0 +1,48 @@
+name: Update SIR Summaries
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'Number of SIRs to query (default: 100)'
+        required: false
+        default: '100'
+  schedule:
+    # Run weekly on Mondays at 00:00 UTC
+    - cron: '0 0 * * 1'
+
+jobs:
+  update-summaries:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas pyarrow requests
+
+      - name: Update SIR summaries
+        env:
+          OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+        run: |
+          cd pdf_parsing
+          python3 update_summaryqueries.py --count ${{ github.event.inputs.count || '100' }}
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add pdf_parsing/summaryqueries.csv
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update SIR summaries (automated)" -m "Added summaries for newly discovered SIRs"
+            git push
+          fi

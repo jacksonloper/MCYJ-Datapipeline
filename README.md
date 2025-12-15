@@ -162,31 +162,33 @@ Configuration is in `website/netlify.toml`.
 
 See [website/README.md](website/README.md) for more details about the dashboard.
 
-## 8. Query Special Investigation Reports (SIRs) with AI
+## 8. AI-Powered SIR Summaries
 
-Query OpenRouter API (DeepSeek v3.2) on Special Investigation Reports to get AI-generated summaries and culpability assessments.
+Automatically generate and maintain AI summaries for Special Investigation Reports (SIRs) using OpenRouter API (DeepSeek v3.2).
 
-### Quick Start
+### Automated Updates
+
+A GitHub Actions workflow automatically:
+1. Scans parquet files for new SIRs
+2. Compares against existing summaries in `pdf_parsing/summaryqueries.csv`
+3. Generates AI summaries for up to 100 new SIRs weekly
+4. Commits results to the repository
+
+**To trigger manually**: Go to Actions → "Update SIR Summaries" → Run workflow
+
+### Local Usage
 
 ```bash
-# Option 1: With repository secret
+cd pdf_parsing
 export OPENROUTER_KEY="your-api-key"
-./run_sir_queries.sh
-
-# Option 2: With encrypted key password
-export OPENROUTER_PASSWORD="your-secret-password"
-./run_sir_queries.sh
-
-# Option 3: Using GitHub Actions workflow
-# Go to Actions > Query SIRs with OpenRouter > Run workflow
+python3 update_summaryqueries.py --count 100
 ```
 
 The query used is: *"Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."*
 
-Results are saved to `sir_query_results.csv` with detailed response data, token usage, and cost information.
+Results are appended to `pdf_parsing/summaryqueries.csv` with:
+- Incident summaries
+- Culpability assessments
+- Token usage and cost information
 
-See [RUN_SIR_QUERY.md](RUN_SIR_QUERY.md) for complete documentation including:
-- Multiple authentication methods
-- Custom configuration options
-- Cost estimation
-- Troubleshooting guide
+See [pdf_parsing/README.md](pdf_parsing/README.md) for complete documentation.

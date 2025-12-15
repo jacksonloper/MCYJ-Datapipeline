@@ -169,6 +169,68 @@ When run on the existing parquet files:
 - Documents with violations: 976
 - Documents without violations: 2534
 
+## Update SIR Summaries (update_summaryqueries.py)
+
+Automatically generate and maintain AI-powered summaries for Special Investigation Reports (SIRs).
+
+### Purpose
+
+This script maintains an up-to-date `summaryqueries.csv` file containing AI-generated summaries of all SIRs. It:
+1. Scans parquet files to identify all SIR documents
+2. Compares against existing summaries in `summaryqueries.csv`
+3. Queries OpenRouter API (DeepSeek v3.2) for missing summaries
+4. Appends new results to the CSV file
+
+### Usage
+
+```bash
+# Update summaries for up to 100 missing SIRs (default)
+cd pdf_parsing
+python3 update_summaryqueries.py
+
+# Specify custom count
+python3 update_summaryqueries.py --count 50
+
+# Use custom paths
+python3 update_summaryqueries.py --parquet-dir custom_parquets --output custom_output.csv
+```
+
+### Requirements
+
+- `OPENROUTER_KEY` environment variable must be set with your OpenRouter API key
+- Dependencies: `pandas`, `pyarrow`, `requests`
+
+### Output Format
+
+The `summaryqueries.csv` file contains:
+- `sha256`: Document hash identifier  
+- `agency_id`: Agency license number
+- `agency_name`: Name of the agency
+- `document_title`: Title of the document
+- `date`: Report date
+- `num_violations`: Number of violations found
+- `violations_list`: List of violated rules
+- `query`: Query text sent to AI
+- `response`: AI-generated summary and culpability assessment
+- `input_tokens`: API input token count
+- `output_tokens`: API output token count  
+- `cost`: API cost (if provided)
+- `duration_ms`: Query duration in milliseconds
+
+### Automation
+
+A GitHub Actions workflow (`.github/workflows/update-sir-summaries.yml`) automatically runs this script:
+- **Scheduled**: Weekly on Mondays at 00:00 UTC
+- **Manual**: Can be triggered from the Actions tab with custom count
+
+The workflow automatically commits new summaries to the repository.
+
+### Query
+
+The script asks: *"Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."*
+
+This generates concise incident summaries with clear responsibility assessments.
+
 ## Investigate Violations Tool
 
 The `investigate_violations.py` script helps you inspect random documents from the parsed violations data, showing both the extracted annotations and the original document text.
@@ -239,13 +301,20 @@ This is useful for:
    python3 pdf_parsing/parse_parquet_violations.py
    ```
 
-3. **Investigate results**: Use `investigate_violations.py` to inspect random documents
+3. **Update SIR summaries**: Use `update_summaryqueries.py` to generate AI summaries for SIRs
+   ```bash
+   cd pdf_parsing
+   export OPENROUTER_KEY="your-api-key"
+   python3 update_summaryqueries.py
+   ```
+
+4. **Investigate results**: Use `investigate_violations.py` to inspect random documents
    ```bash
    cd pdf_parsing
    python3 investigate_violations.py
    ```
 
-4. **Analyze results**: Use the CSV output for analysis, reporting, or further processing
+5. **Analyze results**: Use the CSV outputs for analysis, reporting, or further processing
 
 ## Requirements
 
