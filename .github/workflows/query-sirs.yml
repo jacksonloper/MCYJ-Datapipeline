@@ -73,7 +73,7 @@ jobs:
           import sys
           try:
               df = pd.read_csv('${{ github.event.inputs.output_file }}')
-              successful = len(df[~df['response'].str.startswith('ERROR:')])
+              successful = len(df[~df['response'].str.startswith('ERROR:', na=False)])
               failed = len(df) - successful
               total_input = df['input_tokens'].sum()
               total_output = df['output_tokens'].sum()

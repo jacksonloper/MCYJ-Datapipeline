@@ -71,7 +71,8 @@ def load_document_from_parquet(sha256: str, parquet_dir: str) -> Optional[Dict]:
                 if isinstance(text_data, str):
                     # If stored as string, parse it safely
                     try:
-                        if text_data.strip().startswith('[') and text_data.strip().endswith(']'):
+                        text_stripped = text_data.strip()
+                        if text_stripped.startswith('[') and text_stripped.endswith(']'):
                             text_pages = ast.literal_eval(text_data)
                             if not isinstance(text_pages, list):
                                 logger.warning(f"Parsed text is not a list for document {sha256}")
@@ -136,7 +137,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         OPENROUTER_API_URL,
         headers=headers,
         json=payload,
-        timeout=120  # 2 minute timeout
+        timeout=180  # 3 minute timeout (configurable for large documents)
     )
     
     end_time = time.time()
