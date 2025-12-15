@@ -23,9 +23,9 @@ This guide explains how to run AI queries on 50 Special Investigation Reports us
 
 ## Running the Query Script
 
-### Option 1: Using Repository Secret (Recommended for maintainers)
+### Method 1: Using Repository Secret (For repository maintainers)
 
-If you have access to the repository secret, you can run the script in a GitHub Actions workflow or locally after exporting the secret:
+If you have access to the repository secret OPENROUTER_KEY:
 
 ```bash
 # Set the API key from the repository secret
@@ -35,7 +35,37 @@ export OPENROUTER_KEY="your-openrouter-api-key"
 python3 query_sirs.py
 ```
 
-### Option 2: Using Your Own API Key
+Or use the convenience script:
+```bash
+export OPENROUTER_KEY="your-openrouter-api-key"
+./run_sir_queries.sh
+```
+
+### Method 2: Using Encrypted Key with Password (For authorized users)
+
+If you have the password to decrypt the encrypted key stored in the repository:
+
+```bash
+# Set the password
+export OPENROUTER_PASSWORD="your-secret-password"
+
+# Run with the convenience script (it will auto-decrypt)
+./run_sir_queries.sh
+```
+
+Or decrypt and use manually:
+```bash
+# Install cryptography library if needed
+pip install cryptography
+
+# Decrypt the key
+export OPENROUTER_KEY=$(python3 decrypt_api_key.py --password "your-secret-password")
+
+# Run the query script
+python3 query_sirs.py
+```
+
+### Method 3: Using Your Own API Key
 
 If you have your own OpenRouter API key:
 
@@ -47,7 +77,7 @@ export OPENROUTER_KEY="your-openrouter-api-key"
 python3 query_sirs.py
 ```
 
-### Option 3: Custom Configuration
+### Method 4: Custom Configuration
 
 You can customize various parameters:
 
