@@ -161,3 +161,32 @@ The site is configured for automatic deployment on Netlify:
 Configuration is in `website/netlify.toml`.
 
 See [website/README.md](website/README.md) for more details about the dashboard.
+
+## 8. Query Special Investigation Reports (SIRs) with AI
+
+Query OpenRouter API (DeepSeek v3.2) on Special Investigation Reports to get AI-generated summaries and culpability assessments.
+
+### Quick Start
+
+```bash
+# Option 1: With repository secret
+export OPENROUTER_KEY="your-api-key"
+./run_sir_queries.sh
+
+# Option 2: With encrypted key password
+export OPENROUTER_PASSWORD="your-secret-password"
+./run_sir_queries.sh
+
+# Option 3: Using GitHub Actions workflow
+# Go to Actions > Query SIRs with OpenRouter > Run workflow
+```
+
+The query used is: *"Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."*
+
+Results are saved to `sir_query_results.csv` with detailed response data, token usage, and cost information.
+
+See [RUN_SIR_QUERY.md](RUN_SIR_QUERY.md) for complete documentation including:
+- Multiple authentication methods
+- Custom configuration options
+- Cost estimation
+- Troubleshooting guide
