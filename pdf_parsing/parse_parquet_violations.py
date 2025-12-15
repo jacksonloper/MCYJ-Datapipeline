@@ -384,8 +384,10 @@ def extract_violations_detailed(text_pages: List[str]) -> Dict[str, Any]:
         context = full_text[start_pos:end_pos]
         
         # Only include if context suggests violation
-        if re.search(r'violation|violated|non-compliance|not.*compliance', context, re.IGNORECASE):
-            if not re.search(r'is not violated|not in violation|no violation', context, re.IGNORECASE):
+        # Match: "violation", "violated", "non-compliance", "not in compliance"
+        # But exclude: "not violated", "no violation", "not in violation"
+        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
                 if rule_ref not in [v for v in violations if rule_ref in v]:
                     violations.append(rule_ref)
                     violations_detailed.append({
@@ -407,8 +409,10 @@ def extract_violations_detailed(text_pages: List[str]) -> Dict[str, Any]:
         context = full_text[start_pos:end_pos]
         
         # Only include if context suggests violation
-        if re.search(r'violation|violated|non-compliance|not.*compliance', context, re.IGNORECASE):
-            if not re.search(r'is not violated|not in violation|no violation', context, re.IGNORECASE):
+        # Match: "violation", "violated", "non-compliance", "not in compliance"
+        # But exclude: "not violated", "no violation", "not in violation"
+        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
                 if rule_ref not in [v for v in violations if rule_ref in v]:
                     violations.append(rule_ref)
                     violations_detailed.append({
@@ -492,8 +496,10 @@ def extract_violations(text: str) -> List[str]:
         context = text[start_pos:end_pos]
         
         # Only include if context suggests violation
-        if re.search(r'violation|violated|non-compliance|not.*compliance', context, re.IGNORECASE):
-            if not re.search(r'is not violated|not in violation|no violation', context, re.IGNORECASE):
+        # Match: "violation", "violated", "non-compliance", "not in compliance"
+        # But exclude: "not violated", "no violation", "not in violation"
+        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
                 if rule_ref not in [v for v in violations if rule_ref in v]:
                     violations.append(rule_ref)
     
@@ -509,8 +515,10 @@ def extract_violations(text: str) -> List[str]:
         context = text[start_pos:end_pos]
         
         # Only include if context suggests violation
-        if re.search(r'violation|violated|non-compliance|not.*compliance', context, re.IGNORECASE):
-            if not re.search(r'is not violated|not in violation|no violation', context, re.IGNORECASE):
+        # Match: "violation", "violated", "non-compliance", "not in compliance"
+        # But exclude: "not violated", "no violation", "not in violation"
+        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
                 if rule_ref not in [v for v in violations if rule_ref in v]:
                     violations.append(rule_ref)
     
