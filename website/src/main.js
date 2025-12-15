@@ -543,8 +543,8 @@ function showDocumentModal(docData, docMetadata) {
                 ${(docMetadata.has_not_in_compliance || docMetadata.has_in_compliance || docMetadata.has_provisional_license) ? `
                     <div style="margin-top: 8px;"><strong>Document Status:</strong>
                         <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap;">
-                            ${docMetadata.has_not_in_compliance ? '<span class="status-badge status-not-compliant">⚠️ Not in Compliance</span>' : ''}
-                            ${docMetadata.has_in_compliance ? '<span class="status-badge status-compliant">✓ In Compliance</span>' : ''}
+                            ${docMetadata.has_not_in_compliance ? '<span class="status-badge status-not-compliant">⚠️ Not in Compliance</span>' : 
+                              docMetadata.has_in_compliance ? '<span class="status-badge status-compliant">✓ In Compliance</span>' : ''}
                             ${docMetadata.has_provisional_license ? '<span class="status-badge status-provisional">📋 Provisional License</span>' : ''}
                         </div>
                     </div>
