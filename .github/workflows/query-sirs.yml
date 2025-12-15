@@ -1,0 +1,91 @@
+name: Query SIRs with OpenRouter
+
+on:
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'Number of SIRs to query'
+        required: false
+        default: '50'
+      output_file:
+        description: 'Output CSV filename'
+        required: false
+        default: 'sir_query_results.csv'
+
+jobs:
+  query-sirs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install requests
+
+      - name: Check for violations CSV
+        id: check-violations
+        run: |
+          if [ ! -f violations_output.csv ]; then
+            echo "needs_violations=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_violations=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate violations CSV if needed
+        if: steps.check-violations.outputs.needs_violations == 'true'
+        run: |
+          python3 pdf_parsing/parse_parquet_violations.py \
+            --parquet-dir pdf_parsing/parquet_files \
+            -o violations_output.csv
+
+      - name: Run SIR queries
+        env:
+          OPENROUTER_KEY: ${{ secrets.OPENROUTER_KEY }}
+        run: |
+          python3 query_sirs.py \
+            --count ${{ github.event.inputs.count }} \
+            --output ${{ github.event.inputs.output_file }} \
+            --verbose
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: sir-query-results
+          path: ${{ github.event.inputs.output_file }}
+          retention-days: 90
+
+      - name: Display summary
+        run: |
+          echo "Query Results Summary:"
+          echo "======================"
+          python3 -c "
+          import pandas as pd
+          import sys
+          try:
+              df = pd.read_csv('${{ github.event.inputs.output_file }}')
+              successful = len(df[~df['response'].str.startswith('ERROR:')])
+              failed = len(df) - successful
+              total_input = df['input_tokens'].sum()
+              total_output = df['output_tokens'].sum()
+              print(f'Total queries: {len(df)}')
+              print(f'Successful: {successful}')
+              print(f'Failed: {failed}')
+              print(f'Total input tokens: {total_input:,}')
+              print(f'Total output tokens: {total_output:,}')
+              if 'cost' in df.columns and df['cost'].notna().any():
+                  total_cost = df['cost'].sum()
+                  print(f'Total cost: \${total_cost:.6f}')
+          except Exception as e:
+              print(f'Error reading results: {e}')
+              sys.exit(1)
+          "
