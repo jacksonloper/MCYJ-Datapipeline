@@ -175,9 +175,9 @@ Automatically generate and maintain AI-powered summaries for Special Investigati
 
 ### Purpose
 
-This script maintains an up-to-date `summaryqueries.csv` file containing AI-generated summaries of all SIRs. It:
+This script maintains an up-to-date `sir_summaries.csv` file containing AI-generated summaries of all SIRs. It:
 1. Scans parquet files to identify all SIR documents
-2. Compares against existing summaries in `summaryqueries.csv`
+2. Compares against existing summaries in `sir_summaries.csv`
 3. Queries OpenRouter API (DeepSeek v3.2) for missing summaries
 4. Appends new results to the CSV file
 
@@ -202,7 +202,7 @@ python3 update_summaryqueries.py --parquet-dir custom_parquets --output custom_o
 
 ### Output Format
 
-The `summaryqueries.csv` file contains:
+The `sir_summaries.csv` file contains:
 - `sha256`: Document hash identifier  
 - `agency_id`: Agency license number
 - `agency_name`: Name of the agency

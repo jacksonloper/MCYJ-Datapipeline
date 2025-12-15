@@ -170,7 +170,7 @@ Automatically generate and maintain AI summaries for Special Investigation Repor
 
 A GitHub Actions workflow automatically:
 1. Scans parquet files for new SIRs
-2. Compares against existing summaries in `pdf_parsing/summaryqueries.csv`
+2. Compares against existing summaries in `pdf_parsing/sir_summaries.csv`
 3. Generates AI summaries for up to 100 new SIRs weekly
 4. Commits results to the repository
 
@@ -186,7 +186,7 @@ python3 update_summaryqueries.py --count 100
 
 The query used is: *"Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."*
 
-Results are appended to `pdf_parsing/summaryqueries.csv` with:
+Results are appended to `pdf_parsing/sir_summaries.csv` with:
 - Incident summaries
 - Culpability assessments
 - Token usage and cost information

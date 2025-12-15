@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Update summaryqueries.csv with AI-generated summaries for SIRs.
+Update sir_summaries.csv with AI-generated summaries for SIRs.
 
 This script:
 1. Runs violation parsing to identify all SIR document shas
-2. Compares against existing summaries in pdf_parsing/summaryqueries.csv
+2. Compares against existing summaries in pdf_parsing/sir_summaries.csv
 3. Queries up to N missing SIRs using OpenRouter API
-4. Appends new results to pdf_parsing/summaryqueries.csv
+4. Appends new results to pdf_parsing/sir_summaries.csv
 """
 
 import argparse
@@ -112,7 +112,7 @@ def get_existing_summary_shas(summaryqueries_path: str) -> Set[str]:
     Get SHA256 hashes that already have summaries.
     
     Args:
-        summaryqueries_path: Path to summaryqueries.csv
+        summaryqueries_path: Path to sir_summaries.csv
     
     Returns:
         Set of SHA256 hashes that already have summaries
@@ -247,7 +247,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Update summaryqueries.csv with AI summaries for missing SIRs",
+        description="Update sir_summaries.csv with AI summaries for missing SIRs",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -258,8 +258,8 @@ def main():
     parser.add_argument(
         '--output',
         '-o',
-        default='summaryqueries.csv',
-        help='Output CSV file path (default: summaryqueries.csv)'
+        default='sir_summaries.csv',
+        help='Output CSV file path (default: sir_summaries.csv)'
     )
     parser.add_argument(
         '--count',
@@ -348,8 +348,8 @@ def main():
             
             # Count violations
             violations = doc['violations_list']
-            num_violations = len([v for v in violations if v.get('is_violation', False)])
-            violations_str = '; '.join([v['rule'] for v in violations if v.get('is_violation', False)])
+            num_violations = len(violations)
+            violations_str = '; '.join(violations) if violations else ''
             
             # Store result
             results.append({
