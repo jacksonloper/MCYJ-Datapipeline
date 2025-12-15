@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # OpenRouter API configuration
 OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-MODEL = 'deepseek/deepseek-chat'  # DeepSeek v3.2
+MODEL = 'deepseek/deepseek-v3.2'  # DeepSeek v3.2
 
 # Query to ask about each SIR
 QUERY_TEXT = "Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."

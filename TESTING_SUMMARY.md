@@ -37,13 +37,13 @@ Validated API request structure without making actual API calls:
 - ✅ Document text properly concatenated with query
 - ✅ Request payload structure correct for OpenRouter API
 - ✅ Headers properly configured
-- ✅ Model set to 'deepseek/deepseek-chat'
+- ✅ Model set to 'deepseek/deepseek-v3.2'
 - ✅ Response parsing logic validated
 
 **Example Request Structure**:
 ```json
 {
-  "model": "deepseek/deepseek-chat",
+  "model": "deepseek/deepseek-v3.2",
   "messages": [
     {
       "role": "user",

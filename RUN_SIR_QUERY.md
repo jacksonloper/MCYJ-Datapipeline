@@ -118,7 +118,7 @@ The script generates a CSV file (`sir_query_results.csv` by default) with the fo
 
 ## Query Details
 
-- **Model**: DeepSeek v3.2 via OpenRouter (`deepseek/deepseek-chat`)
+- **Model**: DeepSeek v3.2 via OpenRouter (`deepseek/deepseek-v3.2`)
 - **Query Text**: "Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."
 - **Document Format**: The query is concatenated with the full document text (all pages joined with `\n\n`)
 - **Rate Limiting**: The script includes a 2-second delay between queries to avoid rate limits

@@ -22,7 +22,7 @@ export async function queryDeepSeek(apiKey, query, documentText) {
             'X-Title': 'MCYJ Datapipeline Document Viewer'
         },
         body: JSON.stringify({
-            model: 'deepseek/deepseek-chat',
+            model: 'deepseek/deepseek-v3.2',
             messages: [
                 {
                     role: 'user',

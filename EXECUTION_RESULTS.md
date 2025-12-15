@@ -68,7 +68,7 @@ violations_list, query, response, input_tokens, output_tokens, cost, duration_ms
 
 ## Technical Details
 
-- **Model**: deepseek/deepseek-chat (DeepSeek v3.2)
+- **Model**: deepseek/deepseek-v3.2 (DeepSeek v3.2)
 - **API**: OpenRouter (https://openrouter.ai)
 - **Rate Limiting**: 2-second delay between queries
 - **Timeout**: 180 seconds per request

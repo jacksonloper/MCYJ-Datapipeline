@@ -80,11 +80,11 @@ print(f"  Full prompt length: {len(full_prompt)} chars")
 # Mock the API call
 print(f"\nSimulating API Call:")
 print(f"  URL: https://openrouter.ai/api/v1/chat/completions")
-print(f"  Model: deepseek/deepseek-chat")
+print(f"  Model: deepseek/deepseek-v3.2")
 print(f"  Headers: Authorization, Content-Type, HTTP-Referer, X-Title")
 
 request_payload = {
-    'model': 'deepseek/deepseek-chat',
+    'model': 'deepseek/deepseek-v3.2',
     'messages': [
         {
             'role': 'user',
