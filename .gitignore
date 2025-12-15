@@ -1,8 +1,6 @@
 # Generated output files
 violations_output.csv
 violations_output_*.csv
-sir_query_results.csv
-sir_query_results_*.csv
 
 # Python cache
 __pycache__/
