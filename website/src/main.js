@@ -272,6 +272,21 @@ function renderViolations(violations) {
         // Use document title if available, otherwise fall back to agency name
         const displayTitle = v.document_title || v.agency_name || 'Untitled Document';
         
+        // Build status badges for compliance and provisional license
+        let statusBadges = '';
+        
+        // Compliance status badge
+        if (v.has_not_in_compliance) {
+            statusBadges += '<span class="status-badge status-not-compliant" title="Contains \'not in compliance\' phrase">⚠️ Not in Compliance</span>';
+        } else if (v.has_in_compliance) {
+            statusBadges += '<span class="status-badge status-compliant" title="Contains \'in compliance\' phrase">✓ In Compliance</span>';
+        }
+        
+        // Provisional license status badge
+        if (v.has_provisional_license) {
+            statusBadges += '<span class="status-badge status-provisional" title="Contains \'provisional license\' phrase">📋 Provisional License</span>';
+        }
+        
         return `
             <div class="violation-item ${violationClass}">
                 <div style="font-weight: 600; margin-bottom: 4px;">
@@ -283,6 +298,7 @@ function renderViolations(violations) {
                     ` : ''}
                 </div>
                 <div class="date">${escapeHtml(v.date || 'Date not specified')}</div>
+                ${statusBadges ? `<div style="margin-top: 6px; margin-bottom: 6px;">${statusBadges}</div>` : ''}
                 ${hasViolations ? `
                     <div class="violations-text">
                         ${v.num_violations} violation${v.num_violations > 1 ? 's' : ''}: 
@@ -344,7 +360,10 @@ async function viewDocument(sha256, event) {
                     docMetadata = {
                         title: violation.document_title || violation.agency_name || 'Untitled Document',
                         num_violations: violation.num_violations || 0,
-                        violations_list: violation.violations_list || ''
+                        violations_list: violation.violations_list || '',
+                        has_not_in_compliance: violation.has_not_in_compliance || false,
+                        has_in_compliance: violation.has_in_compliance || false,
+                        has_provisional_license: violation.has_provisional_license || false
                     };
                     break;
                 }
@@ -521,6 +540,15 @@ function showDocumentModal(docData, docMetadata) {
                 ` : `
                     <div style="color: #27ae60;"><strong>Violations:</strong> ✓ No violations found</div>
                 `}
+                ${(docMetadata.has_not_in_compliance || docMetadata.has_in_compliance || docMetadata.has_provisional_license) ? `
+                    <div style="margin-top: 8px;"><strong>Document Status:</strong>
+                        <div style="margin-top: 6px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            ${docMetadata.has_not_in_compliance ? '<span class="status-badge status-not-compliant">⚠️ Not in Compliance</span>' : ''}
+                            ${docMetadata.has_in_compliance ? '<span class="status-badge status-compliant">✓ In Compliance</span>' : ''}
+                            ${docMetadata.has_provisional_license ? '<span class="status-badge status-provisional">📋 Provisional License</span>' : ''}
+                        </div>
+                    </div>
+                ` : ''}
             ` : ''}
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <strong style="flex-shrink: 0;">SHA256:</strong>

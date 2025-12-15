@@ -373,54 +373,58 @@ def extract_violations_detailed(text_pages: List[str]) -> Dict[str, Any]:
                     })
     
     # Pattern 2: Look for "R 400." references (Michigan Administrative Code)
-    r400_pattern = r'R\s+400\.\d+[a-z]?(?:\([^\)]+\))?'
-    r400_matches = re.finditer(r400_pattern, full_text, re.IGNORECASE)
-    
-    for match in r400_matches:
-        rule_ref = match.group(0).strip()
-        rule_page = char_position_to_page(text_pages, match.start())
-        start_pos = max(0, match.start() - 500)
-        end_pos = min(match.end() + 500, len(full_text))
-        context = full_text[start_pos:end_pos]
-        
-        # Only include if context suggests violation
-        # Match: "violation", "violated", "non-compliance", "not in compliance"
-        # But exclude: "not violated", "no violation", "not in violation"
-        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
-            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
-                if rule_ref not in [v for v in violations if rule_ref in v]:
-                    violations.append(rule_ref)
-                    violations_detailed.append({
-                        'rule': rule_ref,
-                        'rule_page': rule_page,
-                        'violation_status': 'established',
-                        'status_page': rule_page  # Best guess
-                    })
+    # DISABLED: This heuristic pattern causes too many false positives
+    # Only explicit "Violation Established" conclusions (Pattern 1 and 1b) are reliable
+    # r400_pattern = r'R\s+400\.\d+[a-z]?(?:\([^\)]+\))?'
+    # r400_matches = re.finditer(r400_pattern, full_text, re.IGNORECASE)
+    # 
+    # for match in r400_matches:
+    #     rule_ref = match.group(0).strip()
+    #     rule_page = char_position_to_page(text_pages, match.start())
+    #     start_pos = max(0, match.start() - 500)
+    #     end_pos = min(match.end() + 500, len(full_text))
+    #     context = full_text[start_pos:end_pos]
+    #     
+    #     # Only include if context suggests violation
+    #     # Match: "violation", "violated", "non-compliance", "not in compliance"
+    #     # But exclude: "not violated", "no violation", "not in violation"
+    #     if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+    #         if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
+    #             if rule_ref not in [v for v in violations if rule_ref in v]:
+    #                 violations.append(rule_ref)
+    #                 violations_detailed.append({
+    #                     'rule': rule_ref,
+    #                     'rule_page': rule_page,
+    #                     'violation_status': 'established',
+    #                     'status_page': rule_page  # Best guess
+    #                 })
     
     # Pattern 3: Look for MCL (Michigan Compiled Laws) references
-    mcl_pattern = r'MCL\s+\d+\.\d+[a-z]?'
-    mcl_matches = re.finditer(mcl_pattern, full_text, re.IGNORECASE)
-    
-    for match in mcl_matches:
-        rule_ref = match.group(0).strip()
-        rule_page = char_position_to_page(text_pages, match.start())
-        start_pos = max(0, match.start() - 500)
-        end_pos = min(match.end() + 500, len(full_text))
-        context = full_text[start_pos:end_pos]
-        
-        # Only include if context suggests violation
-        # Match: "violation", "violated", "non-compliance", "not in compliance"
-        # But exclude: "not violated", "no violation", "not in violation"
-        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
-            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
-                if rule_ref not in [v for v in violations if rule_ref in v]:
-                    violations.append(rule_ref)
-                    violations_detailed.append({
-                        'rule': rule_ref,
-                        'rule_page': rule_page,
-                        'violation_status': 'established',
-                        'status_page': rule_page  # Best guess
-                    })
+    # DISABLED: This heuristic pattern causes too many false positives
+    # Only explicit "Violation Established" conclusions (Pattern 1 and 1b) are reliable
+    # mcl_pattern = r'MCL\s+\d+\.\d+[a-z]?'
+    # mcl_matches = re.finditer(mcl_pattern, full_text, re.IGNORECASE)
+    # 
+    # for match in mcl_matches:
+    #     rule_ref = match.group(0).strip()
+    #     rule_page = char_position_to_page(text_pages, match.start())
+    #     start_pos = max(0, match.start() - 500)
+    #     end_pos = min(match.end() + 500, len(full_text))
+    #     context = full_text[start_pos:end_pos]
+    #     
+    #     # Only include if context suggests violation
+    #     # Match: "violation", "violated", "non-compliance", "not in compliance"
+    #     # But exclude: "not violated", "no violation", "not in violation"
+    #     if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+    #         if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
+    #             if rule_ref not in [v for v in violations if rule_ref in v]:
+    #                 violations.append(rule_ref)
+    #                 violations_detailed.append({
+    #                     'rule': rule_ref,
+    #                     'rule_page': rule_page,
+    #                     'violation_status': 'established',
+    #                     'status_page': rule_page  # Best guess
+    #                 })
     
     return {
         'violations': violations,
@@ -485,42 +489,46 @@ def extract_violations(text: str) -> List[str]:
                 violations.append(rule_ref)
     
     # Pattern 2: Look for "R 400." references (Michigan Administrative Code)
-    r400_pattern = r'R\s+400\.\d+[a-z]?(?:\([^\)]+\))?'
-    r400_matches = re.finditer(r400_pattern, text, re.IGNORECASE)
-    
-    for match in r400_matches:
-        rule_ref = match.group(0).strip()
-        # Get context to check if violated
-        start_pos = max(0, match.start() - 500)
-        end_pos = min(match.end() + 500, len(text))
-        context = text[start_pos:end_pos]
-        
-        # Only include if context suggests violation
-        # Match: "violation", "violated", "non-compliance", "not in compliance"
-        # But exclude: "not violated", "no violation", "not in violation"
-        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
-            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
-                if rule_ref not in [v for v in violations if rule_ref in v]:
-                    violations.append(rule_ref)
+    # DISABLED: This heuristic pattern causes too many false positives
+    # Only explicit "Violation Established" conclusions (Pattern 1 and 1b) are reliable
+    # r400_pattern = r'R\s+400\.\d+[a-z]?(?:\([^\)]+\))?'
+    # r400_matches = re.finditer(r400_pattern, text, re.IGNORECASE)
+    # 
+    # for match in r400_matches:
+    #     rule_ref = match.group(0).strip()
+    #     # Get context to check if violated
+    #     start_pos = max(0, match.start() - 500)
+    #     end_pos = min(match.end() + 500, len(text))
+    #     context = text[start_pos:end_pos]
+    #     
+    #     # Only include if context suggests violation
+    #     # Match: "violation", "violated", "non-compliance", "not in compliance"
+    #     # But exclude: "not violated", "no violation", "not in violation"
+    #     if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+    #         if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
+    #             if rule_ref not in [v for v in violations if rule_ref in v]:
+    #                 violations.append(rule_ref)
     
     # Pattern 3: Look for MCL (Michigan Compiled Laws) references
-    mcl_pattern = r'MCL\s+\d+\.\d+[a-z]?'
-    mcl_matches = re.finditer(mcl_pattern, text, re.IGNORECASE)
-    
-    for match in mcl_matches:
-        rule_ref = match.group(0).strip()
-        # Get context to check if violated
-        start_pos = max(0, match.start() - 500)
-        end_pos = min(match.end() + 500, len(text))
-        context = text[start_pos:end_pos]
-        
-        # Only include if context suggests violation
-        # Match: "violation", "violated", "non-compliance", "not in compliance"
-        # But exclude: "not violated", "no violation", "not in violation"
-        if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
-            if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
-                if rule_ref not in [v for v in violations if rule_ref in v]:
-                    violations.append(rule_ref)
+    # DISABLED: This heuristic pattern causes too many false positives
+    # Only explicit "Violation Established" conclusions (Pattern 1 and 1b) are reliable
+    # mcl_pattern = r'MCL\s+\d+\.\d+[a-z]?'
+    # mcl_matches = re.finditer(mcl_pattern, text, re.IGNORECASE)
+    # 
+    # for match in mcl_matches:
+    #     rule_ref = match.group(0).strip()
+    #     # Get context to check if violated
+    #     start_pos = max(0, match.start() - 500)
+    #     end_pos = min(match.end() + 500, len(text))
+    #     context = text[start_pos:end_pos]
+    #     
+    #     # Only include if context suggests violation
+    #     # Match: "violation", "violated", "non-compliance", "not in compliance"
+    #     # But exclude: "not violated", "no violation", "not in violation"
+    #     if re.search(r'violation|violated|non-compliance|not\s+in\s+compliance', context, re.IGNORECASE):
+    #         if not re.search(r'not\s+violated|no\s+violation|not\s+in\s+violation', context, re.IGNORECASE):
+    #             if rule_ref not in [v for v in violations if rule_ref in v]:
+    #                 violations.append(rule_ref)
     
     return violations
 
