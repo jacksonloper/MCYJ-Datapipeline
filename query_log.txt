@@ -1,0 +1,816 @@
+2025-12-15 19:34:10,993 - INFO - API key loaded from environment
+2025-12-15 19:34:10,993 - INFO - Loading violations from: violations_output.csv
+2025-12-15 19:34:11,018 - INFO - Found 1922 SIRs in total
+2025-12-15 19:34:11,018 - INFO - Randomly selected 50 SIRs to query
+2025-12-15 19:34:11,019 - INFO - 
+================================================================================
+2025-12-15 19:34:11,019 - INFO - Processing SIR 1/50: b3cb69b950cf23121a9eb4f5df4ff9ad47367df15885cb52c34ae20507570aa4
+2025-12-15 19:34:11,019 - INFO - Agency: CHRIST CHILD HOUSE
+2025-12-15 19:34:11,019 - INFO - Title: Special Investigation Report #2024SIC0001696
+2025-12-15 19:34:11,019 - INFO - Date: Special Investigation Intake Date: August 19, 2024
+2025-12-15 19:34:11,019 - INFO - Violations: 2
+2025-12-15 19:34:11,019 - INFO - Loading document from parquet...
+2025-12-15 19:34:11,196 - INFO - Document loaded: 11 pages, 19474 characters
+2025-12-15 19:34:11,196 - INFO - Querying OpenRouter API...
+2025-12-15 19:34:18,459 - INFO - Response received:
+2025-12-15 19:34:18,460 - INFO -   Input tokens: 4760
+2025-12-15 19:34:18,460 - INFO -   Output tokens: 145
+2025-12-15 19:34:18,460 - INFO -   Duration: 7.26s
+2025-12-15 19:34:18,460 - INFO -   Response preview: The Michigan Department of Health and Human Services (MDHHS) investigated **Christ Child House**, a child care facility, after allegations that a staf...
+2025-12-15 19:34:18,460 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:34:20,460 - INFO - 
+================================================================================
+2025-12-15 19:34:20,460 - INFO - Processing SIR 2/50: 1f96d8c05ebae8df98733f2ba50c82ec26fb31a216050189f4d7c12cf4ac8c22
+2025-12-15 19:34:20,460 - INFO - Agency: LINCOLN CENTER
+2025-12-15 19:34:20,460 - INFO - Title: Special Investigation Report #2024C0001161SI
+2025-12-15 19:34:20,460 - INFO - Date: Special Investigation Intake Date: February 16, 2024
+2025-12-15 19:34:20,460 - INFO - Violations: 0
+2025-12-15 19:34:20,461 - INFO - Loading document from parquet...
+2025-12-15 19:34:20,634 - INFO - Document loaded: 7 pages, 10960 characters
+2025-12-15 19:34:20,634 - INFO - Querying OpenRouter API...
+2025-12-15 19:34:28,446 - INFO - Response received:
+2025-12-15 19:34:28,447 - INFO -   Input tokens: 2641
+2025-12-15 19:34:28,447 - INFO -   Output tokens: 170
+2025-12-15 19:34:28,447 - INFO -   Duration: 7.81s
+2025-12-15 19:34:28,447 - INFO -   Response preview: This document is a **Special Investigation Report** by Michigan’s Department of Health and Human Services regarding an incident at the Lincoln Center,...
+2025-12-15 19:34:28,447 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:34:30,447 - INFO - 
+================================================================================
+2025-12-15 19:34:30,447 - INFO - Processing SIR 3/50: c24432c95e7bc3432c69a86a7571d84f9eb0388d3877036aaea4fc8d01aff7ce
+2025-12-15 19:34:30,447 - INFO - Agency: New Hope Youth Center
+2025-12-15 19:34:30,447 - INFO - Title: Special Investigation Report #2025SIC0000681
+2025-12-15 19:34:30,447 - INFO - Date: Special Investigation Intake Date: May 12, 2025
+2025-12-15 19:34:30,448 - INFO - Violations: 1
+2025-12-15 19:34:30,448 - INFO - Loading document from parquet...
+2025-12-15 19:34:30,601 - INFO - Document loaded: 15 pages, 32012 characters
+2025-12-15 19:34:30,601 - INFO - Querying OpenRouter API...
+2025-12-15 19:34:35,970 - INFO - Response received:
+2025-12-15 19:34:35,970 - INFO -   Input tokens: 7740
+2025-12-15 19:34:35,970 - INFO -   Output tokens: 138
+2025-12-15 19:34:35,970 - INFO -   Duration: 5.37s
+2025-12-15 19:34:35,970 - INFO -   Response preview: The Michigan Department of Health and Human Services investigated allegations of misconduct at New Hope Youth Center, including claims that a staff me...
+2025-12-15 19:34:35,971 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:34:37,971 - INFO - 
+================================================================================
+2025-12-15 19:34:37,971 - INFO - Processing SIR 4/50: 70138d20b37e8bb4aa9b08db7c22d869000f90d95d081bd58deb2badbba5dea0
+2025-12-15 19:34:37,971 - INFO - Agency: MOTT CHILDRENS RESIDENCE
+2025-12-15 19:34:37,971 - INFO - Title: Special Investigation Report #2025SIC0000471
+2025-12-15 19:34:37,971 - INFO - Date: Special Investigation Intake Date: March 17, 2025
+2025-12-15 19:34:37,971 - INFO - Violations: 1
+2025-12-15 19:34:37,971 - INFO - Loading document from parquet...
+2025-12-15 19:34:38,078 - INFO - Document loaded: 5 pages, 6213 characters
+2025-12-15 19:34:38,078 - INFO - Querying OpenRouter API...
+2025-12-15 19:34:40,246 - INFO - Response received:
+2025-12-15 19:34:40,247 - INFO -   Input tokens: 1577
+2025-12-15 19:34:40,247 - INFO -   Output tokens: 119
+2025-12-15 19:34:40,247 - INFO -   Duration: 2.17s
+2025-12-15 19:34:40,247 - INFO -   Response preview: The Michigan Department of Health and Human Services issued a Special Investigation Report to Mott Children's Residence, identifying violations relate...
+2025-12-15 19:34:40,247 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:34:42,247 - INFO - 
+================================================================================
+2025-12-15 19:34:42,247 - INFO - Processing SIR 5/50: 2d07d0b19d9f25536c86dd7ea049050e131190d3d3386856ae3c0b4b72eedc3c
+2025-12-15 19:34:42,247 - INFO - Agency: Children's Village
+2025-12-15 19:34:42,247 - INFO - Title: Special Investigation Report
+2025-12-15 19:34:42,247 - INFO - Date: March 13, 2023
+2025-12-15 19:34:42,247 - INFO - Violations: 0
+2025-12-15 19:34:42,247 - INFO - Loading document from parquet...
+2025-12-15 19:34:42,345 - INFO - Document loaded: 6 pages, 10359 characters
+2025-12-15 19:34:42,345 - INFO - Querying OpenRouter API...
+2025-12-15 19:34:45,564 - INFO - Response received:
+2025-12-15 19:34:45,564 - INFO -   Input tokens: 2655
+2025-12-15 19:34:45,564 - INFO -   Output tokens: 153
+2025-12-15 19:34:45,564 - INFO -   Duration: 3.22s
+2025-12-15 19:34:45,564 - INFO -   Response preview: This document details a special investigation conducted by the Michigan Department of Health and Human Services into an allegation that Staff Person 1...
+2025-12-15 19:34:45,565 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:34:47,565 - INFO - 
+================================================================================
+2025-12-15 19:34:47,565 - INFO - Processing SIR 6/50: bea96df3fb065b8c824ee4e800c8e90e99d9f41daa88f0dfcda8bed4f29e6301
+2025-12-15 19:34:47,565 - INFO - Agency: Queen of Angels
+2025-12-15 19:34:47,565 - INFO - Title: Special Investigation Report #2024SIC0001775
+2025-12-15 19:34:47,565 - INFO - Date: Special Investigation Intake Date: September 18, 2024
+2025-12-15 19:34:47,565 - INFO - Violations: 0
+2025-12-15 19:34:47,565 - INFO - Loading document from parquet...
+2025-12-15 19:34:47,661 - INFO - Document loaded: 6 pages, 9045 characters
+2025-12-15 19:34:47,661 - INFO - Querying OpenRouter API...
+2025-12-15 19:34:55,521 - INFO - Response received:
+2025-12-15 19:34:55,521 - INFO -   Input tokens: 2211
+2025-12-15 19:34:55,521 - INFO -   Output tokens: 179
+2025-12-15 19:34:55,521 - INFO -   Duration: 7.86s
+2025-12-15 19:34:55,521 - INFO -   Response preview: A special investigation was conducted at Queen of Angels, a licensed child welfare facility, following allegations that two residents—Youth A (13) and...
+2025-12-15 19:34:55,521 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:34:57,521 - INFO - 
+================================================================================
+2025-12-15 19:34:57,521 - INFO - Processing SIR 7/50: 9f0fac63f2a2316ed0d6d1e1a7b6df97435c9dded4aedad19b40549555785ed1
+2025-12-15 19:34:57,521 - INFO - Agency: OPTIMIST HOUSE
+2025-12-15 19:34:57,521 - INFO - Title: Special Investigation Report #2025SIC0000477
+2025-12-15 19:34:57,521 - INFO - Date: Special Investigation Intake Date: March 17, 2025
+2025-12-15 19:34:57,522 - INFO - Violations: 0
+2025-12-15 19:34:57,522 - INFO - Loading document from parquet...
+2025-12-15 19:34:57,618 - INFO - Document loaded: 5 pages, 7237 characters
+2025-12-15 19:34:57,618 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:02,618 - INFO - Response received:
+2025-12-15 19:35:02,618 - INFO -   Input tokens: 1691
+2025-12-15 19:35:02,619 - INFO -   Output tokens: 160
+2025-12-15 19:35:02,619 - INFO -   Duration: 5.00s
+2025-12-15 19:35:02,619 - INFO -   Response preview: This document is a **Special Investigation Report** from Michigan’s Department of Health and Human Services (MDHHS) regarding allegations that a staff...
+2025-12-15 19:35:02,619 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:04,619 - INFO - 
+================================================================================
+2025-12-15 19:35:04,619 - INFO - Processing SIR 8/50: 4296b5cac92174d93537d4eb3c6a45eefc5437f53d2493b311ddfb1714131397
+2025-12-15 19:35:04,619 - INFO - Agency: Wayne County Juvenile Detention Facility
+2025-12-15 19:35:04,619 - INFO - Title: Special Investigation Report #2025SIC0000967
+2025-12-15 19:35:04,619 - INFO - Date: Special Investigation Intake Date: 08/25/2025
+2025-12-15 19:35:04,620 - INFO - Violations: 3
+2025-12-15 19:35:04,620 - INFO - Loading document from parquet...
+2025-12-15 19:35:04,765 - INFO - Document loaded: 10 pages, 17267 characters
+2025-12-15 19:35:04,765 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:07,955 - INFO - Response received:
+2025-12-15 19:35:07,956 - INFO -   Input tokens: 4474
+2025-12-15 19:35:07,956 - INFO -   Output tokens: 130
+2025-12-15 19:35:07,956 - INFO -   Duration: 3.19s
+2025-12-15 19:35:07,956 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into the Wayne County Juvenile Detention Facility following an ...
+2025-12-15 19:35:07,956 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:09,956 - INFO - 
+================================================================================
+2025-12-15 19:35:09,956 - INFO - Processing SIR 9/50: c2c8b4b6029dac60707b2f1d373cffe5b417df90cb86997ae4842d5643c50a33
+2025-12-15 19:35:09,956 - INFO - Agency: Children's Village
+2025-12-15 19:35:09,956 - INFO - Title: Special Investigation Report #2
+2025-12-15 19:35:09,956 - INFO - Date: 02/06/2023
+2025-12-15 19:35:09,956 - INFO - Violations: 0
+2025-12-15 19:35:09,956 - INFO - Loading document from parquet...
+2025-12-15 19:35:10,054 - INFO - Document loaded: 6 pages, 8069 characters
+2025-12-15 19:35:10,054 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:14,017 - INFO - Response received:
+2025-12-15 19:35:14,017 - INFO -   Input tokens: 2116
+2025-12-15 19:35:14,017 - INFO -   Output tokens: 176
+2025-12-15 19:35:14,017 - INFO -   Duration: 3.96s
+2025-12-15 19:35:14,017 - INFO -   Response preview: This document is a Special Investigation Report conducted by the Michigan Department of Health and Human Services regarding an allegation of sexual as...
+2025-12-15 19:35:14,017 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:16,017 - INFO - 
+================================================================================
+2025-12-15 19:35:16,017 - INFO - Processing SIR 10/50: a3965facff00ae41cee0ddd30291f0e30f27c7129e0bbec2fd2d2f00fc1fdf09
+2025-12-15 19:35:16,017 - INFO - Agency: KENTWOOD CAMPUS
+2025-12-15 19:35:16,017 - INFO - Title: Special Investigation Report #2024SIC0001532
+2025-12-15 19:35:16,018 - INFO - Date: Special Investigation Intake Date: June 24, 2024
+2025-12-15 19:35:16,018 - INFO - Violations: 1
+2025-12-15 19:35:16,018 - INFO - Loading document from parquet...
+2025-12-15 19:35:16,113 - INFO - Document loaded: 10 pages, 19035 characters
+2025-12-15 19:35:16,113 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:20,793 - INFO - Response received:
+2025-12-15 19:35:20,793 - INFO -   Input tokens: 4641
+2025-12-15 19:35:20,793 - INFO -   Output tokens: 176
+2025-12-15 19:35:20,793 - INFO -   Duration: 4.68s
+2025-12-15 19:35:20,793 - INFO -   Response preview: A staff member (Staff 1) at Wedgwood Christian Services' Kentwood Campus punched a youth (Youth A) in the face after the youth spat on them and allege...
+2025-12-15 19:35:20,793 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:22,793 - INFO - 
+================================================================================
+2025-12-15 19:35:22,793 - INFO - Processing SIR 11/50: 405bcb80ec4fe4d61f4c565bf0a4a010f1a78a040f7ad43e8844df28bb4fb3db
+2025-12-15 19:35:22,793 - INFO - Agency: METHODIST CHILDREN'S HOME
+2025-12-15 19:35:22,793 - INFO - Title: Special Investigation Report #2024SIC0001242
+2025-12-15 19:35:22,793 - INFO - Date: Special Investigation Intake Date: March 12, 2024
+2025-12-15 19:35:22,793 - INFO - Violations: 0
+2025-12-15 19:35:22,794 - INFO - Loading document from parquet...
+2025-12-15 19:35:22,892 - INFO - Document loaded: 6 pages, 7678 characters
+2025-12-15 19:35:22,892 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:26,796 - INFO - Response received:
+2025-12-15 19:35:26,796 - INFO -   Input tokens: 2042
+2025-12-15 19:35:26,796 - INFO -   Output tokens: 121
+2025-12-15 19:35:26,796 - INFO -   Duration: 3.90s
+2025-12-15 19:35:26,796 - INFO -   Response preview: This document summarizes a special investigation into an incident at the Methodist Children's Home in Michigan, where two youths (Youth A and Youth B)...
+2025-12-15 19:35:26,796 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:28,796 - INFO - 
+================================================================================
+2025-12-15 19:35:28,796 - INFO - Processing SIR 12/50: 44154a531ec0e9dd5ec0222ae1f017fe5e6f51669e190fa57d0bf05dc4f1b7da
+2025-12-15 19:35:28,796 - INFO - Agency: VASSAR HOUSE
+2025-12-15 19:35:28,796 - INFO - Title: Special Investigation Report #2024SIC0001631
+2025-12-15 19:35:28,796 - INFO - Date: Special Investigation Intake Date: July 30, 2024
+2025-12-15 19:35:28,797 - INFO - Violations: 0
+2025-12-15 19:35:28,797 - INFO - Loading document from parquet...
+2025-12-15 19:35:28,891 - INFO - Document loaded: 9 pages, 12190 characters
+2025-12-15 19:35:28,891 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:31,512 - INFO - Response received:
+2025-12-15 19:35:31,512 - INFO -   Input tokens: 2954
+2025-12-15 19:35:31,512 - INFO -   Output tokens: 134
+2025-12-15 19:35:31,512 - INFO -   Duration: 2.62s
+2025-12-15 19:35:31,512 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into Vassar House, a facility operated by Wolverine Human Servi...
+2025-12-15 19:35:31,512 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:33,512 - INFO - 
+================================================================================
+2025-12-15 19:35:33,512 - INFO - Processing SIR 13/50: f029c8162e853cfe2dfdbe19bbc931349baf59f029a7420253631b55011bde33
+2025-12-15 19:35:33,512 - INFO - Agency: ST. JOHN'S HOME RESIDENTIAL
+2025-12-15 19:35:33,512 - INFO - Title: Special Investigation Report #2025SIC0000091
+2025-12-15 19:35:33,513 - INFO - Date: Special Investigation Intake Date: November 8, 2024
+2025-12-15 19:35:33,513 - INFO - Violations: 0
+2025-12-15 19:35:33,513 - INFO - Loading document from parquet...
+2025-12-15 19:35:33,609 - INFO - Document loaded: 8 pages, 14807 characters
+2025-12-15 19:35:33,609 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:37,281 - INFO - Response received:
+2025-12-15 19:35:37,281 - INFO -   Input tokens: 3673
+2025-12-15 19:35:37,281 - INFO -   Output tokens: 188
+2025-12-15 19:35:37,281 - INFO -   Duration: 3.67s
+2025-12-15 19:35:37,281 - INFO -   Response preview: A special investigation was conducted by the Michigan Department of Health and Human Services (MDHHS) into allegations that a staff member at St. John...
+2025-12-15 19:35:37,281 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:39,281 - INFO - 
+================================================================================
+2025-12-15 19:35:39,281 - INFO - Processing SIR 14/50: f220e33300ec66ff9f6bbdc24830c3121f92ac644c2688de99af33a664d2df34
+2025-12-15 19:35:39,281 - INFO - Agency: New Hope Youth Center
+2025-12-15 19:35:39,281 - INFO - Title: Special Investigation Report #2023C0000667SI
+2025-12-15 19:35:39,282 - INFO - Date: September 13, 2023
+2025-12-15 19:35:39,282 - INFO - Violations: 5
+2025-12-15 19:35:39,282 - INFO - Loading document from parquet...
+2025-12-15 19:35:39,384 - INFO - Document loaded: 48 pages, 108989 characters
+2025-12-15 19:35:39,384 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:48,194 - INFO - Response received:
+2025-12-15 19:35:48,194 - INFO -   Input tokens: 25616
+2025-12-15 19:35:48,194 - INFO -   Output tokens: 195
+2025-12-15 19:35:48,194 - INFO -   Duration: 8.81s
+2025-12-15 19:35:48,194 - INFO -   Response preview: The Michigan Department of Health and Human Services (MDHHS) conducted a special investigation into New Hope Youth Center, a licensed youth facility, ...
+2025-12-15 19:35:48,195 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:50,195 - INFO - 
+================================================================================
+2025-12-15 19:35:50,195 - INFO - Processing SIR 15/50: 5c6373b4de82c01d2e59ab3d0dee24f69a601ebefcaccf09ca7f421ac411bf21
+2025-12-15 19:35:50,195 - INFO - Agency: VISTA MARIA SPECIALTY RESIDENTIAL
+2025-12-15 19:35:50,195 - INFO - Title: Special Investigation Report #2023C0000563
+2025-12-15 19:35:50,195 - INFO - Date: August 10, 2023
+2025-12-15 19:35:50,195 - INFO - Violations: 0
+2025-12-15 19:35:50,195 - INFO - Loading document from parquet...
+2025-12-15 19:35:50,291 - INFO - Document loaded: 10 pages, 17923 characters
+2025-12-15 19:35:50,291 - INFO - Querying OpenRouter API...
+2025-12-15 19:35:57,360 - INFO - Response received:
+2025-12-15 19:35:57,360 - INFO -   Input tokens: 4613
+2025-12-15 19:35:57,360 - INFO -   Output tokens: 163
+2025-12-15 19:35:57,360 - INFO -   Duration: 7.07s
+2025-12-15 19:35:57,360 - INFO -   Response preview: A youth at Vista Maria Specialty Residential alleged that a male staff member named "Mr. David" entered her room at night and sexually assaulted her b...
+2025-12-15 19:35:57,360 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:35:59,361 - INFO - 
+================================================================================
+2025-12-15 19:35:59,361 - INFO - Processing SIR 16/50: 6c890eb77b89984e0c42cb65aab3c0963d0e438488654f062785914af9dd3177
+2025-12-15 19:35:59,361 - INFO - Agency: SUMPTER HOUSE
+2025-12-15 19:35:59,361 - INFO - Title: Special Investigation Report #2025SIC0000914
+2025-12-15 19:35:59,361 - INFO - Date: Special Investigation Intake Date: 08/05/2025
+2025-12-15 19:35:59,361 - INFO - Violations: 1
+2025-12-15 19:35:59,361 - INFO - Loading document from parquet...
+2025-12-15 19:35:59,462 - INFO - Document loaded: 6 pages, 8535 characters
+2025-12-15 19:35:59,462 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:04,341 - INFO - Response received:
+2025-12-15 19:36:04,341 - INFO -   Input tokens: 2197
+2025-12-15 19:36:04,341 - INFO -   Output tokens: 134
+2025-12-15 19:36:04,341 - INFO -   Duration: 4.88s
+2025-12-15 19:36:04,341 - INFO -   Response preview: This letter from Michigan’s Department of Health and Human Services outlines a special investigation into Sumpter House, a licensed child welfare faci...
+2025-12-15 19:36:04,341 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:06,341 - INFO - 
+================================================================================
+2025-12-15 19:36:06,341 - INFO - Processing SIR 17/50: cef21eea763d1b3c16b8faf099a164e54783960ce9949c4c008a81580ff5ddfc
+2025-12-15 19:36:06,341 - INFO - Agency: OAKLAND COUNTY DHHS
+2025-12-15 19:36:06,341 - INFO - Title: Special Investigation Report #2025SIC0000651
+2025-12-15 19:36:06,341 - INFO - Date: Special Investigation Intake Date: May 5, 2025
+2025-12-15 19:36:06,341 - INFO - Violations: 1
+2025-12-15 19:36:06,342 - INFO - Loading document from parquet...
+2025-12-15 19:36:06,444 - INFO - Document loaded: 5 pages, 6289 characters
+2025-12-15 19:36:06,444 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:09,060 - INFO - Response received:
+2025-12-15 19:36:09,060 - INFO -   Input tokens: 1580
+2025-12-15 19:36:09,060 - INFO -   Output tokens: 117
+2025-12-15 19:36:09,060 - INFO -   Duration: 2.62s
+2025-12-15 19:36:09,060 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into allegations of child abuse/neglect occurring in a foster h...
+2025-12-15 19:36:09,061 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:11,061 - INFO - 
+================================================================================
+2025-12-15 19:36:11,061 - INFO - Processing SIR 18/50: 27e1d020fc0e97dbb59336604d778c851048d1ad1a1ec27eab95393b87b86f55
+2025-12-15 19:36:11,061 - INFO - Agency: SAMARITAS - SOUTHWEST
+2025-12-15 19:36:11,061 - INFO - Title: Special Investigation Report #2025SIC0001028
+2025-12-15 19:36:11,061 - INFO - Date: Special Investigation Intake Date: 09/19/2025
+2025-12-15 19:36:11,061 - INFO - Violations: 0
+2025-12-15 19:36:11,061 - INFO - Loading document from parquet...
+2025-12-15 19:36:11,075 - INFO - Document loaded: 6 pages, 8929 characters
+2025-12-15 19:36:11,075 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:16,582 - INFO - Response received:
+2025-12-15 19:36:16,583 - INFO -   Input tokens: 2247
+2025-12-15 19:36:16,583 - INFO -   Output tokens: 156
+2025-12-15 19:36:16,583 - INFO -   Duration: 5.51s
+2025-12-15 19:36:16,583 - INFO -   Response preview: The Michigan Department of Health and Human Services (MDHHS) investigated serious allegations against a foster care worker at Samaritas-Southwest, whe...
+2025-12-15 19:36:16,583 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:18,583 - INFO - 
+================================================================================
+2025-12-15 19:36:18,583 - INFO - Processing SIR 19/50: 4c783b02a9c99d00d75f1d66b956441a46e47e45ac116d74c6017e0645bb4c32
+2025-12-15 19:36:18,583 - INFO - Agency: DA BLODGETT FOR CHILDREN
+2025-12-15 19:36:18,583 - INFO - Title: Special Investigation Report #2024SIC0001248
+2025-12-15 19:36:18,583 - INFO - Date: Special Investigation Intake Date: March 15, 2024
+2025-12-15 19:36:18,583 - INFO - Violations: 1
+2025-12-15 19:36:18,584 - INFO - Loading document from parquet...
+2025-12-15 19:36:18,597 - INFO - Document loaded: 6 pages, 7783 characters
+2025-12-15 19:36:18,597 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:20,950 - INFO - Response received:
+2025-12-15 19:36:20,950 - INFO -   Input tokens: 1914
+2025-12-15 19:36:20,950 - INFO -   Output tokens: 115
+2025-12-15 19:36:20,950 - INFO -   Duration: 2.35s
+2025-12-15 19:36:20,950 - INFO -   Response preview: A Michigan Department of Health and Human Services investigation found that DA Blodgett for Children, a foster care agency, failed to ensure timely de...
+2025-12-15 19:36:20,950 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:22,950 - INFO - 
+================================================================================
+2025-12-15 19:36:22,950 - INFO - Processing SIR 20/50: 3cb4d7054369dde45c411f8cefce646799c0396c273384459d656add7b3f3df4
+2025-12-15 19:36:22,950 - INFO - Agency: CHRIST CHILD HOUSE
+2025-12-15 19:36:22,951 - INFO - Title: Special Investigation Report #2025SIC0000778
+2025-12-15 19:36:22,951 - INFO - Date: Special Investigation Intake Date: June 9, 2025
+2025-12-15 19:36:22,951 - INFO - Violations: 1
+2025-12-15 19:36:22,951 - INFO - Loading document from parquet...
+2025-12-15 19:36:23,045 - INFO - Document loaded: 6 pages, 8656 characters
+2025-12-15 19:36:23,045 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:29,669 - INFO - Response received:
+2025-12-15 19:36:29,669 - INFO -   Input tokens: 2130
+2025-12-15 19:36:29,669 - INFO -   Output tokens: 124
+2025-12-15 19:36:29,669 - INFO -   Duration: 6.62s
+2025-12-15 19:36:29,669 - INFO -   Response preview: This letter from the Michigan Department of Health and Human Services (MDHHS) notifies Christ Child House, a child care facility, of a violation invol...
+2025-12-15 19:36:29,669 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:31,670 - INFO - 
+================================================================================
+2025-12-15 19:36:31,670 - INFO - Processing SIR 21/50: 1aa555ddbaf74e6b076eb3ed47e8417868920db62b732f08f566d524d4861021
+2025-12-15 19:36:31,670 - INFO - Agency: Methodist Children's Home Society
+2025-12-15 19:36:31,670 - INFO - Title: Special Investigation Report #2020C0108009
+2025-12-15 19:36:31,670 - INFO - Date: December 13, 2019
+2025-12-15 19:36:31,670 - INFO - Violations: 1
+2025-12-15 19:36:31,670 - INFO - Loading document from parquet...
+2025-12-15 19:36:31,770 - INFO - Document loaded: 6 pages, 10079 characters
+2025-12-15 19:36:31,770 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:38,005 - INFO - Response received:
+2025-12-15 19:36:38,005 - INFO -   Input tokens: 2538
+2025-12-15 19:36:38,005 - INFO -   Output tokens: 132
+2025-12-15 19:36:38,005 - INFO -   Duration: 6.23s
+2025-12-15 19:36:38,005 - INFO -   Response preview: This report details an investigation into the Methodist Children's Home in Michigan, where three residents engaged in sexual contact outdoors while un...
+2025-12-15 19:36:38,005 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:40,006 - INFO - 
+================================================================================
+2025-12-15 19:36:40,006 - INFO - Processing SIR 22/50: 3b85d45860f524044387d515b69ec1aade5638fe4bac48573a50155c5fa5e813
+2025-12-15 19:36:40,006 - INFO - Agency: River Oak Youth Center
+2025-12-15 19:36:40,006 - INFO - Title: Special Investigation Report #2025SIC0000049
+2025-12-15 19:36:40,006 - INFO - Date: Special Investigation Intake Date: October 22, 2024
+2025-12-15 19:36:40,006 - INFO - Violations: 0
+2025-12-15 19:36:40,006 - INFO - Loading document from parquet...
+2025-12-15 19:36:40,101 - INFO - Document loaded: 8 pages, 14050 characters
+2025-12-15 19:36:40,101 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:43,377 - INFO - Response received:
+2025-12-15 19:36:43,377 - INFO -   Input tokens: 3230
+2025-12-15 19:36:43,377 - INFO -   Output tokens: 147
+2025-12-15 19:36:43,377 - INFO -   Duration: 3.28s
+2025-12-15 19:36:43,377 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into River Oak Youth Center following an incident where a youth...
+2025-12-15 19:36:43,377 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:45,378 - INFO - 
+================================================================================
+2025-12-15 19:36:45,378 - INFO - Processing SIR 23/50: 55dcae46b5e097fa6034b3accd65a6527062dd79851ca2ac6b2564ee455b0e69
+2025-12-15 19:36:45,378 - INFO - Agency: Girlstown
+2025-12-15 19:36:45,378 - INFO - Title: Special Investigation Report #2025SIC0000884
+2025-12-15 19:36:45,378 - INFO - Date: Special Investigation Intake Date: July 28, 2025
+2025-12-15 19:36:45,378 - INFO - Violations: 1
+2025-12-15 19:36:45,378 - INFO - Loading document from parquet...
+2025-12-15 19:36:45,473 - INFO - Document loaded: 11 pages, 21458 characters
+2025-12-15 19:36:45,473 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:48,487 - INFO - Response received:
+2025-12-15 19:36:48,487 - INFO -   Input tokens: 5253
+2025-12-15 19:36:48,487 - INFO -   Output tokens: 165
+2025-12-15 19:36:48,488 - INFO -   Duration: 3.01s
+2025-12-15 19:36:48,488 - INFO -   Response preview: The report details a special investigation into Girlstown, a facility licensed to care for youth, following allegations of neglect and violations of h...
+2025-12-15 19:36:48,488 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:50,488 - INFO - 
+================================================================================
+2025-12-15 19:36:50,488 - INFO - Processing SIR 24/50: 7d513806ee607630fb596c4a972a4c7e0e479d73e349ccc246962a01a12c8bbd
+2025-12-15 19:36:50,488 - INFO - Agency: COMMUNITY CARE ORGANIZATION
+2025-12-15 19:36:50,488 - INFO - Title: Special Investigation Report #2025SIC0000394
+2025-12-15 19:36:50,488 - INFO - Date: Special Investigation Intake Date: February 24, 2025
+2025-12-15 19:36:50,488 - INFO - Violations: 0
+2025-12-15 19:36:50,488 - INFO - Loading document from parquet...
+2025-12-15 19:36:50,583 - INFO - Document loaded: 5 pages, 7599 characters
+2025-12-15 19:36:50,583 - INFO - Querying OpenRouter API...
+2025-12-15 19:36:56,847 - INFO - Response received:
+2025-12-15 19:36:56,847 - INFO -   Input tokens: 1975
+2025-12-15 19:36:56,847 - INFO -   Output tokens: 188
+2025-12-15 19:36:56,847 - INFO -   Duration: 6.26s
+2025-12-15 19:36:56,847 - INFO -   Response preview: This document is a **Special Investigation Report** conducted by Michigan’s Department of Health and Human Services regarding allegations against the ...
+2025-12-15 19:36:56,847 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:36:58,848 - INFO - 
+================================================================================
+2025-12-15 19:36:58,848 - INFO - Processing SIR 25/50: 5f1909283817cdb51b9aaa0ba3098c00039f26ce3a612c60709c7c1062bb1006
+2025-12-15 19:36:58,848 - INFO - Agency: VISTA MARIA FOSTER CARE
+2025-12-15 19:36:58,848 - INFO - Title: Special Investigation Report #2025SIC0000001
+2025-12-15 19:36:58,848 - INFO - Date: Special Investigation Intake Date: October 1, 2024
+2025-12-15 19:36:58,848 - INFO - Violations: 0
+2025-12-15 19:36:58,848 - INFO - Loading document from parquet...
+2025-12-15 19:36:58,944 - INFO - Document loaded: 10 pages, 20377 characters
+2025-12-15 19:36:58,944 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:03,260 - INFO - Response received:
+2025-12-15 19:37:03,260 - INFO -   Input tokens: 5169
+2025-12-15 19:37:03,260 - INFO -   Output tokens: 175
+2025-12-15 19:37:03,260 - INFO -   Duration: 4.32s
+2025-12-15 19:37:03,260 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into Vista Maria Foster Care following allegations of falsified...
+2025-12-15 19:37:03,260 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:05,261 - INFO - 
+================================================================================
+2025-12-15 19:37:05,261 - INFO - Processing SIR 26/50: 5f442d19903b5bd2e8c741d4f999c8139160909d83bbd3fdcafdedd791be2300
+2025-12-15 19:37:05,261 - INFO - Agency: Wolverine Center
+2025-12-15 19:37:05,261 - INFO - Title: Special Investigation Report #2023C0000528
+2025-12-15 19:37:05,261 - INFO - Date: July 6, 2023
+2025-12-15 19:37:05,261 - INFO - Violations: 0
+2025-12-15 19:37:05,261 - INFO - Loading document from parquet...
+2025-12-15 19:37:05,364 - INFO - Document loaded: 6 pages, 9615 characters
+2025-12-15 19:37:05,364 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:08,402 - INFO - Response received:
+2025-12-15 19:37:08,402 - INFO -   Input tokens: 2460
+2025-12-15 19:37:08,402 - INFO -   Output tokens: 155
+2025-12-15 19:37:08,402 - INFO -   Duration: 3.04s
+2025-12-15 19:37:08,402 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into an incident at Wolverine Center involving a youth, Youth A...
+2025-12-15 19:37:08,402 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:10,403 - INFO - 
+================================================================================
+2025-12-15 19:37:10,403 - INFO - Processing SIR 27/50: f142b71dc5ab777ceb5c405799593186e78cc573bc9b33a063b18b9d7c0c387a
+2025-12-15 19:37:10,403 - INFO - Agency: WOLVERINE CENTER
+2025-12-15 19:37:10,403 - INFO - Title: Special Investigation Report #2024SIC0001300
+2025-12-15 19:37:10,403 - INFO - Date: Special Investigation Intake Date: April 2, 2024
+2025-12-15 19:37:10,403 - INFO - Violations: 0
+2025-12-15 19:37:10,403 - INFO - Loading document from parquet...
+2025-12-15 19:37:10,501 - INFO - Document loaded: 8 pages, 12597 characters
+2025-12-15 19:37:10,501 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:12,827 - INFO - Response received:
+2025-12-15 19:37:12,827 - INFO -   Input tokens: 3153
+2025-12-15 19:37:12,828 - INFO -   Output tokens: 132
+2025-12-15 19:37:12,828 - INFO -   Duration: 2.33s
+2025-12-15 19:37:12,828 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into Wolverine Center following allegations of misconduct invol...
+2025-12-15 19:37:12,828 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:14,828 - INFO - 
+================================================================================
+2025-12-15 19:37:14,828 - INFO - Processing SIR 28/50: ba72b1c967d53c1655bf162be607e5046d3b36b2d18cbf0ef31960e0db89e434
+2025-12-15 19:37:14,828 - INFO - Agency: Wolverine Center
+2025-12-15 19:37:14,828 - INFO - Title: Special Investigation Report #2024SIC0001730
+2025-12-15 19:37:14,828 - INFO - Date: Special Investigation Intake Date: September 3, 2024
+2025-12-15 19:37:14,828 - INFO - Violations: 0
+2025-12-15 19:37:14,828 - INFO - Loading document from parquet...
+2025-12-15 19:37:14,926 - INFO - Document loaded: 9 pages, 15715 characters
+2025-12-15 19:37:14,927 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:19,099 - INFO - Response received:
+2025-12-15 19:37:19,100 - INFO -   Input tokens: 3895
+2025-12-15 19:37:19,100 - INFO -   Output tokens: 151
+2025-12-15 19:37:19,100 - INFO -   Duration: 4.17s
+2025-12-15 19:37:19,100 - INFO -   Response preview: This document details a special investigation by the Michigan Department of Health and Human Services into allegations of improper conduct at the Wolv...
+2025-12-15 19:37:19,100 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:21,100 - INFO - 
+================================================================================
+2025-12-15 19:37:21,100 - INFO - Processing SIR 29/50: 3d955118595e494176347e580e1d7ac59bc82d612153294d03e9b2c52b700bed
+2025-12-15 19:37:21,100 - INFO - Agency: CALUMET CENTER
+2025-12-15 19:37:21,100 - INFO - Title: Special Investigation Report #2025SIC0000404
+2025-12-15 19:37:21,100 - INFO - Date: Special Investigation Intake Date: February 25, 2025
+2025-12-15 19:37:21,100 - INFO - Violations: 1
+2025-12-15 19:37:21,101 - INFO - Loading document from parquet...
+2025-12-15 19:37:21,196 - INFO - Document loaded: 6 pages, 9736 characters
+2025-12-15 19:37:21,196 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:23,841 - INFO - Response received:
+2025-12-15 19:37:23,841 - INFO -   Input tokens: 2303
+2025-12-15 19:37:23,841 - INFO -   Output tokens: 128
+2025-12-15 19:37:23,841 - INFO -   Duration: 2.64s
+2025-12-15 19:37:23,841 - INFO -   Response preview: This is a Special Investigation Report conducted by the Michigan Department of Health and Human Services regarding allegations that youths at the Calu...
+2025-12-15 19:37:23,841 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:25,842 - INFO - 
+================================================================================
+2025-12-15 19:37:25,842 - INFO - Processing SIR 30/50: 82481d4291f884ba1bca590078ac104d4fca29451ad9e344dc8058cf26450951
+2025-12-15 19:37:25,842 - INFO - Agency: Queen of Angels
+2025-12-15 19:37:25,842 - INFO - Title: Special Investigation Report #2024SIC0001568
+2025-12-15 19:37:25,842 - INFO - Date: Special Investigation Intake Date: July 8, 2024
+2025-12-15 19:37:25,842 - INFO - Violations: 1
+2025-12-15 19:37:25,842 - INFO - Loading document from parquet...
+2025-12-15 19:37:25,945 - INFO - Document loaded: 10 pages, 17721 characters
+2025-12-15 19:37:25,945 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:30,086 - INFO - Response received:
+2025-12-15 19:37:30,086 - INFO -   Input tokens: 4041
+2025-12-15 19:37:30,086 - INFO -   Output tokens: 143
+2025-12-15 19:37:30,087 - INFO -   Duration: 4.14s
+2025-12-15 19:37:30,087 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation at Queen of Angels, a child welfare facility, following allegat...
+2025-12-15 19:37:30,087 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:32,087 - INFO - 
+================================================================================
+2025-12-15 19:37:32,087 - INFO - Processing SIR 31/50: 85f76e29147f1b27f9a18b291a1e622bec26ada7f6d1205e8c1a334432a70ab8
+2025-12-15 19:37:32,087 - INFO - Agency: Camp Oakland
+2025-12-15 19:37:32,087 - INFO - Title: Special Investigation Report #2025SIC0000482
+2025-12-15 19:37:32,087 - INFO - Date: Special Investigation Intake Date: March 17, 2025
+2025-12-15 19:37:32,087 - INFO - Violations: 0
+2025-12-15 19:37:32,087 - INFO - Loading document from parquet...
+2025-12-15 19:37:32,182 - INFO - Document loaded: 7 pages, 10003 characters
+2025-12-15 19:37:32,182 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:35,487 - INFO - Response received:
+2025-12-15 19:37:35,487 - INFO -   Input tokens: 2399
+2025-12-15 19:37:35,487 - INFO -   Output tokens: 171
+2025-12-15 19:37:35,487 - INFO -   Duration: 3.30s
+2025-12-15 19:37:35,487 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into Camp Oakland following allegations involving Youth A’s abi...
+2025-12-15 19:37:35,487 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:37,487 - INFO - 
+================================================================================
+2025-12-15 19:37:37,487 - INFO - Processing SIR 32/50: f3af75947a3b00c8668e441a08c9b2faf8531eae6867bb81543811f60c2c7be0
+2025-12-15 19:37:37,487 - INFO - Agency: Methodist Children's Home Society
+2025-12-15 19:37:37,487 - INFO - Title: Special Investigation Report #2022C0207014
+2025-12-15 19:37:37,487 - INFO - Date: February 7, 2022
+2025-12-15 19:37:37,487 - INFO - Violations: 1
+2025-12-15 19:37:37,487 - INFO - Loading document from parquet...
+2025-12-15 19:37:37,581 - INFO - Document loaded: 9 pages, 13809 characters
+2025-12-15 19:37:37,581 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:43,937 - INFO - Response received:
+2025-12-15 19:37:43,937 - INFO -   Input tokens: 3454
+2025-12-15 19:37:43,937 - INFO -   Output tokens: 159
+2025-12-15 19:37:43,937 - INFO -   Duration: 6.36s
+2025-12-15 19:37:43,937 - INFO -   Response preview: This letter from Michigan’s Department of Health and Human Services (MDHHS) documents a **repeat violation** at Methodist Children's Home for failing ...
+2025-12-15 19:37:43,937 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:45,938 - INFO - 
+================================================================================
+2025-12-15 19:37:45,938 - INFO - Processing SIR 33/50: d5545e35e7d768c0de9294a63f13df50f781256ac8d8fdd91baa41a7c276c86d
+2025-12-15 19:37:45,938 - INFO - Agency: VISTA MARIA
+2025-12-15 19:37:45,938 - INFO - Title: Special Investigation Report #2023C0000606
+2025-12-15 19:37:45,938 - INFO - Date: July 18, 2023
+2025-12-15 19:37:45,938 - INFO - Violations: 1
+2025-12-15 19:37:45,938 - INFO - Loading document from parquet...
+2025-12-15 19:37:46,033 - INFO - Document loaded: 4 pages, 5581 characters
+2025-12-15 19:37:46,034 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:48,736 - INFO - Response received:
+2025-12-15 19:37:48,736 - INFO -   Input tokens: 1454
+2025-12-15 19:37:48,736 - INFO -   Output tokens: 128
+2025-12-15 19:37:48,736 - INFO -   Duration: 2.70s
+2025-12-15 19:37:48,736 - INFO -   Response preview: The Michigan Department of Health and Human Services issued a Special Investigation Report to Vista Maria, a child caring institution, following alleg...
+2025-12-15 19:37:48,736 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:50,737 - INFO - 
+================================================================================
+2025-12-15 19:37:50,737 - INFO - Processing SIR 34/50: c29f0318b5acb6211fe74fc7a57ad8bc84b3d876891feea86da2364cc03b662b
+2025-12-15 19:37:50,737 - INFO - Agency: METHODIST CHILDREN'S HOME
+2025-12-15 19:37:50,737 - INFO - Title: Special Investigation Report #2024C0000980SI
+2025-12-15 19:37:50,737 - INFO - Date: January 24, 2024
+2025-12-15 19:37:50,737 - INFO - Violations: 0
+2025-12-15 19:37:50,737 - INFO - Loading document from parquet...
+2025-12-15 19:37:50,832 - INFO - Document loaded: 6 pages, 11412 characters
+2025-12-15 19:37:50,832 - INFO - Querying OpenRouter API...
+2025-12-15 19:37:56,525 - INFO - Response received:
+2025-12-15 19:37:56,525 - INFO -   Input tokens: 2902
+2025-12-15 19:37:56,525 - INFO -   Output tokens: 149
+2025-12-15 19:37:56,525 - INFO -   Duration: 5.69s
+2025-12-15 19:37:56,525 - INFO -   Response preview: A special investigation was conducted at Methodist Children's Home after a report that a youth (Youth A) was found walking shoeless in winter weather ...
+2025-12-15 19:37:56,525 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:37:58,526 - INFO - 
+================================================================================
+2025-12-15 19:37:58,526 - INFO - Processing SIR 35/50: 9581b494361f252a87d9dc72f19b7371c3752b2b5284f6c179cd41dd020610bd
+2025-12-15 19:37:58,526 - INFO - Agency: ENNIS CENTER FOR CHILDREN - HOWELL
+2025-12-15 19:37:58,526 - INFO - Title: Special Investigation Report
+2025-12-15 19:37:58,526 - INFO - Date: May 4, 2023
+2025-12-15 19:37:58,526 - INFO - Violations: 3
+2025-12-15 19:37:58,526 - INFO - Loading document from parquet...
+2025-12-15 19:37:58,540 - INFO - Document loaded: 7 pages, 9262 characters
+2025-12-15 19:37:58,540 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:02,019 - INFO - Response received:
+2025-12-15 19:38:02,019 - INFO -   Input tokens: 2155
+2025-12-15 19:38:02,019 - INFO -   Output tokens: 151
+2025-12-15 19:38:02,019 - INFO -   Duration: 3.48s
+2025-12-15 19:38:02,019 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into the Ennis Center for Children in Howell, Michigan, and ide...
+2025-12-15 19:38:02,019 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:04,020 - INFO - 
+================================================================================
+2025-12-15 19:38:04,020 - INFO - Processing SIR 36/50: 97c9be467056942d10d8292bfc5bd82860d4428ba0d20a569096c8d783f2f9bc
+2025-12-15 19:38:04,020 - INFO - Agency: WOLVERINE CENTER
+2025-12-15 19:38:04,020 - INFO - Title: Special Investigation Report #2024C0000819SI
+2025-12-15 19:38:04,020 - INFO - Date: January 4, 2024
+2025-12-15 19:38:04,020 - INFO - Violations: 0
+2025-12-15 19:38:04,020 - INFO - Loading document from parquet...
+2025-12-15 19:38:04,120 - INFO - Document loaded: 8 pages, 13058 characters
+2025-12-15 19:38:04,120 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:07,397 - INFO - Response received:
+2025-12-15 19:38:07,397 - INFO -   Input tokens: 3097
+2025-12-15 19:38:07,397 - INFO -   Output tokens: 141
+2025-12-15 19:38:07,397 - INFO -   Duration: 3.28s
+2025-12-15 19:38:07,397 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation at Wolverine Center in response to anonymous complaints regardi...
+2025-12-15 19:38:07,397 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:09,398 - INFO - 
+================================================================================
+2025-12-15 19:38:09,398 - INFO - Processing SIR 37/50: 0bfb821b627c0e5d065e472d2f38496ccdb8e2e77c67bf7dbc6588e838e59119
+2025-12-15 19:38:09,398 - INFO - Agency: BAY PINES CENTER
+2025-12-15 19:38:09,398 - INFO - Title: Special Investigation Report #2
+2025-12-15 19:38:09,398 - INFO - Date: January 6, 2023
+2025-12-15 19:38:09,398 - INFO - Violations: 0
+2025-12-15 19:38:09,398 - INFO - Loading document from parquet...
+2025-12-15 19:38:09,493 - INFO - Document loaded: 11 pages, 21560 characters
+2025-12-15 19:38:09,493 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:13,720 - INFO - Response received:
+2025-12-15 19:38:13,721 - INFO -   Input tokens: 5338
+2025-12-15 19:38:13,721 - INFO -   Output tokens: 138
+2025-12-15 19:38:13,721 - INFO -   Duration: 4.23s
+2025-12-15 19:38:13,721 - INFO -   Response preview: The Michigan Department of Health and Human Services (MDHHS) conducted a special investigation into allegations of improper restraint and inadequate m...
+2025-12-15 19:38:13,721 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:15,721 - INFO - 
+================================================================================
+2025-12-15 19:38:15,721 - INFO - Processing SIR 38/50: 6f781f194669b273dff180fa6d0b7690e32cea730eec7f38e63a63f0f14d18bd
+2025-12-15 19:38:15,721 - INFO - Agency: Let's Talk About it Girl's Home III
+2025-12-15 19:38:15,721 - INFO - Title: Special Investigation Report #2024C0001133SI
+2025-12-15 19:38:15,721 - INFO - Date: Special Investigation Intake Date: February 9, 2024
+2025-12-15 19:38:15,721 - INFO - Violations: 0
+2025-12-15 19:38:15,721 - INFO - Loading document from parquet...
+2025-12-15 19:38:15,818 - INFO - Document loaded: 7 pages, 11036 characters
+2025-12-15 19:38:15,818 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:19,259 - INFO - Response received:
+2025-12-15 19:38:19,259 - INFO -   Input tokens: 2901
+2025-12-15 19:38:19,259 - INFO -   Output tokens: 150
+2025-12-15 19:38:19,259 - INFO -   Duration: 3.44s
+2025-12-15 19:38:19,259 - INFO -   Response preview: The Michigan Department of Health and Human Services investigated allegations that a staff member at Let's Talk About It Girl's Home III engaged in in...
+2025-12-15 19:38:19,259 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:21,259 - INFO - 
+================================================================================
+2025-12-15 19:38:21,259 - INFO - Processing SIR 39/50: 5e8189515eae53361a0bd77ef92f774f7d65c268b67b0d5a5e857f5ebedc4ffc
+2025-12-15 19:38:21,259 - INFO - Agency: Holy Cross Children's Services -Mid-Michigan
+2025-12-15 19:38:21,259 - INFO - Title: Special Investigation Report #2025SIC0000818
+2025-12-15 19:38:21,260 - INFO - Date: Special Investigation Intake Date: June 25, 2025
+2025-12-15 19:38:21,260 - INFO - Violations: 1
+2025-12-15 19:38:21,260 - INFO - Loading document from parquet...
+2025-12-15 19:38:21,356 - INFO - Document loaded: 15 pages, 30700 characters
+2025-12-15 19:38:21,356 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:26,277 - INFO - Response received:
+2025-12-15 19:38:26,277 - INFO -   Input tokens: 7891
+2025-12-15 19:38:26,277 - INFO -   Output tokens: 197
+2025-12-15 19:38:26,277 - INFO -   Duration: 4.92s
+2025-12-15 19:38:26,278 - INFO -   Response preview: This document details a special investigation conducted by the Michigan Department of Health and Human Services into an altercation between a staff me...
+2025-12-15 19:38:26,278 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:28,278 - INFO - 
+================================================================================
+2025-12-15 19:38:28,278 - INFO - Processing SIR 40/50: 83b4d07de51b52f4f368aa07da105e859107b6df1682d2c45c5e8731778f6b86
+2025-12-15 19:38:28,278 - INFO - Agency: Michigan Department of Health and Human
+2025-12-15 19:38:28,278 - INFO - Title: Special Investigation Report #2021C0102020
+2025-12-15 19:38:28,278 - INFO - Date: August 16, 2021
+2025-12-15 19:38:28,278 - INFO - Violations: 1
+2025-12-15 19:38:28,278 - INFO - Loading document from parquet...
+2025-12-15 19:38:28,373 - INFO - Document loaded: 9 pages, 12125 characters
+2025-12-15 19:38:28,373 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:31,423 - INFO - Response received:
+2025-12-15 19:38:31,424 - INFO -   Input tokens: 2998
+2025-12-15 19:38:31,424 - INFO -   Output tokens: 179
+2025-12-15 19:38:31,424 - INFO -   Duration: 3.05s
+2025-12-15 19:38:31,424 - INFO -   Response preview: The Michigan Department of Health and Human Services (DHHS) conducted a special investigation into the Otsego/Crawford/Oscoda DHHS facility, which ove...
+2025-12-15 19:38:31,424 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:33,424 - INFO - 
+================================================================================
+2025-12-15 19:38:33,424 - INFO - Processing SIR 41/50: 5628f953fcdd0523af6cb38599f28d8fa5a5cd99d40e673c1789ff5f13639af5
+2025-12-15 19:38:33,424 - INFO - Agency: VASSAR HOUSE
+2025-12-15 19:38:33,424 - INFO - Title: Special Investigation Report #2024C0001112SI
+2025-12-15 19:38:33,424 - INFO - Date: February 6, 2024
+2025-12-15 19:38:33,424 - INFO - Violations: 0
+2025-12-15 19:38:33,424 - INFO - Loading document from parquet...
+2025-12-15 19:38:33,528 - INFO - Document loaded: 4 pages, 4337 characters
+2025-12-15 19:38:33,528 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:38,996 - INFO - Response received:
+2025-12-15 19:38:38,996 - INFO -   Input tokens: 1100
+2025-12-15 19:38:38,996 - INFO -   Output tokens: 112
+2025-12-15 19:38:38,996 - INFO -   Duration: 5.47s
+2025-12-15 19:38:38,996 - INFO -   Response preview: This letter summarizes a special investigation into allegations that a youth facility, Vassar House, failed to provide medication to youth in November...
+2025-12-15 19:38:38,996 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:40,996 - INFO - 
+================================================================================
+2025-12-15 19:38:40,997 - INFO - Processing SIR 42/50: 38aecc8e441692c07bfe7ff4532aeadacc28453711703ff3127344f3414f2f47
+2025-12-15 19:38:40,997 - INFO - Agency: Vista Maria - Mental Health
+2025-12-15 19:38:40,997 - INFO - Title: Special Investigation Report #2025SIC0000247
+2025-12-15 19:38:40,997 - INFO - Date: Special Investigation Intake Date: December 30, 2024
+2025-12-15 19:38:40,997 - INFO - Violations: 2
+2025-12-15 19:38:40,997 - INFO - Loading document from parquet...
+2025-12-15 19:38:41,093 - INFO - Document loaded: 7 pages, 10822 characters
+2025-12-15 19:38:41,093 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:46,409 - INFO - Response received:
+2025-12-15 19:38:46,409 - INFO -   Input tokens: 2717
+2025-12-15 19:38:46,409 - INFO -   Output tokens: 107
+2025-12-15 19:38:46,409 - INFO -   Duration: 5.32s
+2025-12-15 19:38:46,409 - INFO -   Response preview: A Michigan state investigation found that a staff member at Vista Maria, a mental health facility, verbally threatened a youth ("I’m gonna beat your a...
+2025-12-15 19:38:46,409 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:48,410 - INFO - 
+================================================================================
+2025-12-15 19:38:48,410 - INFO - Processing SIR 43/50: e34c121001d910847d61559a6be1e468c5ac5ce1e9dec5914bade6bde96240ad
+2025-12-15 19:38:48,410 - INFO - Agency: ALPENA/MONTMORENCY DHHS
+2025-12-15 19:38:48,410 - INFO - Title: Special Investigation Report
+2025-12-15 19:38:48,410 - INFO - Date: March 20, 2023
+2025-12-15 19:38:48,410 - INFO - Violations: 0
+2025-12-15 19:38:48,410 - INFO - Loading document from parquet...
+2025-12-15 19:38:48,507 - INFO - Document loaded: 5 pages, 4535 characters
+2025-12-15 19:38:48,508 - INFO - Querying OpenRouter API...
+2025-12-15 19:38:52,309 - INFO - Response received:
+2025-12-15 19:38:52,309 - INFO -   Input tokens: 1143
+2025-12-15 19:38:52,309 - INFO -   Output tokens: 144
+2025-12-15 19:38:52,309 - INFO -   Duration: 3.80s
+2025-12-15 19:38:52,309 - INFO -   Response preview: The Michigan Department of Health and Human Services (DHHS) issued a Special Investigation Report to the ALPENA/MONTMORENCY DHHS facility, citing a vi...
+2025-12-15 19:38:52,309 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:38:54,309 - INFO - 
+================================================================================
+2025-12-15 19:38:54,309 - INFO - Processing SIR 44/50: 9bb872ad5b13e02a47a5e5f8074a15dd633784527b81773edcf4e41dc6dac024
+2025-12-15 19:38:54,310 - INFO - Agency: CLARENCE FISCHER CENTER
+2025-12-15 19:38:54,310 - INFO - Title: Special Investigation Report #2025SIC0000964
+2025-12-15 19:38:54,310 - INFO - Date: Special Investigation Intake Date: 08/22/2025
+2025-12-15 19:38:54,310 - INFO - Violations: 0
+2025-12-15 19:38:54,310 - INFO - Loading document from parquet...
+2025-12-15 19:38:54,411 - INFO - Document loaded: 9 pages, 17858 characters
+2025-12-15 19:38:54,411 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:03,643 - INFO - Response received:
+2025-12-15 19:39:03,643 - INFO -   Input tokens: 4181
+2025-12-15 19:39:03,643 - INFO -   Output tokens: 133
+2025-12-15 19:39:03,643 - INFO -   Duration: 9.23s
+2025-12-15 19:39:03,643 - INFO -   Response preview: This document summarizes a special investigation into allegations of verbal abuse by a program director at the Clarence Fischer Center, a youth facili...
+2025-12-15 19:39:03,643 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:39:05,644 - INFO - 
+================================================================================
+2025-12-15 19:39:05,644 - INFO - Processing SIR 45/50: d199e6cf9250468bf5b6011d249564e3d707995dde99bc8ab5cd2d650ecbcb4d
+2025-12-15 19:39:05,644 - INFO - Agency: VISTA MARIA - MENTAL HEALTH
+2025-12-15 19:39:05,644 - INFO - Title: Special Investigation Report #2025SIC0000770
+2025-12-15 19:39:05,644 - INFO - Date: Special Investigation Intake Date: June 4, 2025
+2025-12-15 19:39:05,644 - INFO - Violations: 2
+2025-12-15 19:39:05,644 - INFO - Loading document from parquet...
+2025-12-15 19:39:05,740 - INFO - Document loaded: 18 pages, 35565 characters
+2025-12-15 19:39:05,740 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:11,921 - INFO - Response received:
+2025-12-15 19:39:11,921 - INFO -   Input tokens: 8511
+2025-12-15 19:39:11,921 - INFO -   Output tokens: 123
+2025-12-15 19:39:11,921 - INFO -   Duration: 6.18s
+2025-12-15 19:39:11,921 - INFO -   Response preview: This investigation found multiple violations at Vista Maria, a mental health facility in Michigan, including staff using personal cell phones inapprop...
+2025-12-15 19:39:11,921 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:39:13,921 - INFO - 
+================================================================================
+2025-12-15 19:39:13,921 - INFO - Processing SIR 46/50: 132d92fd4245e269a5b79089cbbf694484992ff0fe15beacd6cd97979944afb0
+2025-12-15 19:39:13,922 - INFO - Agency: MOTT CHILDRENS RESIDENCE
+2025-12-15 19:39:13,922 - INFO - Title: Special Investigation Report #2025SIC0000532
+2025-12-15 19:39:13,922 - INFO - Date: Special Investigation Intake Date: April 7, 2025
+2025-12-15 19:39:13,922 - INFO - Violations: 1
+2025-12-15 19:39:13,922 - INFO - Loading document from parquet...
+2025-12-15 19:39:14,023 - INFO - Document loaded: 12 pages, 21289 characters
+2025-12-15 19:39:14,023 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:21,846 - INFO - Response received:
+2025-12-15 19:39:21,846 - INFO -   Input tokens: 5278
+2025-12-15 19:39:21,846 - INFO -   Output tokens: 213
+2025-12-15 19:39:21,846 - INFO -   Duration: 7.82s
+2025-12-15 19:39:21,846 - INFO -   Response preview: This document is a **Special Investigation Report** from Michigan’s Department of Health and Human Services (MDHHS) regarding an incident at Mott Chil...
+2025-12-15 19:39:21,847 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:39:23,847 - INFO - 
+================================================================================
+2025-12-15 19:39:23,847 - INFO - Processing SIR 47/50: 0e3fa6d07378c984b4bcf8ebba9db2ee2f26e63f64c6e86f65c1ee6850efbc27
+2025-12-15 19:39:23,847 - INFO - Agency: LINCOLN CENTER
+2025-12-15 19:39:23,847 - INFO - Title: Special Investigation Report #2024SIC0001483
+2025-12-15 19:39:23,847 - INFO - Date: Special Investigation Intake Date: June 3, 2024
+2025-12-15 19:39:23,847 - INFO - Violations: 0
+2025-12-15 19:39:23,847 - INFO - Loading document from parquet...
+2025-12-15 19:39:23,943 - INFO - Document loaded: 4 pages, 4387 characters
+2025-12-15 19:39:23,943 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:27,222 - INFO - Response received:
+2025-12-15 19:39:27,222 - INFO -   Input tokens: 1219
+2025-12-15 19:39:27,222 - INFO -   Output tokens: 136
+2025-12-15 19:39:27,222 - INFO -   Duration: 3.28s
+2025-12-15 19:39:27,222 - INFO -   Response preview: This document summarizes a special investigation conducted by the Michigan Department of Health and Human Services into alleged physical abuse of a yo...
+2025-12-15 19:39:27,222 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:39:29,223 - INFO - 
+================================================================================
+2025-12-15 19:39:29,223 - INFO - Processing SIR 48/50: 70800f3cf6f0de5fb97b9f4b657b5a267c5e1ac9bd9fa160246a39fefa86e338
+2025-12-15 19:39:29,223 - INFO - Agency: Vista Maria Open Residential
+2025-12-15 19:39:29,223 - INFO - Title: Special Investigation Report #2024SIC0001471
+2025-12-15 19:39:29,223 - INFO - Date: Special Investigation Intake Date: May 29, 2024
+2025-12-15 19:39:29,223 - INFO - Violations: 1
+2025-12-15 19:39:29,223 - INFO - Loading document from parquet...
+2025-12-15 19:39:29,318 - INFO - Document loaded: 8 pages, 12769 characters
+2025-12-15 19:39:29,318 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:32,501 - INFO - Response received:
+2025-12-15 19:39:32,501 - INFO -   Input tokens: 3075
+2025-12-15 19:39:32,501 - INFO -   Output tokens: 136
+2025-12-15 19:39:32,501 - INFO -   Duration: 3.18s
+2025-12-15 19:39:32,501 - INFO -   Response preview: The Michigan Department of Health and Human Services conducted a special investigation into Vista Maria Open Residential following allegations that a ...
+2025-12-15 19:39:32,501 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:39:34,501 - INFO - 
+================================================================================
+2025-12-15 19:39:34,501 - INFO - Processing SIR 49/50: dcc115f60cb854db114e8db46a4451aeadacc2e788bec3e919005dbc0a833a12
+2025-12-15 19:39:34,501 - INFO - Agency: New Hope Youth Center
+2025-12-15 19:39:34,502 - INFO - Title: Special Investigation Report #2024SIC0001372
+2025-12-15 19:39:34,502 - INFO - Date: Special Investigation Intake Date: April 25, 2024
+2025-12-15 19:39:34,502 - INFO - Violations: 3
+2025-12-15 19:39:34,502 - INFO - Loading document from parquet...
+2025-12-15 19:39:34,598 - INFO - Document loaded: 32 pages, 78340 characters
+2025-12-15 19:39:34,598 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:40,420 - INFO - Response received:
+2025-12-15 19:39:40,420 - INFO -   Input tokens: 17960
+2025-12-15 19:39:40,420 - INFO -   Output tokens: 199
+2025-12-15 19:39:40,420 - INFO -   Duration: 5.82s
+2025-12-15 19:39:40,420 - INFO -   Response preview: The **New Hope Youth Center** in Michigan underwent a **Special Investigation** by the Michigan Department of Health and Human Services due to multipl...
+2025-12-15 19:39:40,420 - INFO - Waiting 2 seconds before next query...
+2025-12-15 19:39:42,420 - INFO - 
+================================================================================
+2025-12-15 19:39:42,420 - INFO - Processing SIR 50/50: b827703f59f6a9a12d5f8035cb9f459256a64458c1ed44ad02cee2de9939317e
+2025-12-15 19:39:42,420 - INFO - Agency: Eagle Village Inc
+2025-12-15 19:39:42,420 - INFO - Title: Special Investigation Report #2021C0114040
+2025-12-15 19:39:42,420 - INFO - Date: January 5, 2022
+2025-12-15 19:39:42,420 - INFO - Violations: 0
+2025-12-15 19:39:42,420 - INFO - Loading document from parquet...
+2025-12-15 19:39:42,514 - INFO - Document loaded: 12 pages, 21613 characters
+2025-12-15 19:39:42,514 - INFO - Querying OpenRouter API...
+2025-12-15 19:39:47,181 - INFO - Response received:
+2025-12-15 19:39:47,181 - INFO -   Input tokens: 5361
+2025-12-15 19:39:47,181 - INFO -   Output tokens: 180
+2025-12-15 19:39:47,181 - INFO -   Duration: 4.67s
+2025-12-15 19:39:47,181 - INFO -   Response preview: The Michigan Department of Health and Human Services (MDHHS) conducted a special investigation into Eagle Village Inc., a child caring institution, fo...
+2025-12-15 19:39:47,181 - INFO - 
+================================================================================
+2025-12-15 19:39:47,181 - INFO - Writing 50 results to sir_query_results.csv
+2025-12-15 19:39:47,182 - INFO - Done!
+2025-12-15 19:39:47,182 - INFO - 
+Results saved to: sir_query_results.csv
+2025-12-15 19:39:47,182 - INFO - 
+Summary:
+2025-12-15 19:39:47,182 - INFO -   Total queries: 50
+2025-12-15 19:39:47,182 - INFO -   Successful: 50
+2025-12-15 19:39:47,182 - INFO -   Failed: 0
+2025-12-15 19:39:47,183 - INFO -   Total input tokens: 202623
+2025-12-15 19:39:47,183 - INFO -   Total output tokens: 7555
