@@ -1,0 +1,17 @@
+Categorization of SIRs/Themes 
+
+Severe SIRs: 
+- Safety and Violence: Incidents involving physical assault, staff-on-youth violence, youth-on-youth violence, sexual abuse, threats, youth death,  or serious safety risks.
+- Restraint and seclusion: Use of physical restraints, mechanical restraints, seclusion/isolation, or any incident suggesting excessive force or unsafe de-escalation practices.
+- Medical and mental health concerns: Suicidal ideation, self-harm, medication errors, missed medical care, emergency hospitalizations, or unmet treatment needs.
+
+Moderate SIRs:
+- Administrative or Rights-Related Issues: Inappropriate discipline, denial of services (schooling, visits), policy violations, or incidents that raise compliance/fidelity questions.
+- Environmental or supervision failures: Runaways, youth-on-youth conflict escalating due to lack of supervision, unsafe physical environment, contraband, or facility-level breakdowns (e.g. understaffing). 
+- Staff misconduct that does not involve violence: staff using inappropriate tone or language towards youth, staff making threats like “i’ll write you up” or “you won’t get phone time” or unprofessional boundaries (oversharing personal information or favoritism). 
+
+Low SIRs:
+- Administrative or paperwork issues: missing signatures on required forms, minor documentation errors, late submission of a report or service plan. Paperwork issues that signal training or workflow issues, not safety concerns. 
+- Policy compliance errors (non-safety): Staff not completing required training hours on time, small deviations from daily schedule guidelines, or failure to update youth’s case file on schedule. 
+- Facility condition issues (non-hazardous): Paint peeling, broken furniture that isn’t a safety hazard, missing posters or required signage. 
+
