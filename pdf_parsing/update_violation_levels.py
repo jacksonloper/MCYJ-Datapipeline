@@ -308,7 +308,9 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
         else:
             logger.error("No JSON object found in response")
             raise Exception("No JSON object found in response")
-        
+    
+    # Validate and normalize parsed values (applies to both parsing paths)
+    try:
         # Ensure keywords is a list and handle None/empty cases properly
         if keywords is None:
             keywords = []
@@ -326,10 +328,10 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
         # Raise error if level is empty (parsing failed)
         if not level:
             raise ValueError(f"Could not extract valid level from response: {ai_response[:200]}")
-    except (json.JSONDecodeError, AttributeError, KeyError, ValueError) as e:
-        # If JSON parsing fails, raise exception to skip this result
-        logger.error(f"Failed to parse JSON response: {e}")
-        raise Exception(f"JSON parsing failed: {e}")
+    except (AttributeError, KeyError, ValueError) as e:
+        # If validation fails, raise exception to skip this result
+        logger.error(f"Failed to validate parsed response: {e}")
+        raise Exception(f"Response validation failed: {e}")
     
     return {
         'level': level,
