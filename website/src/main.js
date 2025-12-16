@@ -11,8 +11,75 @@ let apiKey = null; // Store decrypted API key
 
 // Filter state
 let filters = {
-    sirOnly: false
+    sirOnly: false,
+    keywords: [] // Array of selected keywords
 };
+
+// Trie data structure for keyword autocomplete
+class TrieNode {
+    constructor() {
+        this.children = new Map();
+        this.isEndOfWord = false;
+        this.count = 0; // Number of documents with this keyword
+    }
+}
+
+class Trie {
+    constructor() {
+        this.root = new TrieNode();
+    }
+
+    insert(word) {
+        let node = this.root;
+        word = word.toLowerCase();
+        
+        for (const char of word) {
+            if (!node.children.has(char)) {
+                node.children.set(char, new TrieNode());
+            }
+            node = node.children.get(char);
+        }
+        node.isEndOfWord = true;
+        node.count++;
+    }
+
+    search(prefix) {
+        let node = this.root;
+        prefix = prefix.toLowerCase();
+        
+        for (const char of prefix) {
+            if (!node.children.has(char)) {
+                return [];
+            }
+            node = node.children.get(char);
+        }
+        
+        const results = [];
+        this._collectWords(node, prefix, results);
+        return results.sort((a, b) => b.count - a.count); // Sort by frequency
+    }
+
+    _collectWords(node, prefix, results, maxResults = 10) {
+        if (results.length >= maxResults) return;
+        
+        if (node.isEndOfWord) {
+            results.push({ keyword: prefix, count: node.count });
+        }
+        
+        for (const [char, childNode] of node.children) {
+            this._collectWords(childNode, prefix + char, results, maxResults);
+        }
+    }
+
+    getAllKeywords() {
+        const results = [];
+        this._collectWords(this.root, '', results, Infinity);
+        return results.sort((a, b) => b.count - a.count);
+    }
+}
+
+let keywordTrie = new Trie();
+let allKeywords = new Set();
 
 // Load and display data
 async function init() {
@@ -29,12 +96,16 @@ async function init() {
         allAgencies = await response.json();
         filteredAgencies = allAgencies;
         
+        // Build keyword trie from all documents
+        buildKeywordTrie();
+        
         hideLoading();
         displayStats();
         displayAgencies(allAgencies);
         setupSearch();
         setupShaLookup();
         setupFilters();
+        setupKeywordFilter();
         handleUrlHash();
         handleQueryStringDocument();
         
@@ -91,6 +162,18 @@ function applyFilters() {
                 return false;
             }
             
+            // Filter by keywords
+            if (filters.keywords && filters.keywords.length > 0) {
+                const docKeywords = d.sir_violation_level?.keywords || [];
+                const docKeywordsLower = docKeywords.map(k => k.toLowerCase());
+                const hasAllKeywords = filters.keywords.every(filterKw => 
+                    docKeywordsLower.includes(filterKw.toLowerCase())
+                );
+                if (!hasAllKeywords) {
+                    return false;
+                }
+            }
+            
             return true;
         });
         
@@ -118,6 +201,127 @@ function setupFilters() {
         applyFilters();
     });
 }
+
+function buildKeywordTrie() {
+    // Collect all keywords from all documents
+    allAgencies.forEach(agency => {
+        if (agency.documents && Array.isArray(agency.documents)) {
+            agency.documents.forEach(doc => {
+                if (doc.sir_violation_level && doc.sir_violation_level.keywords && Array.isArray(doc.sir_violation_level.keywords)) {
+                    doc.sir_violation_level.keywords.forEach(keyword => {
+                        keywordTrie.insert(keyword);
+                        allKeywords.add(keyword.toLowerCase());
+                    });
+                }
+            });
+        }
+    });
+    console.log(`Built keyword trie with ${allKeywords.size} unique keywords`);
+}
+
+function setupKeywordFilter() {
+    const keywordInput = document.getElementById('keywordFilterInput');
+    const keywordSuggestions = document.getElementById('keywordSuggestions');
+    const selectedKeywordsContainer = document.getElementById('selectedKeywords');
+    
+    if (!keywordInput) return; // Element not added yet
+    
+    // Handle input for autocomplete
+    keywordInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        if (query.length < 2) {
+            keywordSuggestions.style.display = 'none';
+            return;
+        }
+        
+        const suggestions = keywordTrie.search(query);
+        
+        if (suggestions.length === 0) {
+            keywordSuggestions.style.display = 'none';
+            return;
+        }
+        
+        keywordSuggestions.innerHTML = suggestions.map(s => `
+            <div class="keyword-suggestion" data-keyword="${escapeHtml(s.keyword)}">
+                <span>${escapeHtml(s.keyword)}</span>
+                <span style="color: #666; font-size: 0.85em;">(${s.count})</span>
+            </div>
+        `).join('');
+        keywordSuggestions.style.display = 'block';
+        
+        // Add click handlers to suggestions
+        keywordSuggestions.querySelectorAll('.keyword-suggestion').forEach(div => {
+            div.addEventListener('click', () => {
+                const keyword = div.dataset.keyword;
+                addKeywordFilter(keyword);
+                keywordInput.value = '';
+                keywordSuggestions.style.display = 'none';
+            });
+        });
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#keywordFilterInput') && !e.target.closest('#keywordSuggestions')) {
+            keywordSuggestions.style.display = 'none';
+        }
+    });
+    
+    // Allow pressing Enter to add the first suggestion
+    keywordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstSuggestion = keywordSuggestions.querySelector('.keyword-suggestion');
+            if (firstSuggestion) {
+                const keyword = firstSuggestion.dataset.keyword;
+                addKeywordFilter(keyword);
+                keywordInput.value = '';
+                keywordSuggestions.style.display = 'none';
+            }
+        }
+    });
+}
+
+function addKeywordFilter(keyword) {
+    const keywordLower = keyword.toLowerCase();
+    
+    // Check if keyword is already selected
+    if (filters.keywords.includes(keywordLower)) {
+        return;
+    }
+    
+    filters.keywords.push(keywordLower);
+    renderSelectedKeywords();
+    applyFilters();
+}
+
+function removeKeywordFilter(keyword) {
+    filters.keywords = filters.keywords.filter(k => k !== keyword.toLowerCase());
+    renderSelectedKeywords();
+    applyFilters();
+}
+
+function renderSelectedKeywords() {
+    const container = document.getElementById('selectedKeywords');
+    
+    if (!container) return;
+    
+    if (filters.keywords.length === 0) {
+        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic;">No keywords selected</div>';
+        return;
+    }
+    
+    container.innerHTML = filters.keywords.map(keyword => `
+        <span class="selected-keyword-badge">
+            ${escapeHtml(keyword)}
+            <button class="remove-keyword-btn" onclick="window.removeKeywordFilter('${escapeHtml(keyword)}')" title="Remove keyword">✕</button>
+        </span>
+    `).join('');
+}
+
+// Export functions to window for inline onclick handlers
+window.removeKeywordFilter = removeKeywordFilter;
 
 function displayAgencies(agencies) {
     const agenciesEl = document.getElementById('agencies');
