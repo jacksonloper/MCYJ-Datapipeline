@@ -3,7 +3,7 @@
 Update sir_summaries.csv with AI-generated summaries for SIRs.
 
 This script:
-1. Runs violation parsing to identify all SIR document shas
+1. Reads document_info.csv to identify all SIR document shas
 2. Compares against existing summaries in pdf_parsing/sir_summaries.csv
 3. Queries up to N missing SIRs using OpenRouter API
 4. Appends new results to pdf_parsing/sir_summaries.csv
@@ -19,21 +19,10 @@ import re
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import pandas as pd
 import requests
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-from parse_parquet_violations import (
-    extract_license_number,
-    extract_agency_name,
-    extract_document_title,
-    extract_inspection_date,
-    is_special_investigation,
-    extract_violations
-)
 
 # Set up logger
 logging.basicConfig(
@@ -68,52 +57,39 @@ def get_api_key() -> str:
     return api_key
 
 
-def get_all_sir_shas(parquet_dir: str) -> Set[str]:
+def get_all_sir_info(doc_info_csv: str) -> List[Tuple[str, Dict[str, str]]]:
     """
-    Get all SHA256 hashes for documents that are SIRs from parquet files.
+    Get all information for documents that are SIRs from document_info.csv.
     
     Args:
-        parquet_dir: Directory containing parquet files
+        doc_info_csv: Path to document_info.csv file
     
     Returns:
-        Set of SHA256 hashes for SIR documents
+        List of tuples (sha256, info_dict) for SIR documents
     """
-    parquet_path = Path(parquet_dir)
-    parquet_files = sorted(parquet_path.glob("*.parquet"))
+    doc_info_path = Path(doc_info_csv)
+    if not doc_info_path.exists():
+        raise FileNotFoundError(f"Document info CSV not found: {doc_info_csv}")
     
-    sir_shas = set()
+    df = pd.read_csv(doc_info_csv)
     
-    for parquet_file in parquet_files:
-        logger.info(f"Checking {parquet_file.name} for SIRs...")
-        try:
-            df = pd.read_parquet(parquet_file)
-            
-            for _, row in df.iterrows():
-                # Parse text pages
-                text_data = row['text']
-                if isinstance(text_data, str):
-                    text_stripped = text_data.strip()
-                    if text_stripped.startswith('[') and text_stripped.endswith(']'):
-                        text_pages = ast.literal_eval(text_data)
-                    else:
-                        continue
-                else:
-                    text_pages = list(text_data) if text_data is not None else []
-                
-                if not text_pages:
-                    continue
-                
-                # Check if it's a SIR
-                full_text = '\n\n'.join(text_pages)
-                if is_special_investigation(full_text):
-                    sir_shas.add(row['sha256'])
-                    
-        except Exception as e:
-            logger.error(f"Error processing {parquet_file.name}: {e}")
-            continue
+    # Filter for Special Investigation Reports
+    sirs = df[df['is_special_investigation'] == True]
     
-    logger.info(f"Found {len(sir_shas)} SIRs in parquet files")
-    return sir_shas
+    logger.info(f"Found {len(sirs)} SIRs in document info CSV")
+    
+    # Convert to list of (sha256, info_dict) tuples
+    sir_list = []
+    for _, row in sirs.iterrows():
+        info = {
+            'agency_id': str(row['agency_id']) if pd.notna(row['agency_id']) else '',
+            'agency_name': str(row['agency_name']) if pd.notna(row['agency_name']) else '',
+            'document_title': str(row['document_title']) if pd.notna(row['document_title']) else '',
+            'date': str(row['date']) if pd.notna(row['date']) else '',
+        }
+        sir_list.append((str(row['sha256']), info))
+    
+    return sir_list
 
 
 def get_existing_summary_shas(summaryqueries_path: str) -> Set[str]:
@@ -164,18 +140,12 @@ def load_document_from_parquet(sha256: str, parquet_dir: str) -> Optional[Dict]:
                 else:
                     text_pages = list(text_data) if text_data is not None else []
                 
-                # Extract metadata
                 full_text = '\n\n'.join(text_pages)
                 
                 return {
                     'sha256': row['sha256'],
                     'text_pages': text_pages,
-                    'full_text': full_text,
-                    'agency_id': extract_license_number(full_text) or '',
-                    'agency_name': extract_agency_name(full_text) or '',
-                    'document_title': extract_document_title(full_text) or '',
-                    'date': extract_inspection_date(full_text) or '',
-                    'violations_list': extract_violations(full_text)
+                    'full_text': full_text
                 }
         except Exception as e:
             logger.debug(f"Error reading {parquet_file.name}: {e}")
@@ -292,6 +262,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
+        '--doc-info',
+        default='document_info.csv',
+        help='Path to document_info.csv file (default: document_info.csv)'
+    )
+    parser.add_argument(
         '--parquet-dir',
         default='parquet_files',
         help='Directory containing parquet files (default: parquet_files)'
@@ -319,6 +294,7 @@ def main():
     
     # Resolve paths relative to script directory
     script_dir = Path(__file__).parent
+    doc_info_path = script_dir / args.doc_info
     parquet_dir = script_dir / args.parquet_dir
     output_path = script_dir / args.output
     
@@ -330,13 +306,16 @@ def main():
         logger.error(str(e))
         sys.exit(1)
     
-    # Get all SIR shas from parquet files
-    logger.info(f"Scanning parquet files in {parquet_dir}...")
-    all_sir_shas = get_all_sir_shas(str(parquet_dir))
+    # Get all SIRs from document info CSV
+    logger.info(f"Reading document info from {doc_info_path}...")
+    all_sirs = get_all_sir_info(str(doc_info_path))
     
-    if not all_sir_shas:
-        logger.warning("No SIRs found in parquet files")
+    if not all_sirs:
+        logger.warning("No SIRs found in document info CSV")
         sys.exit(0)
+    
+    all_sir_shas = {sha for sha, _ in all_sirs}
+    sir_info_map = {sha: info for sha, info in all_sirs}
     
     # Get existing summary shas
     existing_shas = get_existing_summary_shas(str(output_path))
@@ -361,7 +340,9 @@ def main():
         logger.info(f"\n{'='*80}")
         logger.info(f"Processing SIR {idx}/{len(shas_to_query)}: {sha}")
         
-        # Load document from parquet
+        # Get info from document info map
+        sir_info = sir_info_map.get(sha, {})
+        
         logger.info("Loading document from parquet...")
         doc = load_document_from_parquet(sha, str(parquet_dir))
         
@@ -369,9 +350,9 @@ def main():
             logger.error(f"Could not find document in parquet files: {sha}")
             continue
         
-        logger.info(f"Agency: {doc['agency_name']}")
-        logger.info(f"Title: {doc['document_title']}")
-        logger.info(f"Date: {doc['date']}")
+        logger.info(f"Agency: {sir_info.get('agency_name', 'Unknown')}")
+        logger.info(f"Title: {sir_info.get('document_title', 'Unknown')}")
+        logger.info(f"Date: {sir_info.get('date', 'Unknown')}")
         logger.info(f"Document: {len(doc['text_pages'])} pages, {len(doc['full_text'])} characters")
         
         # Query the API
@@ -388,20 +369,13 @@ def main():
             logger.info(f"  Summary preview: {result['summary'][:150]}...")
             logger.info(f"  Violation: {result['violation']}")
             
-            # Count violations
-            violations = doc['violations_list']
-            num_violations = len(violations)
-            violations_str = '; '.join(violations) if violations else ''
-            
             # Store result
             results.append({
                 'sha256': sha,
-                'agency_id': doc['agency_id'],
-                'agency_name': doc['agency_name'],
-                'document_title': doc['document_title'],
-                'date': doc['date'],
-                'num_violations': num_violations,
-                'violations_list': violations_str if violations_str else 'nan',
+                'agency_id': sir_info.get('agency_id', ''),
+                'agency_name': sir_info.get('agency_name', ''),
+                'document_title': sir_info.get('document_title', ''),
+                'date': sir_info.get('date', ''),
                 'query': args.query,
                 'response': result['summary'],  # Use parsed summary, not raw response
                 'violation': result['violation'],
@@ -432,7 +406,7 @@ def main():
     
     with open(output_path, 'a', newline='', encoding='utf-8') as f:
         fieldnames = ['sha256', 'agency_id', 'agency_name', 'document_title', 'date', 
-                     'num_violations', 'violations_list', 'query', 'response', 'violation',
+                     'query', 'response', 'violation',
                      'input_tokens', 'output_tokens', 'cost', 'duration_ms']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         
