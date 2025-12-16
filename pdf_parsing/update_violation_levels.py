@@ -286,25 +286,36 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
     keywords = []
     
     try:
-        # Try to extract JSON from the response (in case there's extra text)
-        json_match = re.search(r'\{[^{}]*"level"[^{}]*"justification"[^{}]*"keywords"[^{}]*\}', ai_response, re.DOTALL)
+        # Try to parse the response as JSON directly first
+        parsed = json.loads(ai_response)
+        level = parsed.get('level', '')
+        justification = parsed.get('justification', '')
+        keywords = parsed.get('keywords', [])
+    except json.JSONDecodeError:
+        # If direct parsing fails, try to extract JSON from the response (in case there's extra text)
+        # Use a more flexible regex that doesn't depend on field order
+        json_match = re.search(r'\{[^{}]*\}', ai_response, re.DOTALL)
         if json_match:
             json_str = json_match.group(0)
-            parsed = json.loads(json_str)
-            level = parsed.get('level', '')
-            justification = parsed.get('justification', '')
-            keywords = parsed.get('keywords', [])
+            try:
+                parsed = json.loads(json_str)
+                level = parsed.get('level', '')
+                justification = parsed.get('justification', '')
+                keywords = parsed.get('keywords', [])
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse extracted JSON: {e}")
+                raise Exception(f"JSON parsing failed: {e}")
         else:
-            # If no JSON found, try parsing the whole response
-            parsed = json.loads(ai_response)
-            level = parsed.get('level', '')
-            justification = parsed.get('justification', '')
-            keywords = parsed.get('keywords', [])
+            logger.error("No JSON object found in response")
+            raise Exception("No JSON object found in response")
         
-        # Ensure keywords is a list
-        if not isinstance(keywords, list):
+        # Ensure keywords is a list and handle None/empty cases properly
+        if keywords is None:
+            keywords = []
+        elif not isinstance(keywords, list):
             logger.warning(f"Keywords is not a list, converting: {keywords}")
-            keywords = [str(keywords)]
+            # Convert to string and wrap in list
+            keywords = [str(keywords)] if keywords else []
         
         # Normalize level to low, moderate, or severe
         normalized_level = normalize_violation_level(level)
