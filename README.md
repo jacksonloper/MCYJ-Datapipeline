@@ -161,6 +161,16 @@ See [website/README.md](website/README.md) for more details about the dashboard.
 
 Automatically generate and maintain AI summaries for Special Investigation Reports (SIRs) using OpenRouter API (DeepSeek v3.2).
 
+### Prompt Caching Optimization
+
+All AI queries use **prompt caching** to reduce costs when making multiple queries about the same document. The document text is sent as a common prefix, allowing OpenRouter to cache it across queries:
+
+- First query: Full cost
+- Subsequent queries: Significant savings via `cache_discount`
+- Typical savings: Up to 10x on large documents
+
+See [CACHING_INVESTIGATION.md](CACHING_INVESTIGATION.md) for details on implementation and verification.
+
 ### Automated Updates
 
 A GitHub Actions workflow automatically:
@@ -183,6 +193,6 @@ The AI analyzes each report to provide:
 - **Summary**: Incident description and culpability assessment
 - **Violation status**: Whether allegations were substantiated (y/n)
 
-Results are appended to `pdf_parsing/sir_summaries.csv` with complete metadata including token usage and cost information.
+Results are appended to `pdf_parsing/sir_summaries.csv` with complete metadata including token usage, cost, and cache discount information.
 
 See [pdf_parsing/README.md](pdf_parsing/README.md) for complete documentation.
