@@ -163,6 +163,31 @@ def load_document_from_parquet(sha256: str, parquet_dir: str) -> Optional[Dict]:
     return None
 
 
+def normalize_violation_level(level: str) -> str:
+    """
+    Normalize a violation level string to one of: 'low', 'moderate', 'severe', or empty.
+    
+    Args:
+        level: Raw level string from LLM response
+    
+    Returns:
+        Normalized level string
+    """
+    level = level.lower()
+    if level in ['low', 'moderate', 'severe']:
+        return level
+    
+    # Try to normalize variations
+    if 'low' in level:
+        return 'low'
+    elif 'moderate' in level or 'medium' in level:
+        return 'moderate'
+    elif 'severe' in level or 'high' in level:
+        return 'severe'
+    
+    return ''
+
+
 def query_openrouter(api_key: str, theming_instructions: str, document_text: str) -> Dict:
     """
     Query OpenRouter API with the document and theming instructions.
@@ -255,34 +280,19 @@ Special Investigation Report:
         if json_match:
             json_str = json_match.group(0)
             parsed = json.loads(json_str)
-            level = parsed.get('level', '').lower()
+            level = parsed.get('level', '')
             justification = parsed.get('justification', '')
-            # Normalize level to low, moderate, or severe
-            if level not in ['low', 'moderate', 'severe']:
-                logger.warning(f"Invalid level '{level}', trying to normalize")
-                if 'low' in level:
-                    level = 'low'
-                elif 'moderate' in level or 'medium' in level:
-                    level = 'moderate'
-                elif 'severe' in level or 'high' in level:
-                    level = 'severe'
-                else:
-                    level = ''
         else:
             # If no JSON found, try parsing the whole response
             parsed = json.loads(ai_response)
-            level = parsed.get('level', '').lower()
+            level = parsed.get('level', '')
             justification = parsed.get('justification', '')
-            if level not in ['low', 'moderate', 'severe']:
-                logger.warning(f"Invalid level '{level}', trying to normalize")
-                if 'low' in level:
-                    level = 'low'
-                elif 'moderate' in level or 'medium' in level:
-                    level = 'moderate'
-                elif 'severe' in level or 'high' in level:
-                    level = 'severe'
-                else:
-                    level = ''
+        
+        # Normalize level to low, moderate, or severe
+        normalized_level = normalize_violation_level(level)
+        if normalized_level != level.lower():
+            logger.warning(f"Normalized level '{level}' to '{normalized_level}'")
+        level = normalized_level
     except (json.JSONDecodeError, AttributeError, KeyError) as e:
         # If JSON parsing fails, leave both fields empty
         logger.warning(f"Could not parse JSON response: {e}. Setting level and justification to empty strings.")
