@@ -11,15 +11,15 @@ pip install -e .
 cd website
 
 echo ""
-echo "==> Step 1: Generating violations CSV from parquet files..."
-python3 ../pdf_parsing/parse_parquet_violations.py \
+echo "==> Step 1: Generating document info CSV from parquet files..."
+python3 ../pdf_parsing/extract_document_info.py \
   --parquet-dir ../pdf_parsing/parquet_files \
-  -o ../violations_output.csv
+  -o ../document_info.csv
 
 echo ""
 echo "==> Step 2: Generating JSON data for website..."
 python3 generate_website_data.py \
-  --violations-csv ../violations_output.csv \
+  --document-csv ../document_info.csv \
   --output-dir public/data
 
 echo ""
@@ -27,7 +27,7 @@ echo "==> Step 2.5: Exporting parquet documents to individual JSON files..."
 python3 export_parquet_to_json.py \
   --parquet-dir ../pdf_parsing/parquet_files \
   --output-dir public/documents \
-  --violations-csv ../violations_output.csv
+  --document-csv ../document_info.csv
 
 echo ""
 echo "==> Step 3: Building website with Vite..."

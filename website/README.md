@@ -1,14 +1,14 @@
 # Michigan Child Welfare Licensing Dashboard
 
-A lightweight web dashboard built with Vite to display Michigan Child Welfare agency violations and reports.  Live [here](https://scintillating-licorice-0dd1c4.netlify.app/).
+A lightweight web dashboard built with Vite to display Michigan Child Welfare agency documents and reports.  Live [here](https://scintillating-licorice-0dd1c4.netlify.app/).
 
 ## Features
 
 - **Agency Directory**: Browse all child welfare agencies
-- **Violations Tracking**: View detailed violation reports for each agency
+- **Document Tracking**: View detailed document reports for each agency
 - **Search & Filter**: Search agencies by name or ID
-- **Expandable Details**: Click any agency to view detailed violations
-- **Summary Statistics**: Dashboard showing total agencies, violations, and reports
+- **Expandable Details**: Click any agency to view detailed documents
+- **Summary Statistics**: Dashboard showing total agencies and reports
 
 ## Development
 
@@ -40,8 +40,8 @@ A lightweight web dashboard built with Vite to display Michigan Child Welfare ag
 ### Building for Production
 
 Run the build script which:
-1. Generates violations CSV from parquet files
-2. Creates JSON data files from CSVs
+1. Generates document info CSV from parquet files
+2. Creates JSON data files from the document info CSV
 3. Builds the static website
 
 ```bash
@@ -54,8 +54,8 @@ The built files will be in the `dist/` directory.
 
 The site is configured for automatic deployment on Netlify. The build process:
 
-1. Runs `pdf_parsing/parse_parquet_violations.py` to generate violations from parquet files
-2. Runs `generate_website_data.py` to create JSON files from violations CSV
+1. Runs `pdf_parsing/extract_document_info.py` to generate document info from parquet files
+2. Runs `generate_website_data.py` to create JSON files from document info CSV
 3. Builds the static site with Vite
 
 ### Netlify Configuration
@@ -71,9 +71,9 @@ The `netlify.toml` file configures:
 The dashboard uses data from:
 
 - **Parquet Files**: PDF text extracts in `../pdf_parsing/parquet_files/`
-- **Violations CSV**: Generated from parquet files via `pdf_parsing/parse_parquet_violations.py`
+- **Document Info CSV**: Generated from parquet files via `pdf_parsing/extract_document_info.py`
 
-The dashboard derives all agency information directly from the violations data (no separate facility metadata required).
+The dashboard derives all agency information directly from the document data (no separate facility metadata required).
 
 ## Project Structure
 
@@ -107,14 +107,14 @@ To regenerate the data manually:
 # From the website directory
 cd website
 
-# Generate violations CSV from parquet files
-python3 ../pdf_parsing/parse_parquet_violations.py \
+# Generate document info CSV from parquet files
+python3 ../pdf_parsing/extract_document_info.py \
   --parquet-dir ../pdf_parsing/parquet_files \
-  -o ../violations_output.csv
+  -o ../document_info.csv
 
-# Generate JSON files for website (derives agency info from violations)
+# Generate JSON files for website (derives agency info from documents)
 python3 generate_website_data.py \
-  --violations-csv ../violations_output.csv \
+  --document-csv ../document_info.csv \
   --output-dir public/data
 ```
 

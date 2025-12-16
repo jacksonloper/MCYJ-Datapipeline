@@ -78,19 +78,18 @@ Each processing run creates a new file named: `YYYYMMDD_HHMMSS_pdf_text.parquet`
 
 Example: `20251103_143052_pdf_text.parquet`
 
-## Violation Parsing Tool
+## Document Info Extraction Tool
 
-The `parse_parquet_violations.py` script parses the parquet files containing PDF text extracts and outputs violation information to CSV.
+The `extract_document_info.py` script extracts basic document information from parquet files containing PDF text extracts and outputs to CSV.
 
 ### What It Does
 
-This script processes all parquet files and extracts structured information about licensing violations:
+This script processes all parquet files and extracts structured information about licensing documents:
 - Agency ID (License #)
 - Agency name
 - Inspection/report date
-- List of policies/rules that were violated
-
-The script intelligently filters out rules that are marked as "not violated" or "no violation" and only includes actual violations.
+- Document title (extracted from document content)
+- Special Investigation Report indicator (whether document is a SIR)
 
 ### Usage
 
@@ -98,20 +97,20 @@ The script intelligently filters out rules that are marked as "not violated" or 
 
 #### Basic Usage
 
-Parse all parquet files and create a CSV report:
+Extract document info from all parquet files and create a CSV report:
 
 ```bash
-python3 parse_parquet_violations.py
+python3 extract_document_info.py
 ```
 
-This will read from `pdf_parsing/parquet_files/` by default and output to `violations_output.csv`.
+This will read from `pdf_parsing/parquet_files/` by default and output to `document_info.csv`.
 
 #### Custom Paths
 
 Specify custom input and output paths:
 
 ```bash
-python3 parse_parquet_violations.py --parquet-dir /path/to/parquet/files -o my_violations.csv
+python3 extract_document_info.py --parquet-dir /path/to/parquet/files -o my_document_info.csv
 ```
 
 #### Verbose Mode
@@ -119,7 +118,7 @@ python3 parse_parquet_violations.py --parquet-dir /path/to/parquet/files -o my_v
 Enable detailed logging:
 
 ```bash
-python3 parse_parquet_violations.py --verbose
+python3 extract_document_info.py --verbose
 ```
 
 ### Output Format
@@ -133,41 +132,21 @@ The CSV contains the following columns:
 | `agency_name` | Name of the licensed agency | Child & Family Services - Northeast Michigan |
 | `document_title` | Type of document | Special Investigation Report #2019C0114036 |
 | `is_special_investigation` | Whether document is a Special Investigation Report | True, False |
-| `violations_list` | Semicolon-separated list of violated rules | R 400.12421; R 400.12418 |
-| `num_violations` | Count of violations | 2 |
 | `sha256` | SHA256 hash of the source PDF | abc123... |
 | `date_processed` | Timestamp when the PDF was processed | 2025-11-03T13:33:47.274306 |
 
 ### Example Output
 
 ```csv
-agency_id,date,agency_name,document_title,is_special_investigation,violations_list,num_violations,sha256,date_processed
-CB040201041,February 14, 2020,Child & Family Services - Northeast Michigan,Special Investigation Report #2019C0114036,True,R 400.12324,1,2731d75f...,2025-11-03T13:33:47.274306
-CB040201041,October 25, 2021,Child Family Services of NE Michigan,Renewal Inspection Report,False,R 400.12421; R 400.12418,2,d29a479d...,2025-11-03T13:33:47.470767
-CA110200973,04/28/2022,Berrien County Trial Court-Family Division,Licensing Study,False,,0,38b0a4d0...,2025-11-03T13:33:47.750253
+agency_id,date,agency_name,document_title,is_special_investigation,sha256,date_processed
+CB040201041,February 14, 2020,Child & Family Services - Northeast Michigan,Special Investigation Report #2019C0114036,True,2731d75f...,2025-11-03T13:33:47.274306
+CB040201041,October 25, 2021,Child Family Services of NE Michigan,Renewal Inspection Report,False,d29a479d...,2025-11-03T13:33:47.470767
+CA110200973,04/28/2022,Berrien County Trial Court-Family Division,Licensing Study,False,38b0a4d0...,2025-11-03T13:33:47.750253
 ```
 
-### Violation Detection
+## Investigate Documents Tool
 
-The parser identifies violations by looking for several patterns:
-
-1. **CPA Rules**: "Rule Code & CPA Rule 400.XXXX" with "Conclusion: Violation Established"
-2. **R 400 Rules**: Michigan Administrative Code references (e.g., "R 400.12421")
-3. **MCL References**: Michigan Compiled Laws (e.g., "MCL 722.954c")
-
-The parser explicitly filters out any rules marked as:
-- "is not violated"
-- "not in violation"
-- "no violation"
-
-This ensures that only actual violations are reported, not compliant items mentioned in the document.
-
-### Example Statistics
-
-When run on the existing parquet files:
-- Processed: 3510 documents
-- Documents with violations: 976
-- Documents without violations: 2534
+The `investigate_violations.py` script helps you inspect random documents from the extracted document data, showing both the extracted information and the original document text.
 
 ## Update SIR Summaries (update_summaryqueries.py)
 
@@ -176,7 +155,7 @@ Automatically generate and maintain AI-powered summaries for Special Investigati
 ### Purpose
 
 This script maintains an up-to-date `sir_summaries.csv` file containing AI-generated summaries of all SIRs. It:
-1. Scans parquet files to identify all SIR documents
+1. Scans document information CSV to identify all SIR documents
 2. Compares against existing summaries in `sir_summaries.csv`
 3. Queries OpenRouter API (DeepSeek v3.2) for missing summaries
 4. Appends new results to the CSV file
@@ -192,7 +171,7 @@ python3 update_summaryqueries.py
 python3 update_summaryqueries.py --count 50
 
 # Use custom paths
-python3 update_summaryqueries.py --parquet-dir custom_parquets --output custom_output.csv
+python3 update_summaryqueries.py --doc-info document_info.csv --output sir_summaries.csv
 ```
 
 ### Requirements
@@ -208,8 +187,6 @@ The `sir_summaries.csv` file contains:
 - `agency_name`: Name of the agency
 - `document_title`: Title of the document
 - `date`: Report date
-- `num_violations`: Number of violations found
-- `violations_list`: List of violated rules
 - `query`: Query text sent to AI
 - `response`: AI-generated summary and culpability assessment
 - `violation`: Whether allegations were substantiated ("y" or "n")
@@ -232,10 +209,6 @@ The script asks: *"Please analyze this Special Investigation Report and respond 
 
 This generates concise incident summaries with clear responsibility assessments and violation status.
 
-## Investigate Violations Tool
-
-The `investigate_violations.py` script helps you inspect random documents from the parsed violations data, showing both the extracted annotations and the original document text.
-
 ### Usage
 
 **Note**: Run from the `pdf_parsing/` directory.
@@ -256,15 +229,6 @@ Show documents from specific categories:
 # Show Special Investigation Reports only (default)
 python3 investigate_violations.py --category sir
 
-# Show documents with no violations
-python3 investigate_violations.py --category noviolation
-
-# Show documents with 1-9 violations
-python3 investigate_violations.py --category violation
-
-# Show documents with 10+ violations
-python3 investigate_violations.py --category manyviolation
-
 # Show any document regardless of type
 python3 investigate_violations.py --category all
 ```
@@ -272,9 +236,6 @@ python3 investigate_violations.py --category all
 ### Categories
 
 - **`sir`**: Special Investigation Reports only (default)
-- **`noviolation`**: Documents with 0 violations
-- **`violation`**: Documents with 1-9 violations
-- **`manyviolation`**: Documents with 10+ violations
 - **`all`**: Any document
 
 ### Output
@@ -282,11 +243,10 @@ python3 investigate_violations.py --category all
 The script displays:
 - Document metadata (agency ID, name, date, document title)
 - Whether it's a Special Investigation Report
-- Number of violations and list of violated rules
 - Full document text from the parquet file
 
 This is useful for:
-- Verifying that violations are being correctly extracted
+- Verifying that information is being correctly extracted
 - Understanding the document structure
 - Quality checking the parsing logic
 
@@ -297,9 +257,9 @@ This is useful for:
    python3 pdf_parsing/extract_pdf_text.py --pdf-dir /path/to/pdfs
    ```
 
-2. **Parse violations**: Use `parse_parquet_violations.py` to extract violation information
+2. **Extract document info**: Use `extract_document_info.py` to extract basic document information
    ```bash
-   python3 pdf_parsing/parse_parquet_violations.py
+   python3 pdf_parsing/extract_document_info.py
    ```
 
 3. **Update SIR summaries**: Use `update_summaryqueries.py` to generate AI summaries for SIRs

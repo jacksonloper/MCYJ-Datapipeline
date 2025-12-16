@@ -22,50 +22,34 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def load_violations_metadata(violations_csv: str) -> Dict[str, Dict]:
-    """Load violations CSV and create a lookup by SHA256."""
+def load_document_metadata(document_csv: str) -> Dict[str, Dict]:
+    """Load document CSV and create a lookup by SHA256."""
     metadata_by_sha = {}
     
-    if not violations_csv or not Path(violations_csv).exists():
-        logger.warning(f"Violations CSV not found: {violations_csv}")
+    if not document_csv or not Path(document_csv).exists():
+        logger.warning(f"Document CSV not found: {document_csv}")
         return metadata_by_sha
     
-    with open(violations_csv, 'r', encoding='utf-8') as f:
+    with open(document_csv, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
             sha256 = row.get('sha256', '').strip()
             if not sha256:
                 continue
             
-            # Parse JSON fields
-            try:
-                not_in_compliance_pages = json.loads(row.get('not_in_compliance_pages', '[]'))
-            except (json.JSONDecodeError, TypeError):
-                not_in_compliance_pages = []
-            
-            try:
-                in_compliance_pages = json.loads(row.get('in_compliance_pages', '[]'))
-            except (json.JSONDecodeError, TypeError):
-                in_compliance_pages = []
-            
-            try:
-                violations_detailed = json.loads(row.get('violations_detailed', '[]'))
-            except (json.JSONDecodeError, TypeError):
-                violations_detailed = []
-            
             metadata_by_sha[sha256] = {
-                'has_not_in_compliance': row.get('has_not_in_compliance', 'False').lower() in ('true', '1', 'yes'),
-                'has_in_compliance': row.get('has_in_compliance', 'False').lower() in ('true', '1', 'yes'),
-                'not_in_compliance_pages': not_in_compliance_pages,
-                'in_compliance_pages': in_compliance_pages,
-                'violations_detailed': violations_detailed
+                'agency_id': row.get('agency_id', ''),
+                'agency_name': row.get('agency_name', ''),
+                'document_title': row.get('document_title', ''),
+                'date': row.get('date', ''),
+                'is_special_investigation': row.get('is_special_investigation', 'False').lower() in ('true', '1', 'yes'),
             }
     
     logger.info(f"Loaded metadata for {len(metadata_by_sha)} documents")
     return metadata_by_sha
 
 
-def export_parquet_to_json(parquet_dir: str, output_dir: str, violations_csv: Optional[str] = None) -> None:
+def export_parquet_to_json(parquet_dir: str, output_dir: str, document_csv: Optional[str] = None) -> None:
     """Export each parquet row to a separate JSON file."""
     parquet_path = Path(parquet_dir)
     output_path = Path(output_dir)
@@ -77,8 +61,8 @@ def export_parquet_to_json(parquet_dir: str, output_dir: str, violations_csv: Op
     # Create output directory
     output_path.mkdir(parents=True, exist_ok=True)
     
-    # Load violations metadata if provided
-    violations_metadata = load_violations_metadata(violations_csv) if violations_csv else {}
+    # Load document metadata if provided
+    document_metadata = load_document_metadata(document_csv) if document_csv else {}
     
     # Find all parquet files
     parquet_files = list(parquet_path.glob("*.parquet"))
@@ -131,15 +115,15 @@ def export_parquet_to_json(parquet_dir: str, output_dir: str, violations_csv: Op
                     'pages': text_pages
                 }
                 
-                # Add highlighting metadata if available
-                if sha256 in violations_metadata:
-                    metadata = violations_metadata[sha256]
-                    document['highlighting'] = {
-                        'has_not_in_compliance': metadata['has_not_in_compliance'],
-                        'has_in_compliance': metadata['has_in_compliance'],
-                        'not_in_compliance_pages': metadata['not_in_compliance_pages'],
-                        'in_compliance_pages': metadata['in_compliance_pages'],
-                        'violations_detailed': metadata['violations_detailed']
+                # Add document metadata if available
+                if sha256 in document_metadata:
+                    metadata = document_metadata[sha256]
+                    document['metadata'] = {
+                        'agency_id': metadata['agency_id'],
+                        'agency_name': metadata['agency_name'],
+                        'document_title': metadata['document_title'],
+                        'date': metadata['date'],
+                        'is_special_investigation': metadata['is_special_investigation']
                     }
                 
                 # Write to individual JSON file
@@ -165,7 +149,7 @@ def main():
     script_dir = Path(__file__).parent.absolute()
     
     parser = argparse.ArgumentParser(
-        description="Export parquet rows to individual JSON files with highlighting metadata"
+        description="Export parquet rows to individual JSON files with document metadata"
     )
     parser.add_argument(
         "--parquet-dir",
@@ -178,9 +162,9 @@ def main():
         help="Output directory for JSON files (default: public/documents)"
     )
     parser.add_argument(
-        "--violations-csv",
-        default=str(script_dir / "../violations_output.csv"),
-        help="Path to violations CSV file for highlighting metadata (default: ../violations_output.csv)"
+        "--document-csv",
+        default=str(script_dir / "../document_info.csv"),
+        help="Path to document info CSV file for metadata (default: ../document_info.csv)"
     )
     parser.add_argument(
         "--verbose",
@@ -196,7 +180,7 @@ def main():
         format='%(asctime)s - %(levelname)s - %(message)s'
     )
     
-    export_parquet_to_json(args.parquet_dir, args.output_dir, args.violations_csv)
+    export_parquet_to_json(args.parquet_dir, args.output_dir, args.document_csv)
 
 
 if __name__ == "__main__":

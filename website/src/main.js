@@ -11,9 +11,7 @@ let apiKey = null; // Store decrypted API key
 
 // Filter state
 let filters = {
-    sirOnly: false,
-    violationsFilter: 'all', // 'all', 'with', 'without'
-    complianceStatus: 'all' // 'all', 'not_in_compliance', 'in_compliance', 'neither'
+    sirOnly: false
 };
 
 // Load and display data
@@ -63,9 +61,7 @@ function displayStats() {
     // Use filtered agencies for stats
     const agencies = filteredAgencies;
     const totalAgencies = agencies.length;
-    const totalViolations = agencies.reduce((sum, a) => sum + a.total_violations, 0);
     const totalReports = agencies.reduce((sum, a) => sum + a.total_reports, 0);
-    const agenciesWithViolations = agencies.filter(a => a.total_violations > 0).length;
     
     statsEl.innerHTML = `
         <div class="stat-card">
@@ -73,16 +69,8 @@ function displayStats() {
             <div class="stat-label">Total Agencies</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number">${totalViolations}</div>
-            <div class="stat-label">Total Violations</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${agenciesWithViolations}</div>
-            <div class="stat-label">Agencies with Violations</div>
-        </div>
-        <div class="stat-card">
             <div class="stat-number">${totalReports}</div>
-            <div class="stat-label">Reports/Inspections</div>
+            <div class="stat-label">Total Reports/Documents</div>
         </div>
     `;
 }
@@ -91,46 +79,26 @@ function applyFilters() {
     // Start with all agencies
     let agencies = JSON.parse(JSON.stringify(allAgencies)); // Deep clone
     
-    // Apply filters to each agency's violations
+    // Apply filters to each agency's documents
     agencies = agencies.map(agency => {
-        if (!agency.violations || !Array.isArray(agency.violations)) {
+        if (!agency.documents || !Array.isArray(agency.documents)) {
             return agency;
         }
         
-        let filteredViolations = agency.violations.filter(v => {
+        let filteredDocuments = agency.documents.filter(d => {
             // Filter by SIR only
-            if (filters.sirOnly && !v.is_special_investigation) {
-                return false;
-            }
-            
-            // Filter by violations
-            if (filters.violationsFilter === 'with' && v.num_violations === 0) {
-                return false;
-            }
-            if (filters.violationsFilter === 'without' && v.num_violations > 0) {
-                return false;
-            }
-            
-            // Filter by compliance status
-            if (filters.complianceStatus === 'not_in_compliance' && !v.has_not_in_compliance) {
-                return false;
-            }
-            if (filters.complianceStatus === 'in_compliance' && !v.has_in_compliance) {
-                return false;
-            }
-            if (filters.complianceStatus === 'neither' && (v.has_not_in_compliance || v.has_in_compliance)) {
+            if (filters.sirOnly && !d.is_special_investigation) {
                 return false;
             }
             
             return true;
         });
         
-        // Update agency stats based on filtered violations
+        // Update agency stats based on filtered documents
         return {
             ...agency,
-            violations: filteredViolations,
-            total_violations: filteredViolations.reduce((sum, v) => sum + v.num_violations, 0),
-            total_reports: filteredViolations.length
+            documents: filteredDocuments,
+            total_reports: filteredDocuments.length
         };
     });
     
@@ -148,28 +116,6 @@ function setupFilters() {
     sirOnlyCheckbox.addEventListener('change', (e) => {
         filters.sirOnly = e.target.checked;
         applyFilters();
-    });
-    
-    // Violations filter
-    const violationsRadios = document.querySelectorAll('input[name="violationsFilter"]');
-    violationsRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                filters.violationsFilter = e.target.value;
-                applyFilters();
-            }
-        });
-    });
-    
-    // Compliance status filter
-    const complianceRadios = document.querySelectorAll('input[name="complianceFilter"]');
-    complianceRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                filters.complianceStatus = e.target.value;
-                applyFilters();
-            }
-        });
     });
 }
 
@@ -201,16 +147,13 @@ function displayAgencies(agencies) {
                 </div>
                 
                 <div class="agency-stats">
-                    <span class="stat-badge violations-badge">
-                        ⚠️ ${agency.total_violations} Violations
-                    </span>
                     <span class="stat-badge reports-badge">
                         📋 ${agency.total_reports} Reports
                     </span>
                 </div>
                 
                 <div class="agency-details" id="details-${agency.agencyId}">
-                    ${renderViolations(agency.violations)}
+                    ${renderDocuments(agency.documents)}
                 </div>
             </div>
         `;
@@ -230,54 +173,45 @@ function displayAgencies(agencies) {
     });
 }
 
-function renderViolations(violations) {
-    if (!violations || violations.length === 0) {
+function renderDocuments(documents) {
+    if (!documents || documents.length === 0) {
         return `
-            <div class="violations-list">
-                <div class="section-title">Violations & Reports</div>
+            <div class="documents-list">
+                <div class="section-title">Documents & Reports</div>
                 <p style="color: #666;">No reports available.</p>
             </div>
         `;
     }
     
     // Sort by date (most recent first)
-    const sortedViolations = [...violations].sort((a, b) => {
+    const sortedDocuments = [...documents].sort((a, b) => {
         return new Date(b.date_processed) - new Date(a.date_processed);
     });
     
-    const violationItems = sortedViolations.map(v => {
-        const hasViolations = v.num_violations > 0;
-        const violationClass = hasViolations ? 'has-violations' : '';
-        
+    const documentItems = sortedDocuments.map(d => {
         // Use document title if available, otherwise fall back to agency name
-        const displayTitle = v.document_title || v.agency_name || 'Untitled Document';
+        const displayTitle = d.document_title || d.agency_name || 'Untitled Document';
+        const isSir = d.is_special_investigation;
         
         return `
-            <div class="violation-item ${violationClass}">
+            <div class="document-item ${isSir ? 'is-sir' : ''}">
                 <div style="font-weight: 600; margin-bottom: 4px;">
                     ${escapeHtml(displayTitle)}
-                    ${v.sha256 ? `
-                        <button class="copy-link-btn" onclick="copyDocumentLink('${v.sha256}', event)" title="Copy link to this document">
+                    ${isSir ? ' <span style="color: #e74c3c; font-size: 0.85em;">🔍 SIR</span>' : ''}
+                    ${d.sha256 ? `
+                        <button class="copy-link-btn" onclick="copyDocumentLink('${d.sha256}', event)" title="Copy link to this document">
                             🔗
                         </button>
                     ` : ''}
                 </div>
-                <div class="date">${escapeHtml(v.date || 'Date not specified')}</div>
-                ${hasViolations ? `
-                    <div class="violations-text">
-                        ${v.num_violations} violation${v.num_violations > 1 ? 's' : ''}: 
-                        ${escapeHtml(v.violations_list)}
-                    </div>
-                ` : `
-                    <div style="color: #27ae60;">✓ No violations found</div>
-                `}
-                ${v.sha256 ? `
+                <div class="date">${escapeHtml(d.date || 'Date not specified')}</div>
+                ${d.sha256 ? `
                     <div style="margin-top: 8px;">
-                        <button class="view-document-btn" onclick="viewDocument('${v.sha256}', event)">
+                        <button class="view-document-btn" onclick="viewDocument('${d.sha256}', event)">
                             📄 View Full Document
                         </button>
-                        <div id="query-count-${v.sha256}" style="margin-top: 8px; font-size: 0.85em; color: #666; font-style: italic;">
-                            <span class="query-count-placeholder" data-sha="${v.sha256}">Loading query history...</span>
+                        <div id="query-count-${d.sha256}" style="margin-top: 8px; font-size: 0.85em; color: #666; font-style: italic;">
+                            <span class="query-count-placeholder" data-sha="${d.sha256}">Loading query history...</span>
                         </div>
                     </div>
                 ` : ''}
@@ -287,17 +221,17 @@ function renderViolations(violations) {
     
     // After rendering, load query counts for each document using microtask
     queueMicrotask(() => {
-        sortedViolations.forEach(v => {
-            if (v.sha256) {
-                loadQueryCount(v.sha256);
+        sortedDocuments.forEach(d => {
+            if (d.sha256) {
+                loadQueryCount(d.sha256);
             }
         });
     });
     
     return `
-        <div class="violations-list">
-            <div class="section-title">Violations & Reports (${violations.length})</div>
-            ${violationItems}
+        <div class="documents-list">
+            <div class="section-title">Documents & Reports (${documents.length})</div>
+            ${documentItems}
         </div>
     `;
 }
@@ -318,13 +252,12 @@ async function viewDocument(sha256, event) {
         // Find document metadata from agencies data
         let docMetadata = null;
         for (const agency of allAgencies) {
-            if (agency.violations && Array.isArray(agency.violations)) {
-                const violation = agency.violations.find(v => v.sha256 === sha256);
-                if (violation) {
+            if (agency.documents && Array.isArray(agency.documents)) {
+                const document = agency.documents.find(d => d.sha256 === sha256);
+                if (document) {
                     docMetadata = {
-                        title: violation.document_title || violation.agency_name || 'Untitled Document',
-                        num_violations: violation.num_violations || 0,
-                        violations_list: violation.violations_list || ''
+                        title: document.document_title || document.agency_name || 'Untitled Document',
+                        is_special_investigation: document.is_special_investigation || false
                     };
                     break;
                 }
@@ -399,78 +332,15 @@ function showDocumentModal(docData, docMetadata) {
         return;
     }
     
-    // Get highlighting metadata
-    const highlighting = docData.highlighting || {};
-    
-    // Format the document pages with highlighting
+    // Format the document pages
     const totalPages = docData.pages.length;
     const pagesHtml = docData.pages.map((page, pageIndex) => {
-        let pageContent = page;
-        const highlightRanges = [];
-        
-        // Highlight compliance phrases
-        if (highlighting.not_in_compliance_pages && highlighting.not_in_compliance_pages.includes(pageIndex)) {
-            const positions = findTextPositions(page, 'is\\s+not\\s+in\\s+compliance', 'gi');
-            positions.forEach(pos => {
-                highlightRanges.push({
-                    ...pos,
-                    className: 'highlight-not-in-compliance'
-                });
-            });
-        }
-        
-        if (highlighting.in_compliance_pages && highlighting.in_compliance_pages.includes(pageIndex)) {
-            const positions = findTextPositions(page, '(?<!not\\s)is\\s+in\\s+compliance', 'gi');
-            positions.forEach(pos => {
-                highlightRanges.push({
-                    ...pos,
-                    className: 'highlight-in-compliance'
-                });
-            });
-        }
-        
-        // Highlight rules and violation statuses
-        if (highlighting.violations_detailed && Array.isArray(highlighting.violations_detailed)) {
-            for (const vDetail of highlighting.violations_detailed) {
-                if (vDetail.rule_page === pageIndex) {
-                    // Highlight the rule reference
-                    const rulePattern = vDetail.rule.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                    const positions = findTextPositions(page, rulePattern, 'gi');
-                    positions.forEach(pos => {
-                        highlightRanges.push({
-                            ...pos,
-                            className: 'highlight-rule'
-                        });
-                    });
-                }
-                
-                if (vDetail.status_page === pageIndex) {
-                    // Highlight violation established/not established
-                    const statusPattern = vDetail.violation_status === 'established' 
-                        ? '(?:Repeat\\s+)?Violation\\s+Established' 
-                        : 'Violation\\s+Not\\s+Established';
-                    const positions = findTextPositions(page, statusPattern, 'gi');
-                    positions.forEach(pos => {
-                        highlightRanges.push({
-                            ...pos,
-                            className: vDetail.violation_status === 'established' 
-                                ? 'highlight-violation-established' 
-                                : 'highlight-violation-not-established'
-                        });
-                    });
-                }
-            }
-        }
-        
-        // Apply highlighting
-        const highlightedContent = highlightRanges.length > 0 
-            ? highlightText(page, highlightRanges)
-            : escapeHtml(page);
+        const pageContent = escapeHtml(page);
         
         return `
             <div class="document-page">
                 <div class="page-number">Page ${pageIndex + 1} of ${totalPages}</div>
-                <pre class="page-text">${highlightedContent}</pre>
+                <pre class="page-text">${pageContent}</pre>
             </div>
         `;
     }).join('');
@@ -483,11 +353,9 @@ function showDocumentModal(docData, docMetadata) {
         <div class="document-info">
             ${docMetadata ? `
                 <div><strong>Title:</strong> ${escapeHtml(docMetadata.title)}</div>
-                ${docMetadata.num_violations > 0 ? `
-                    <div style="word-break: break-word; overflow-wrap: break-word;"><strong>Violations Found:</strong> ${escapeHtml(docMetadata.violations_list)}</div>
-                ` : `
-                    <div style="color: #27ae60;"><strong>Violations:</strong> ✓ No violations found</div>
-                `}
+                ${docMetadata.is_special_investigation ? `
+                    <div style="color: #e74c3c;"><strong>Type:</strong> 🔍 Special Investigation Report</div>
+                ` : ''}
             ` : ''}
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <strong style="flex-shrink: 0;">SHA256:</strong>

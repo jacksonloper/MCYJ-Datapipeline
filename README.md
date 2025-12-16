@@ -61,7 +61,7 @@ $ ls downloads/ | head
 
 check the md5sums
 
-## 5. Extract text from PDFs and parse violations
+## 5. Extract text from PDFs and extract basic document info
 
 Extract text from PDFs and save to parquet files:
 
@@ -69,10 +69,10 @@ Extract text from PDFs and save to parquet files:
 python3 pdf_parsing/extract_pdf_text.py --pdf-dir Downloads --parquet-dir pdf_parsing/parquet_files
 ```
 
-Parse parquet files to extract violation information to CSV:
+Extract basic document information from parquet files to CSV:
 
 ```bash
-python3 pdf_parsing/parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o violations_output.csv
+python3 pdf_parsing/extract_document_info.py --parquet-dir pdf_parsing/parquet_files -o document_info.csv
 ```
 
 The output CSV contains:
@@ -80,11 +80,11 @@ The output CSV contains:
 - Agency name
 - Document title (extracted from document content, e.g., "Special Investigation Report", "Renewal Inspection Report")
 - Inspection/report date
-- List of policies/rules violated (excluding "not violated" entries)
+- Special Investigation Report indicator (whether document is a SIR)
 
-## 6. Investigate violations
+## 6. Investigate documents
 
-After running the violations script, you can investigate random documents to see the original text alongside the parsed annotations:
+After running the document extraction script, you can investigate random documents to see the original text alongside the parsed information:
 
 ```bash
 cd pdf_parsing
@@ -93,12 +93,7 @@ python3 investigate_violations.py
 
 Categories:
 - `sir` - Special Investigation Reports only (default)
-- `noviolation` - Documents with 0 violations
-- `violation` - Documents with 1-9 violations
-- `manyviolation` - Documents with 10+ violations
 - `all` - Any document
-
-The script displays a random document from the specified category, showing both the annotation (parsed violations) and the full document text from the parquet file.
 
 ### Investigate a specific document by SHA
 
@@ -122,7 +117,7 @@ See [pdf_parsing/README.md](pdf_parsing/README.md) for more details.
 
 ## 7. Web Dashboard
 
-A lightweight web dashboard is included to visualize agency violations and reports.
+A lightweight web dashboard is included to visualize agency documents and reports.
 
 ### Building the Website
 
@@ -134,8 +129,8 @@ cd website
 ```
 
 This will:
-1. Generate violations CSV from parquet files
-2. Create JSON data files from the violations (deriving agency info automatically)
+1. Generate document info CSV from parquet files
+2. Create JSON data files from the document info (deriving agency info automatically)
 3. Build the static website with Vite
 
 The built website will be in the `dist/` directory.
