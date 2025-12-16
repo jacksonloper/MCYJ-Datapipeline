@@ -38,7 +38,7 @@ def load_sir_summaries(sir_summaries_csv: str) -> Dict[str, Dict]:
                 continue
             
             summaries_by_sha[sha256] = {
-                'summary': row.get('response', ''),
+                'summary': row.get('response', ''),  # 'response' column contains the AI-generated summary text
                 'violation': row.get('violation', '')
             }
     

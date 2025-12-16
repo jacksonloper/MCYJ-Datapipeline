@@ -391,7 +391,7 @@ function showDocumentModal(docData, docMetadata) {
                     <h3 style="margin: 0 0 10px 0; color: #e67e22; font-size: 1.1em;">
                         📋 Special Investigation Report Summary
                         ${docData.sir_summary.violation === 'y' ? '<span style="color: #e74c3c; margin-left: 8px; font-size: 0.9em;">⚠️ Violation Substantiated</span>' : ''}
-                        ${docData.sir_summary.violation === 'n' ? '<span style="color: #27ae60; margin-left: 8px; font-size: 0.9em;">✓ No Violation Substantiated</span>' : ''}
+                        ${docData.sir_summary.violation === 'n' ? '<span style="color: #27ae60; margin-left: 8px; font-size: 0.9em;">✓ No Violation</span>' : ''}
                     </h3>
                 </div>
                 <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #f39c12; line-height: 1.6; color: #333;">
