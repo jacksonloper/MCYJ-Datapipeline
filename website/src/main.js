@@ -332,7 +332,7 @@ function showDocumentModal(docData, docMetadata) {
         return;
     }
     
-    // Format the document pages without highlighting
+    // Format the document pages
     const totalPages = docData.pages.length;
     const pagesHtml = docData.pages.map((page, pageIndex) => {
         const pageContent = escapeHtml(page);
