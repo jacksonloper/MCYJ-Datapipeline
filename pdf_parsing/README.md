@@ -148,6 +148,67 @@ CA110200973,04/28/2022,Berrien County Trial Court-Family Division,Licensing Stud
 
 The `investigate_violations.py` script helps you inspect random documents from the extracted document data, showing both the extracted information and the original document text.
 
+## Update SIR Summaries (update_summaryqueries.py)
+
+Automatically generate and maintain AI-powered summaries for Special Investigation Reports (SIRs).
+
+### Purpose
+
+This script maintains an up-to-date `sir_summaries.csv` file containing AI-generated summaries of all SIRs. It:
+1. Scans document information CSV to identify all SIR documents
+2. Compares against existing summaries in `sir_summaries.csv`
+3. Queries OpenRouter API (DeepSeek v3.2) for missing summaries
+4. Appends new results to the CSV file
+
+### Usage
+
+```bash
+# Update summaries for up to 100 missing SIRs (default)
+cd pdf_parsing
+python3 update_summaryqueries.py
+
+# Specify custom count
+python3 update_summaryqueries.py --count 50
+
+# Use custom paths
+python3 update_summaryqueries.py --doc-info document_info.csv --output sir_summaries.csv
+```
+
+### Requirements
+
+- `OPENROUTER_KEY` environment variable must be set with your OpenRouter API key
+- Dependencies: `pandas`, `pyarrow`, `requests`
+
+### Output Format
+
+The `sir_summaries.csv` file contains:
+- `sha256`: Document hash identifier  
+- `agency_id`: Agency license number
+- `agency_name`: Name of the agency
+- `document_title`: Title of the document
+- `date`: Report date
+- `query`: Query text sent to AI
+- `response`: AI-generated summary and culpability assessment
+- `violation`: Whether allegations were substantiated ("y" or "n")
+- `input_tokens`: API input token count
+- `output_tokens`: API output token count  
+- `cost`: API cost (if provided)
+- `duration_ms`: Query duration in milliseconds
+
+### Automation
+
+A GitHub Actions workflow (`.github/workflows/update-sir-summaries.yml`) automatically runs this script:
+- **Scheduled**: Weekly on Mondays at 00:00 UTC
+- **Manual**: Can be triggered from the Actions tab with custom count
+
+The workflow automatically commits new summaries to the repository.
+
+### Query
+
+The script asks: *"Please analyze this Special Investigation Report and respond with a JSON object containing exactly two fields: (1) 'summary' - a few sentences explaining what went down, including one sentence weighing in on culpability, and (2) 'violation' - either 'y' if allegations of policy/code violations were substantiated, or 'n' if they were not substantiated."*
+
+This generates concise incident summaries with clear responsibility assessments and violation status.
+
 ### Usage
 
 **Note**: Run from the `pdf_parsing/` directory.
@@ -201,13 +262,20 @@ This is useful for:
    python3 pdf_parsing/extract_document_info.py
    ```
 
-3. **Investigate results**: Use `investigate_violations.py` to inspect random documents
+3. **Update SIR summaries**: Use `update_summaryqueries.py` to generate AI summaries for SIRs
+   ```bash
+   cd pdf_parsing
+   export OPENROUTER_KEY="your-api-key"
+   python3 update_summaryqueries.py
+   ```
+
+4. **Investigate results**: Use `investigate_violations.py` to inspect random documents
    ```bash
    cd pdf_parsing
    python3 investigate_violations.py
    ```
 
-4. **Analyze results**: Use the CSV output for analysis, reporting, or further processing
+5. **Analyze results**: Use the CSV outputs for analysis, reporting, or further processing
 
 ## Requirements
 

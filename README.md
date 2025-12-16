@@ -156,3 +156,33 @@ The site is configured for automatic deployment on Netlify:
 Configuration is in `website/netlify.toml`.
 
 See [website/README.md](website/README.md) for more details about the dashboard.
+
+## 8. AI-Powered SIR Summaries
+
+Automatically generate and maintain AI summaries for Special Investigation Reports (SIRs) using OpenRouter API (DeepSeek v3.2).
+
+### Automated Updates
+
+A GitHub Actions workflow automatically:
+1. Scans parquet files for new SIRs
+2. Compares against existing summaries in `pdf_parsing/sir_summaries.csv`
+3. Generates AI summaries for up to 100 new SIRs weekly
+4. Commits results to the repository
+
+**To trigger manually**: Go to Actions → "Update SIR Summaries" → Run workflow
+
+### Local Usage
+
+```bash
+cd pdf_parsing
+export OPENROUTER_KEY="your-api-key"
+python3 update_summaryqueries.py --count 100
+```
+
+The AI analyzes each report to provide:
+- **Summary**: Incident description and culpability assessment
+- **Violation status**: Whether allegations were substantiated (y/n)
+
+Results are appended to `pdf_parsing/sir_summaries.csv` with complete metadata including token usage and cost information.
+
+See [pdf_parsing/README.md](pdf_parsing/README.md) for complete documentation.

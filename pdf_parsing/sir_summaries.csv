@@ -1,0 +1,22 @@
+sha256,agency_id,agency_name,document_title,date,query,response,violation,input_tokens,output_tokens,cost,duration_ms
+0005aef67191b6a71053e81c44c2f70a7d60ce7b92d2ca666672f197d66e30dc,CB520304693,Upper Peninsula Family Solutions,Special Investigation Report #2020C0102008,"March 2, 2020","Please analyze this Special Investigation Report and respond with a JSON object containing exactly two fields:
+
+1. ""summary"": A few sentences explaining what went down here, including one extra sentence weighing in on culpability.
+2. ""violation"": Either ""y"" if allegations of policy/code violations were substantiated in this report, or ""n"" if they were not substantiated.
+
+Return ONLY the JSON object, no other text. Format:
+{""summary"": ""..."", ""violation"": ""y""}","The investigation concerned allegations that the agency failed to timely assess a relative for placement of children, which was not substantiated. However, the investigation revealed two other violations: a failure to document a case contact in the state system within the required five business days, and a failure to complete a required Relative Placement Safety Screen within five business days of the relative's expressed interest. The agency bears responsibility for these administrative and procedural failures.",y,3683,100,,6362
+0024a225c1d3dde399bd189e0cc2392aad5b47ba9720b1f2fd40204223f74bb1,CI460403164,LHS Family and Youth Services,Special Investigation Report #2022C0446027,"June 29, 2022","Please analyze this Special Investigation Report and respond with a JSON object containing exactly two fields:
+
+1. ""summary"": A few sentences explaining what went down here, including one extra sentence weighing in on culpability.
+2. ""violation"": Either ""y"" if allegations of policy/code violations were substantiated in this report, or ""n"" if they were not substantiated.
+
+Return ONLY the JSON object, no other text. Format:
+{""summary"": ""..."", ""violation"": ""y""}","A physical fight between two youths (Youth A and Youth B) occurred at the Adrian Group Home on May 10, 2022, resulting in injuries including bruises and a bloody nose for Youth B. The investigation found that while staff-to-youth ratios were technically met, only two staff were on duty instead of the typical three, and they were insufficient to safely control the escalating situation or effectively separate the youths, leading to a prolonged altercation. The evidence substantiates a violation of staffing rules, placing clear culpability on the facility for failing to provide adequate supervision to ensure resident safety.",y,3329,129,,3207
+0039c6bf571d7de8482f8bfbf6751219309429b5dbeb5c59da575951444dd35f,CI820272493,VISTA MARIA - MENTAL HEALTH,Special Investigation Report #2025SIC0000600,"Special Investigation Intake Date: April 24, 2025","Please analyze this Special Investigation Report and respond with a JSON object containing exactly two fields:
+
+1. ""summary"": A few sentences explaining what went down here, including one extra sentence weighing in on culpability.
+2. ""violation"": Either ""y"" if allegations of policy/code violations were substantiated in this report, or ""n"" if they were not substantiated.
+
+Return ONLY the JSON object, no other text. Format:
+{""summary"": ""..."", ""violation"": ""y""}","A special investigation was conducted after an allegation that a staff member at VISTA MARIA placed his hands around a youth's neck during a physical altercation on April 23, 2025. The investigation, which included interviews with staff, youths, and a review of video footage, found insufficient evidence to substantiate the choking allegation, concluding instead that the youth was the primary aggressor. The report's final determination states that no substantial violations were found and the facility is in compliance, effectively assigning no culpability to the staff or facility.",n,2379,121,,2495
