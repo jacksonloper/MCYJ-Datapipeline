@@ -34,6 +34,10 @@ export async function initDB() {
                 objectStore.createIndex('queryHash', 'queryHash', { unique: false });
                 objectStore.createIndex('timestamp', 'timestamp', { unique: false });
             }
+            
+            // Note: IndexedDB is schema-less for object properties. Adding the cacheDiscount
+            // field doesn't require a schema migration - it's automatically handled when storing
+            // objects with the new field. Version was bumped to indicate data format change.
         };
     });
 }
