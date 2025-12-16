@@ -236,6 +236,15 @@ function renderDocuments(documents) {
                             ${d.sir_summary.violation === 'n' ? '<span style="color: #27ae60; margin-left: 6px;">✓ No Violation</span>' : ''}
                         </div>
                         <div style="font-size: 0.9em; line-height: 1.5; color: #555;">${escapeHtml(d.sir_summary.summary)}</div>
+                        ${hasViolationLevel && d.sir_violation_level.keywords && d.sir_violation_level.keywords.length > 0 ? `
+                            <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                <span style="font-size: 0.8em; color: #666; margin-right: 4px;">🏷️</span>
+                                ${d.sir_violation_level.keywords.slice(0, 5).map(kw => 
+                                    `<span style="background: #e8f4f8; color: #2980b9; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; border: 1px solid #3498db;">${escapeHtml(kw)}</span>`
+                                ).join('')}
+                                ${d.sir_violation_level.keywords.length > 5 ? `<span style="font-size: 0.75em; color: #666;">+${d.sir_violation_level.keywords.length - 5} more</span>` : ''}
+                            </div>
+                        ` : ''}
                     </div>
                 ` : ''}
                 ${d.sha256 ? `
@@ -435,10 +444,20 @@ function showDocumentModal(docData, docMetadata) {
                     </h3>
                 </div>
                 <div style="background: white; padding: 15px; border-radius: 6px; border-left: 4px solid #f39c12; line-height: 1.6; color: #333;">
-                    <div style="margin-bottom: ${docData.sir_violation_level && docData.sir_violation_level.justification ? '15px' : '0'};">
+                    <div style="margin-bottom: ${docData.sir_violation_level && (docData.sir_violation_level.justification || (docData.sir_violation_level.keywords && docData.sir_violation_level.keywords.length > 0)) ? '15px' : '0'};">
                         <strong style="color: #2c3e50;">Summary:</strong>
                         <div style="margin-top: 8px;">${escapeHtml(docData.sir_summary.summary)}</div>
                     </div>
+                    ${docData.sir_violation_level && docData.sir_violation_level.keywords && docData.sir_violation_level.keywords.length > 0 ? `
+                        <div style="padding-top: 15px; border-top: 1px solid #ecf0f1; margin-bottom: ${docData.sir_violation_level.justification ? '15px' : '0'};">
+                            <strong style="color: #2c3e50;">Keywords:</strong>
+                            <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                                ${docData.sir_violation_level.keywords.map(kw => 
+                                    `<span style="background: #e8f4f8; color: #2980b9; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; border: 1px solid #3498db;">${escapeHtml(kw)}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
                     ${docData.sir_violation_level && docData.sir_violation_level.justification ? `
                         <div style="padding-top: 15px; border-top: 1px solid #ecf0f1;">
                             <strong style="color: #2c3e50;">Severity Justification:</strong>
