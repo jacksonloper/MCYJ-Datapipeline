@@ -164,12 +164,13 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         document_text: Full document text (all pages concatenated)
     
     Returns:
-        Dict with summary, violation, response, tokens, cost, and duration
+        Dict with summary, violation, response, tokens, cost, cache_discount, and duration
     """
     start_time = time.time()
     
-    # Combine query with document as the website does
-    full_prompt = f"{query}\n\n{document_text}"
+    # Put document first with a common prefix to enable prompt caching
+    # This allows OpenRouter to cache the document portion across multiple queries
+    full_prompt = f"Consider the following document.\n\n{document_text}\n\n{query}"
     
     headers = {
         'Authorization': f'Bearer {api_key}',
@@ -217,6 +218,9 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
     # Extract cost from usage object (OpenRouter returns it here with usage accounting enabled)
     cost = usage.get('cost', None)
     
+    # Extract cache discount information (shows savings from prompt caching)
+    cache_discount = usage.get('cache_discount', None)
+    
     # Parse JSON response
     summary = ''
     violation = ''
@@ -253,6 +257,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         'input_tokens': input_tokens,
         'output_tokens': output_tokens,
         'cost': cost if cost else '',
+        'cache_discount': cache_discount if cache_discount else '',
         'duration_ms': duration_ms
     }
 
@@ -369,6 +374,8 @@ def main():
             logger.info(f"  Duration: {result['duration_ms']/1000:.2f}s")
             if result['cost']:
                 logger.info(f"  Cost: ${result['cost']:.6f}")
+            if result['cache_discount']:
+                logger.info(f"  Cache Discount: ${result['cache_discount']:.6f}")
             logger.info(f"  Summary preview: {result['summary'][:150]}...")
             logger.info(f"  Violation: {result['violation']}")
             
@@ -385,6 +392,7 @@ def main():
                 'input_tokens': result['input_tokens'],
                 'output_tokens': result['output_tokens'],
                 'cost': result['cost'],
+                'cache_discount': result['cache_discount'],
                 'duration_ms': result['duration_ms']
             })
             
@@ -410,7 +418,7 @@ def main():
     with open(output_path, 'a', newline='', encoding='utf-8') as f:
         fieldnames = ['sha256', 'agency_id', 'agency_name', 'document_title', 'date', 
                      'query', 'response', 'violation',
-                     'input_tokens', 'output_tokens', 'cost', 'duration_ms']
+                     'input_tokens', 'output_tokens', 'cost', 'cache_discount', 'duration_ms']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         
         if not file_exists:

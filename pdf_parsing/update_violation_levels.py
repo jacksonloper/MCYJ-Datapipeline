@@ -36,7 +36,12 @@ OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 MODEL = 'deepseek/deepseek-v3.2'  # DeepSeek v3.2
 
 # Query template for violation level classification
-QUERY_TEMPLATE = """Based on the categorization instructions below, please analyze this Special Investigation Report and determine the severity level of the actual violations that were substantiated (ignore any unsubstantiated allegations).
+# Document comes first with a common prefix to enable prompt caching
+QUERY_TEMPLATE = """Consider the following Special Investigation Report.
+
+{document_text}
+
+Based on the categorization instructions below, please analyze this Special Investigation Report and determine the severity level of the actual violations that were substantiated (ignore any unsubstantiated allegations).
 
 Categorization Instructions:
 {theming_instructions}
@@ -47,10 +52,7 @@ Please respond with a JSON object containing exactly two fields:
 2. "justification": A brief explanation of why you chose this level, referencing the specific violations found and how they align with the categorization criteria
 
 Return ONLY the JSON object, no other text. Format:
-{{"level": "...", "justification": "..."}}
-
-Special Investigation Report:
-{document_text}"""
+{{"level": "...", "justification": "..."}}"""
 
 
 def get_api_key() -> str:
@@ -274,6 +276,9 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
     # Extract cost from usage object
     cost = usage.get('cost', None)
     
+    # Extract cache discount information (shows savings from prompt caching)
+    cache_discount = usage.get('cache_discount', None)
+    
     # Parse JSON response
     level = ''
     justification = ''
@@ -313,6 +318,7 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
         'input_tokens': input_tokens,
         'output_tokens': output_tokens,
         'cost': cost if cost else '',
+        'cache_discount': cache_discount if cache_discount else '',
         'duration_ms': duration_ms
     }
 
@@ -441,6 +447,8 @@ def main():
             logger.info(f"  Duration: {result['duration_ms']/1000:.2f}s")
             if result['cost']:
                 logger.info(f"  Cost: ${result['cost']:.6f}")
+            if result['cache_discount']:
+                logger.info(f"  Cache Discount: ${result['cache_discount']:.6f}")
             logger.info(f"  Level: {result['level']}")
             logger.info(f"  Justification preview: {result['justification'][:150]}...")
             
@@ -456,6 +464,7 @@ def main():
                 'input_tokens': result['input_tokens'],
                 'output_tokens': result['output_tokens'],
                 'cost': result['cost'],
+                'cache_discount': result['cache_discount'],
                 'duration_ms': result['duration_ms']
             })
             
@@ -484,7 +493,7 @@ def main():
     with open(output_path, 'a', newline='', encoding='utf-8') as f:
         fieldnames = ['sha256', 'agency_id', 'agency_name', 'document_title', 'date', 
                      'level', 'justification',
-                     'input_tokens', 'output_tokens', 'cost', 'duration_ms']
+                     'input_tokens', 'output_tokens', 'cost', 'cache_discount', 'duration_ms']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         
         if not file_exists:

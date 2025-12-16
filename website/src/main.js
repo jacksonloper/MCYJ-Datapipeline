@@ -946,7 +946,8 @@ async function submitAiQuery() {
             result.inputTokens,
             result.outputTokens,
             result.durationMs,
-            result.cost
+            result.cost,
+            result.cacheDiscount
         );
         
         // Display the result
@@ -957,6 +958,7 @@ async function submitAiQuery() {
             outputTokens: result.outputTokens,
             durationMs: result.durationMs,
             cost: result.cost,
+            cacheDiscount: result.cacheDiscount,
             timestamp: Date.now()
         });
         
@@ -990,6 +992,12 @@ function displayQueryResult(queryData) {
     const outputCost = (queryData.outputTokens / 1000000) * 0.38;
     const estimatedCost = inputCost + outputCost;
     
+    // Build cache discount info if available
+    let cacheInfo = '';
+    if (queryData.cacheDiscount !== null && queryData.cacheDiscount !== undefined) {
+        cacheInfo = `<span style="color: #27ae60; font-weight: 600;">💾 Cache Discount: $${queryData.cacheDiscount.toFixed(6)}</span>`;
+    }
+    
     // Create a result display element
     const resultHtml = `
         <div style="background: white; padding: 20px; border: 2px solid #3498db; border-radius: 8px; margin-top: 15px;">
@@ -1006,6 +1014,7 @@ function displayQueryResult(queryData) {
                 <span>📊 Output tokens: ${queryData.outputTokens}</span>
                 <span>⏱️ Duration: ${(queryData.durationMs / 1000).toFixed(2)}s</span>
                 <span>💰 Estimated Cost: ~$${estimatedCost.toFixed(6)}</span>
+                ${cacheInfo}
                 <span>🕐 ${new Date(queryData.timestamp).toLocaleString()}</span>
             </div>
         </div>
@@ -1052,6 +1061,12 @@ async function loadQueryHistory(sha256) {
             const outputCost = (q.outputTokens / 1000000) * 0.38;
             const estimatedCost = inputCost + outputCost;
             
+            // Build cache discount info if available
+            let cacheInfo = '';
+            if (q.cacheDiscount !== null && q.cacheDiscount !== undefined) {
+                cacheInfo = `<span style="color: #27ae60; font-weight: 600;">💾 Cache: $${q.cacheDiscount.toFixed(6)}</span>`;
+            }
+            
             return `
                 <div style="background: white; padding: 15px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px;">
                     <div style="margin-bottom: 10px;">
@@ -1066,6 +1081,7 @@ async function loadQueryHistory(sha256) {
                         <span>📊 ${q.inputTokens} in / ${q.outputTokens} out</span>
                         <span>⏱️ ${(q.durationMs / 1000).toFixed(2)}s</span>
                         <span>💰 ~$${estimatedCost.toFixed(6)}</span>
+                        ${cacheInfo}
                         <span>🕐 ${new Date(q.timestamp).toLocaleString()}</span>
                     </div>
                 </div>
@@ -1158,6 +1174,12 @@ async function loadAllQueriesForManager() {
                 const outputCost = (q.outputTokens / 1000000) * 0.38;
                 const estimatedCost = inputCost + outputCost;
                 
+                // Build cache discount info if available
+                let cacheInfo = '';
+                if (q.cacheDiscount !== null && q.cacheDiscount !== undefined) {
+                    cacheInfo = `<span style="color: #27ae60; font-weight: 600;">💾 Cache Discount: $${q.cacheDiscount.toFixed(6)}</span>`;
+                }
+                
                 html += `
                     <div class="query-manager-item">
                         <div class="query-manager-item-header">
@@ -1181,6 +1203,7 @@ async function loadAllQueriesForManager() {
                             <span>📊 Output: ${q.outputTokens} tokens</span>
                             <span>⏱️ Duration: ${(q.durationMs / 1000).toFixed(2)}s</span>
                             <span>💰 Estimated Cost: $${estimatedCost.toFixed(6)}</span>
+                            ${cacheInfo}
                         </div>
                     </div>
                 `;
