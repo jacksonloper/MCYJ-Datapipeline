@@ -35,6 +35,23 @@ logger = logging.getLogger(__name__)
 OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 MODEL = 'deepseek/deepseek-v3.2'  # DeepSeek v3.2
 
+# Query template for violation level classification
+QUERY_TEMPLATE = """Based on the categorization instructions below, please analyze this Special Investigation Report and determine the severity level of the actual violations that were substantiated (ignore any unsubstantiated allegations).
+
+Categorization Instructions:
+{theming_instructions}
+
+Please respond with a JSON object containing exactly two fields:
+
+1. "level": Either "low", "moderate", or "severe" based on the categorization instructions above
+2. "justification": A brief explanation of why you chose this level, referencing the specific violations found and how they align with the categorization criteria
+
+Return ONLY the JSON object, no other text. Format:
+{{"level": "...", "justification": "..."}}
+
+Special Investigation Report:
+{document_text}"""
+
 
 def get_api_key() -> str:
     """Get OpenRouter API key from environment variable."""
@@ -199,27 +216,14 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
     
     Returns:
         Dict with level, justification, response, tokens, cost, and duration
+        
+    Raises:
+        Exception: If API request fails or JSON response cannot be parsed
     """
     start_time = time.time()
     
-    # Construct the query
-    query = """Based on the categorization instructions below, please analyze this Special Investigation Report and determine the severity level of the actual violations that were substantiated (ignore any unsubstantiated allegations).
-
-Categorization Instructions:
-{theming_instructions}
-
-Please respond with a JSON object containing exactly two fields:
-
-1. "level": Either "low", "moderate", or "severe" based on the categorization instructions above
-2. "justification": A brief explanation of why you chose this level, referencing the specific violations found and how they align with the categorization criteria
-
-Return ONLY the JSON object, no other text. Format:
-{{"level": "...", "justification": "..."}}
-
-Special Investigation Report:
-{document_text}"""
-    
-    full_prompt = query.format(
+    # Construct the query using the template
+    full_prompt = QUERY_TEMPLATE.format(
         theming_instructions=theming_instructions,
         document_text=document_text
     )
@@ -293,11 +297,14 @@ Special Investigation Report:
         if normalized_level != level.lower():
             logger.warning(f"Normalized level '{level}' to '{normalized_level}'")
         level = normalized_level
-    except (json.JSONDecodeError, AttributeError, KeyError) as e:
-        # If JSON parsing fails, leave both fields empty
-        logger.warning(f"Could not parse JSON response: {e}. Setting level and justification to empty strings.")
-        level = ''
-        justification = ''
+        
+        # Raise error if level is empty (parsing failed)
+        if not level:
+            raise ValueError(f"Could not extract valid level from response: {ai_response[:200]}")
+    except (json.JSONDecodeError, AttributeError, KeyError, ValueError) as e:
+        # If JSON parsing fails, raise exception to skip this result
+        logger.error(f"Failed to parse JSON response: {e}")
+        raise Exception(f"JSON parsing failed: {e}")
     
     return {
         'level': level,
@@ -457,8 +464,11 @@ def main():
                 logger.info("Waiting 2 seconds before next query...")
                 time.sleep(2)
             
+        except requests.RequestException as e:
+            logger.error(f"API request error: {e}")
+            continue
         except Exception as e:
-            logger.error(f"Error querying API: {e}")
+            logger.error(f"Error processing query: {e}")
             continue
     
     if not results:
