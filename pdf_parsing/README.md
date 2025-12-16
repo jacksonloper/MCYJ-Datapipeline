@@ -212,6 +212,7 @@ The `sir_summaries.csv` file contains:
 - `violations_list`: List of violated rules
 - `query`: Query text sent to AI
 - `response`: AI-generated summary and culpability assessment
+- `violation`: Whether allegations were substantiated ("y" or "n")
 - `input_tokens`: API input token count
 - `output_tokens`: API output token count  
 - `cost`: API cost (if provided)
@@ -227,9 +228,9 @@ The workflow automatically commits new summaries to the repository.
 
 ### Query
 
-The script asks: *"Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."*
+The script asks: *"Please analyze this Special Investigation Report and respond with a JSON object containing exactly two fields: (1) 'summary' - a few sentences explaining what went down, including one sentence weighing in on culpability, and (2) 'violation' - either 'y' if allegations of policy/code violations were substantiated, or 'n' if they were not substantiated."*
 
-This generates concise incident summaries with clear responsibility assessments.
+This generates concise incident summaries with clear responsibility assessments and violation status.
 
 ## Investigate Violations Tool
 

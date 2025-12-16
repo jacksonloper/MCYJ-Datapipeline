@@ -184,11 +184,10 @@ export OPENROUTER_KEY="your-api-key"
 python3 update_summaryqueries.py --count 100
 ```
 
-The query used is: *"Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."*
+The AI analyzes each report to provide:
+- **Summary**: Incident description and culpability assessment
+- **Violation status**: Whether allegations were substantiated (y/n)
 
-Results are appended to `pdf_parsing/sir_summaries.csv` with:
-- Incident summaries
-- Culpability assessments
-- Token usage and cost information
+Results are appended to `pdf_parsing/sir_summaries.csv` with complete metadata including token usage and cost information.
 
 See [pdf_parsing/README.md](pdf_parsing/README.md) for complete documentation.

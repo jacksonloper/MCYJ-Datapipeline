@@ -12,8 +12,10 @@ This script:
 import argparse
 import ast
 import csv
+import json
 import logging
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -44,8 +46,15 @@ logger = logging.getLogger(__name__)
 OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 MODEL = 'deepseek/deepseek-v3.2'  # DeepSeek v3.2
 
-# Query to ask about each SIR
-QUERY_TEXT = "Explain what went down here, in a few sentences. In one extra sentence, weigh in on culpability."
+# Query to ask about each SIR - now requests JSON format
+QUERY_TEXT = """Please analyze this Special Investigation Report and respond with a JSON object containing exactly two fields:
+
+1. "summary": A few sentences explaining what went down here, including one extra sentence weighing in on culpability.
+2. "violation": Either "y" if allegations of policy/code violations were substantiated in this report, or "n" if they were not substantiated.
+
+Return ONLY the JSON object, no other text. Format:
+{"summary": "...", "violation": "y"}"""
+
 
 
 def get_api_key() -> str:
@@ -185,7 +194,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         document_text: Full document text (all pages concatenated)
     
     Returns:
-        Dict with response, tokens, cost, and duration
+        Dict with summary, violation, response, tokens, cost, and duration
     """
     start_time = time.time()
     
@@ -235,13 +244,52 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
     # Try to extract cost if provided by OpenRouter
     cost = data.get('cost', None)
     
+    # Parse JSON response
+    summary = ai_response
+    violation = ''
+    
+    try:
+        # Try to parse as JSON
+        # First, try to extract JSON from the response (in case there's extra text)
+        json_match = re.search(r'\{[^{}]*"summary"[^{}]*"violation"[^{}]*\}', ai_response, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+            parsed = json.loads(json_str)
+            summary = parsed.get('summary', ai_response)
+            violation = parsed.get('violation', '').lower()
+            # Normalize violation to y or n
+            if violation not in ['y', 'n']:
+                violation = 'y' if 'yes' in violation or 'substantiated' in violation.lower() else 'n'
+        else:
+            # If no JSON found, try parsing the whole response
+            parsed = json.loads(ai_response)
+            summary = parsed.get('summary', ai_response)
+            violation = parsed.get('violation', '').lower()
+            if violation not in ['y', 'n']:
+                violation = 'y' if 'yes' in violation or 'substantiated' in violation.lower() else 'n'
+    except (json.JSONDecodeError, AttributeError, KeyError) as e:
+        # If JSON parsing fails, use the full response as summary and try to infer violation
+        logger.warning(f"Could not parse JSON response: {e}. Using raw response.")
+        summary = ai_response
+        # Try to infer from keywords in response
+        lower_response = ai_response.lower()
+        if 'violation established' in lower_response or 'substantiated' in lower_response:
+            violation = 'y'
+        elif 'not substantiated' in lower_response or 'no violation' in lower_response:
+            violation = 'n'
+        else:
+            violation = ''  # Unknown
+    
     return {
-        'response': ai_response,
+        'summary': summary,
+        'violation': violation,
+        'response': ai_response,  # Keep raw response for debugging
         'input_tokens': input_tokens,
         'output_tokens': output_tokens,
         'cost': cost if cost else '',
         'duration_ms': duration_ms
     }
+
 
 
 def main():
@@ -344,7 +392,8 @@ def main():
             logger.info(f"  Duration: {result['duration_ms']/1000:.2f}s")
             if result['cost']:
                 logger.info(f"  Cost: ${result['cost']:.6f}")
-            logger.info(f"  Response preview: {result['response'][:150]}...")
+            logger.info(f"  Summary preview: {result['summary'][:150]}...")
+            logger.info(f"  Violation: {result['violation']}")
             
             # Count violations
             violations = doc['violations_list']
@@ -361,7 +410,8 @@ def main():
                 'num_violations': num_violations,
                 'violations_list': violations_str if violations_str else 'nan',
                 'query': args.query,
-                'response': result['response'],
+                'response': result['summary'],  # Use parsed summary, not raw response
+                'violation': result['violation'],
                 'input_tokens': result['input_tokens'],
                 'output_tokens': result['output_tokens'],
                 'cost': result['cost'],
@@ -389,7 +439,7 @@ def main():
     
     with open(output_path, 'a', newline='', encoding='utf-8') as f:
         fieldnames = ['sha256', 'agency_id', 'agency_name', 'document_title', 'date', 
-                     'num_violations', 'violations_list', 'query', 'response', 
+                     'num_violations', 'violations_list', 'query', 'response', 'violation',
                      'input_tokens', 'output_tokens', 'cost', 'duration_ms']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         
