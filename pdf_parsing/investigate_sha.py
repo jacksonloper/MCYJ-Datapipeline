@@ -18,7 +18,7 @@ import pandas as pd
 
 # Import parsing functions
 sys.path.insert(0, str(Path(__file__).parent))
-from parse_parquet_violations import parse_document
+from extract_document_info import parse_document
 
 # Set up logger
 logger = logging.getLogger(__name__)
@@ -88,14 +88,6 @@ def investigate_sha(sha256: str, parquet_dir: str, full_text: bool = False) -> N
     print(f"Document Title: {parsed['document_title']}")
     print(f"Date: {parsed['date']}")
     print(f"Is Special Investigation: {parsed['is_special_investigation']}")
-    print(f"Number of Violations: {parsed['num_violations']}")
-    
-    if parsed['violations']:
-        print(f"\nViolations Found by Parser:")
-        for i, violation in enumerate(parsed['violations'], 1):
-            print(f"  {i}. {violation}")
-    else:
-        print("\nViolations: None")
     
     # Display document text
     document_text = '\n'.join(doc['text_pages'])
