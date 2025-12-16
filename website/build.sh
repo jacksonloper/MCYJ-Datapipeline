@@ -13,7 +13,7 @@ cd website
 echo ""
 echo "==> Step 1: Generating JSON data for website..."
 python3 generate_website_data.py \
-  --document-csv ../document_info.csv \
+  --document-csv ../pdf_parsing/document_info.csv \
   --sir-summaries-csv ../pdf_parsing/sir_summaries.csv \
   --output-dir public/data
 
@@ -22,7 +22,7 @@ echo "==> Step 2: Exporting parquet documents to individual JSON files..."
 python3 export_parquet_to_json.py \
   --parquet-dir ../pdf_parsing/parquet_files \
   --output-dir public/documents \
-  --document-csv ../document_info.csv \
+  --document-csv ../pdf_parsing/document_info.csv \
   --sir-summaries-csv ../pdf_parsing/sir_summaries.csv
 
 echo ""
