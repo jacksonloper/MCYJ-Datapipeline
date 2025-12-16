@@ -293,18 +293,30 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
         keywords = parsed.get('keywords', [])
     except json.JSONDecodeError:
         # If direct parsing fails, try to extract JSON from the response (in case there's extra text)
-        # Use a more flexible regex that doesn't depend on field order
-        json_match = re.search(r'\{[^{}]*\}', ai_response, re.DOTALL)
-        if json_match:
-            json_str = json_match.group(0)
-            try:
-                parsed = json.loads(json_str)
-                level = parsed.get('level', '')
-                justification = parsed.get('justification', '')
-                keywords = parsed.get('keywords', [])
-            except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse extracted JSON: {e}")
-                raise Exception(f"JSON parsing failed: {e}")
+        # Find the first { and attempt to parse from there, trying progressively longer substrings
+        start_idx = ai_response.find('{')
+        if start_idx != -1:
+            # Try to find a valid JSON object by looking for matching braces
+            brace_count = 0
+            for i in range(start_idx, len(ai_response)):
+                if ai_response[i] == '{':
+                    brace_count += 1
+                elif ai_response[i] == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        # Found matching closing brace
+                        json_str = ai_response[start_idx:i+1]
+                        try:
+                            parsed = json.loads(json_str)
+                            level = parsed.get('level', '')
+                            justification = parsed.get('justification', '')
+                            keywords = parsed.get('keywords', [])
+                            break
+                        except json.JSONDecodeError:
+                            continue
+            else:
+                logger.error("No valid JSON object found in response")
+                raise Exception("No valid JSON object found in response")
         else:
             logger.error("No JSON object found in response")
             raise Exception("No JSON object found in response")
