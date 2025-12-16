@@ -245,7 +245,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
     cost = data.get('cost', None)
     
     # Parse JSON response
-    summary = ai_response
+    summary = ''
     violation = ''
     
     try:
@@ -255,7 +255,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         if json_match:
             json_str = json_match.group(0)
             parsed = json.loads(json_str)
-            summary = parsed.get('summary', ai_response)
+            summary = parsed.get('summary', '')
             violation = parsed.get('violation', '').lower()
             # Normalize violation to y or n
             if violation not in ['y', 'n']:
@@ -263,22 +263,15 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         else:
             # If no JSON found, try parsing the whole response
             parsed = json.loads(ai_response)
-            summary = parsed.get('summary', ai_response)
+            summary = parsed.get('summary', '')
             violation = parsed.get('violation', '').lower()
             if violation not in ['y', 'n']:
                 violation = 'y' if 'yes' in violation or 'substantiated' in violation.lower() else 'n'
     except (json.JSONDecodeError, AttributeError, KeyError) as e:
-        # If JSON parsing fails, use the full response as summary and try to infer violation
-        logger.warning(f"Could not parse JSON response: {e}. Using raw response.")
-        summary = ai_response
-        # Try to infer from keywords in response
-        lower_response = ai_response.lower()
-        if 'violation established' in lower_response or 'substantiated' in lower_response:
-            violation = 'y'
-        elif 'not substantiated' in lower_response or 'no violation' in lower_response:
-            violation = 'n'
-        else:
-            violation = ''  # Unknown
+        # If JSON parsing fails, leave both fields empty
+        logger.warning(f"Could not parse JSON response: {e}. Setting summary and violation to empty strings.")
+        summary = ''
+        violation = ''
     
     return {
         'summary': summary,
