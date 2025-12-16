@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
-Investigate violations output by displaying random parquet rows with their annotations.
+Investigate documents by displaying random parquet rows with their extracted info.
 
-This script displays a random parquet row text along with the parsed violation annotations.
+This script displays a random parquet row text along with the parsed document information.
 It can filter by category:
 - sir: Special Investigation Reports only (default)
-- noviolation: Documents with 0 violations
-- violation: Documents with 1-9 violations
-- manyviolation: Documents with 10+ violations
+- all: Any document
 """
 
 import argparse
@@ -24,12 +22,11 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-def load_violations_csv(csv_path: str) -> pd.DataFrame:
-    """Load violations CSV file."""
-    logger.info(f"Loading violations CSV from: {csv_path}")
+def load_document_info_csv(csv_path: str) -> pd.DataFrame:
+    """Load document info CSV file."""
+    logger.info(f"Loading document info CSV from: {csv_path}")
     df = pd.read_csv(csv_path)
     logger.info(f"Loaded {len(df)} records")
-    logger.info(f"Records with violations: {len(df[df['num_violations'] > 0])}")
     return df
 
 
@@ -58,27 +55,19 @@ def find_document_in_parquet(sha256: str, parquet_dir: str) -> Optional[Dict]:
     return None
 
 
-def display_document(violation_record: Dict, original_doc: Dict) -> None:
+def display_document(document_record: Dict, original_doc: Dict) -> None:
     """Display a document's text and annotation."""
     print("\n" + "="*80)
     print("RANDOM DOCUMENT SAMPLE")
     print("="*80)
 
-    print("\n--- ANNOTATION ---")
-    print(f"SHA256: {violation_record['sha256']}")
-    print(f"Agency ID: {violation_record['agency_id']}")
-    print(f"Agency Name: {violation_record['agency_name']}")
-    print(f"Document Title: {violation_record.get('document_title', 'N/A')}")
-    print(f"Date: {violation_record['date']}")
-    print(f"Special Investigation Report: {'Yes' if violation_record.get('is_special_investigation') else 'No'}")
-    print(f"Number of Violations: {violation_record['num_violations']}")
-    if violation_record['violations_list'] and not pd.isna(violation_record['violations_list']):
-        violations = violation_record['violations_list'].split('; ')
-        print(f"Violations:")
-        for i, violation in enumerate(violations, 1):
-            print(f"  {i}. {violation}")
-    else:
-        print("Violations: None")
+    print("\n--- DOCUMENT INFO ---")
+    print(f"SHA256: {document_record['sha256']}")
+    print(f"Agency ID: {document_record['agency_id']}")
+    print(f"Agency Name: {document_record['agency_name']}")
+    print(f"Document Title: {document_record.get('document_title', 'N/A')}")
+    print(f"Date: {document_record['date']}")
+    print(f"Special Investigation Report: {'Yes' if document_record.get('is_special_investigation') else 'No'}")
     
     if original_doc:
         print(f"\nParquet File: {original_doc['parquet_file']}")
@@ -110,26 +99,17 @@ def display_document(violation_record: Dict, original_doc: Dict) -> None:
     print("\n" + "="*80)
 
 
-def show_random_document(violations_csv: str, parquet_dir: str, category: str = "sir") -> None:
+def show_random_document(document_csv: str, parquet_dir: str, category: str = "sir") -> None:
     """Show a random document from the specified category."""
-    # Load violations CSV
-    logger.info(f"Loading violations CSV from: {violations_csv}")
-    df = pd.read_csv(violations_csv)
+    # Load document info CSV
+    logger.info(f"Loading document info CSV from: {document_csv}")
+    df = pd.read_csv(document_csv)
     logger.info(f"Loaded {len(df)} records")
 
     # Filter by category
     if category == "sir":
         filtered_df = df[df['is_special_investigation'] == True]
         category_name = "Special Investigation Reports"
-    elif category == "noviolation":
-        filtered_df = df[df['num_violations'] == 0]
-        category_name = "no violations"
-    elif category == "violation":
-        filtered_df = df[(df['num_violations'] >= 1) & (df['num_violations'] < 10)]
-        category_name = "1-9 violations"
-    elif category == "manyviolation":
-        filtered_df = df[df['num_violations'] >= 10]
-        category_name = "10+ violations"
     else:  # "all"
         filtered_df = df
         category_name = "all categories"
@@ -143,15 +123,13 @@ def show_random_document(violations_csv: str, parquet_dir: str, category: str = 
     # Select a random document
     random_row = filtered_df.sample(n=1).iloc[0]
 
-    violation_record = {
+    document_record = {
         'sha256': random_row['sha256'],
         'agency_id': random_row['agency_id'],
         'agency_name': random_row['agency_name'],
         'document_title': random_row.get('document_title', 'N/A'),
         'date': random_row['date'],
         'is_special_investigation': random_row.get('is_special_investigation', False),
-        'num_violations': random_row['num_violations'],
-        'violations_list': random_row['violations_list']
     }
     
     # Find original document in parquet files
@@ -162,43 +140,31 @@ def show_random_document(violations_csv: str, parquet_dir: str, category: str = 
         return
     
     # Display the document
-    display_document(violation_record, original_doc)
+    display_document(document_record, original_doc)
 
 
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Show a random parquet row text with its violation annotation",
+        description="Show a random parquet row text with its document information",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Categories:
   sir            - Special Investigation Reports only (default)
-  noviolation    - Documents with 0 violations
-  violation      - Documents with 1-9 violations
-  manyviolation  - Documents with 10+ violations
   all            - Any document
 
 Examples:
   # Show a random Special Investigation Report (default)
   python3 investigate_violations.py
 
-  # Show a random document with no violations
-  python3 investigate_violations.py --category noviolation
-
-  # Show a random document with many violations
-  python3 investigate_violations.py --category manyviolation
-
-  # Show a random document with 1-9 violations
-  python3 investigate_violations.py --category violation
-
   # Show any document regardless of type
   python3 investigate_violations.py --category all
         """
     )
     parser.add_argument(
-        "--violations-csv",
-        default="../violations_output.csv",
-        help="Path to violations CSV file (default: ../violations_output.csv)"
+        "--document-csv",
+        default="../document_info.csv",
+        help="Path to document info CSV file (default: ../document_info.csv)"
     )
     parser.add_argument(
         "--parquet-dir",
@@ -207,7 +173,7 @@ Examples:
     )
     parser.add_argument(
         "--category",
-        choices=["sir", "noviolation", "violation", "manyviolation", "all"],
+        choices=["sir", "all"],
         default="sir",
         help="Category of documents to show (default: sir)"
     )
@@ -226,16 +192,16 @@ Examples:
     )
     
     # Check if files exist
-    if not Path(args.violations_csv).exists():
-        logger.error(f"Violations CSV not found: {args.violations_csv}")
-        logger.info("Run: python3 pdf_parsing/parse_parquet_violations.py --parquet-dir pdf_parsing/parquet_files -o violations_output.csv")
+    if not Path(args.document_csv).exists():
+        logger.error(f"Document info CSV not found: {args.document_csv}")
+        logger.info("Run: python3 pdf_parsing/extract_document_info.py --parquet-dir pdf_parsing/parquet_files -o document_info.csv")
         sys.exit(1)
     
     if not Path(args.parquet_dir).exists():
         logger.error(f"Parquet directory not found: {args.parquet_dir}")
         sys.exit(1)
     
-    show_random_document(args.violations_csv, args.parquet_dir, args.category)
+    show_random_document(args.document_csv, args.parquet_dir, args.category)
 
 
 if __name__ == "__main__":
