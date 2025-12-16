@@ -10,8 +10,9 @@
 export async function queryDeepSeek(apiKey, query, documentText) {
     const startTime = performance.now();
     
-    // Combine query with document as specified
-    const fullPrompt = `${query}\n\n${documentText}`;
+    // Put document first with a common prefix to enable prompt caching
+    // This allows OpenRouter to cache the document portion across multiple queries
+    const fullPrompt = `Consider the following document.\n\n${documentText}\n\n${query}`;
     
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -53,12 +54,16 @@ export async function queryDeepSeek(apiKey, query, documentText) {
     
     // Extract cost from usage object (OpenRouter returns it here with usage accounting enabled)
     const cost = usage.cost || null;
+    
+    // Extract cache discount information (shows savings from prompt caching)
+    const cacheDiscount = usage.cache_discount || null;
 
     return {
         response: aiResponse,
         inputTokens,
         outputTokens,
         cost,
+        cacheDiscount,
         durationMs
     };
 }

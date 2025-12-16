@@ -1,7 +1,7 @@
 // IndexedDB module for storing and retrieving AI queries
 
 const DB_NAME = 'MCYJ_Queries';
-const DB_VERSION = 1;
+const DB_VERSION = 2;  // Bumped to add cacheDiscount field
 const STORE_NAME = 'queries';
 
 let db = null;
@@ -34,6 +34,10 @@ export async function initDB() {
                 objectStore.createIndex('queryHash', 'queryHash', { unique: false });
                 objectStore.createIndex('timestamp', 'timestamp', { unique: false });
             }
+            
+            // Note: IndexedDB is schema-less for object properties. Adding the cacheDiscount
+            // field doesn't require a schema migration - it's automatically handled when storing
+            // objects with the new field. Version was bumped to indicate data format change.
         };
     });
 }
@@ -54,7 +58,7 @@ function hashQuery(query) {
 /**
  * Store a query result in IndexedDB
  */
-export async function storeQuery(sha256, query, response, inputTokens, outputTokens, durationMs, cost = null) {
+export async function storeQuery(sha256, query, response, inputTokens, outputTokens, durationMs, cost = null, cacheDiscount = null) {
     if (!db) {
         await initDB();
     }
@@ -71,6 +75,7 @@ export async function storeQuery(sha256, query, response, inputTokens, outputTok
             inputTokens,
             outputTokens,
             cost,
+            cacheDiscount,
             durationMs,
             timestamp: Date.now()
         };
