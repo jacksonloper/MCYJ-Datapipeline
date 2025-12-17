@@ -162,14 +162,14 @@ function applyFilters() {
                 return false;
             }
             
-            // Filter by keywords
+            // Filter by keywords (OR logic - match ANY keyword)
             if (filters.keywords && filters.keywords.length > 0) {
                 const docKeywords = d.sir_violation_level?.keywords || [];
                 const docKeywordsLower = docKeywords.map(k => k.toLowerCase());
-                const hasAllKeywords = filters.keywords.every(filterKw => 
+                const hasAnyKeyword = filters.keywords.some(filterKw => 
                     docKeywordsLower.includes(filterKw.toLowerCase())
                 );
-                if (!hasAllKeywords) {
+                if (!hasAnyKeyword) {
                     return false;
                 }
             }
@@ -204,13 +204,23 @@ function setupFilters() {
 
 function buildKeywordTrie() {
     // Collect all keywords from all documents
+    // Split each keyword by whitespace to allow partial word matching
     allAgencies.forEach(agency => {
         if (agency.documents && Array.isArray(agency.documents)) {
             agency.documents.forEach(doc => {
                 if (doc.sir_violation_level && doc.sir_violation_level.keywords && Array.isArray(doc.sir_violation_level.keywords)) {
                     doc.sir_violation_level.keywords.forEach(keyword => {
+                        // Insert the full keyword phrase
                         keywordTrie.insert(keyword);
                         allKeywords.add(keyword.toLowerCase());
+                        
+                        // Also insert individual words from the keyword
+                        const words = keyword.trim().split(/\s+/);
+                        words.forEach(word => {
+                            if (word.length > 0) {
+                                keywordTrie.insert(word);
+                            }
+                        });
                     });
                 }
             });
