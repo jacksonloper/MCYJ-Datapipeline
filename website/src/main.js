@@ -20,16 +20,19 @@ class TrieNode {
     constructor() {
         this.children = new Map();
         this.isEndOfWord = false;
-        this.count = 0; // Number of documents with this keyword
+        this.isFullKeyword = false; // Track if this is an actual full keyword vs just a word fragment
+        this.fullKeywords = new Set(); // Store which full keywords contain this word/prefix
+        this.count = 0; // Number of documents with this keyword (only for full keywords)
     }
 }
 
 class Trie {
     constructor() {
         this.root = new TrieNode();
+        this.keywordCounts = new Map(); // Track counts for full keywords
     }
 
-    insert(word) {
+    insert(word, isFullKeyword = false, fullKeywordPhrase = null) {
         let node = this.root;
         word = word.toLowerCase();
         
@@ -38,9 +41,22 @@ class Trie {
                 node.children.set(char, new TrieNode());
             }
             node = node.children.get(char);
+            
+            // Track which full keyword this prefix belongs to
+            if (fullKeywordPhrase) {
+                node.fullKeywords.add(fullKeywordPhrase.toLowerCase());
+            }
         }
         node.isEndOfWord = true;
-        node.count++;
+        if (isFullKeyword) {
+            node.isFullKeyword = true;
+            const lowerKey = word.toLowerCase();
+            this.keywordCounts.set(lowerKey, (this.keywordCounts.get(lowerKey) || 0) + 1);
+            node.count = this.keywordCounts.get(lowerKey);
+        }
+        if (fullKeywordPhrase) {
+            node.fullKeywords.add(fullKeywordPhrase.toLowerCase());
+        }
     }
 
     search(prefix) {
@@ -54,27 +70,61 @@ class Trie {
             node = node.children.get(char);
         }
         
-        const results = [];
-        this._collectWords(node, prefix, results);
-        return results.sort((a, b) => b.count - a.count); // Sort by frequency
+        const results = new Map(); // Use map to deduplicate
+        this._collectKeywords(node, prefix, results);
+        return Array.from(results.values()).sort((a, b) => b.count - a.count);
     }
 
-    _collectWords(node, prefix, results, maxResults = 10) {
-        if (results.length >= maxResults) return;
+    _collectKeywords(node, prefix, results, maxResults = 10) {
+        if (results.size >= maxResults) return;
         
-        if (node.isEndOfWord) {
-            results.push({ keyword: prefix, count: node.count });
+        // If this is a full keyword, add it
+        if (node.isEndOfWord && node.isFullKeyword) {
+            const lowerPrefix = prefix.toLowerCase();
+            if (!results.has(lowerPrefix)) {
+                results.set(lowerPrefix, { 
+                    keyword: prefix, 
+                    count: this.keywordCounts.get(lowerPrefix) || node.count 
+                });
+            }
         }
         
+        // Add all full keywords that contain this word/prefix
+        for (const fullKeyword of node.fullKeywords) {
+            if (!results.has(fullKeyword)) {
+                results.set(fullKeyword, { 
+                    keyword: fullKeyword, 
+                    count: this.keywordCounts.get(fullKeyword) || 1
+                });
+            }
+        }
+        
+        // Continue traversing to find more matches
         for (const [char, childNode] of node.children) {
-            this._collectWords(childNode, prefix + char, results, maxResults);
+            this._collectKeywords(childNode, prefix + char, results, maxResults);
         }
     }
 
     getAllKeywords() {
-        const results = [];
-        this._collectWords(this.root, '', results, Infinity);
-        return results.sort((a, b) => b.count - a.count);
+        const results = new Map();
+        this._collectAllFullKeywords(this.root, '', results);
+        return Array.from(results.values()).sort((a, b) => b.count - a.count);
+    }
+    
+    _collectAllFullKeywords(node, prefix, results) {
+        if (node.isEndOfWord && node.isFullKeyword) {
+            const lowerPrefix = prefix.toLowerCase();
+            if (!results.has(lowerPrefix)) {
+                results.set(lowerPrefix, { 
+                    keyword: prefix, 
+                    count: this.keywordCounts.get(lowerPrefix) || node.count 
+                });
+            }
+        }
+        
+        for (const [char, childNode] of node.children) {
+            this._collectAllFullKeywords(childNode, prefix + char, results);
+        }
     }
 }
 
@@ -210,15 +260,16 @@ function buildKeywordTrie() {
             agency.documents.forEach(doc => {
                 if (doc.sir_violation_level && doc.sir_violation_level.keywords && Array.isArray(doc.sir_violation_level.keywords)) {
                     doc.sir_violation_level.keywords.forEach(keyword => {
-                        // Insert the full keyword phrase
-                        keywordTrie.insert(keyword);
+                        // Insert the full keyword phrase and mark it as a full keyword
+                        keywordTrie.insert(keyword, true, keyword);
                         allKeywords.add(keyword.toLowerCase());
                         
-                        // Also insert individual words from the keyword
+                        // Also insert individual words from the keyword for search purposes
+                        // These link back to the full keyword so typing "inj" can find "serious injury"
                         const words = keyword.trim().split(/\s+/);
                         words.forEach(word => {
                             if (word.length > 0) {
-                                keywordTrie.insert(word);
+                                keywordTrie.insert(word, false, keyword);
                             }
                         });
                     });
