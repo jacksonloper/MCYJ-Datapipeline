@@ -698,33 +698,12 @@
         }
 
         .bar-chart-label {
-            flex: 0 0 120px;
+            flex: 0 0 auto;
+            min-width: 140px;
             font-size: 0.85em;
             color: #333;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
             text-align: right;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .bar-chart-label:hover {
-            color: #3498db;
-        }
-
-        .bar-chart-label.expanded {
-            flex: 0 0 auto;
-            white-space: normal;
             word-break: break-word;
-            background: #fff;
-            padding: 4px 8px;
-            border-radius: 4px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-            z-index: 10;
-            position: relative;
-            min-width: 120px;
-            max-width: 200px;
         }
 
         .bar-chart-bar-container {
@@ -775,7 +754,7 @@
 
             /* Mobile-friendly bar chart adjustments */
             .bar-chart-label {
-                flex: 0 0 80px;
+                min-width: 100px;
                 font-size: 0.75em;
             }
 
@@ -795,7 +774,7 @@
             }
 
             .bar-chart-label {
-                flex: 0 0 65px;
+                min-width: 80px;
                 font-size: 0.7em;
             }
 
