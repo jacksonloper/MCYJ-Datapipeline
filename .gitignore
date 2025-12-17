@@ -43,3 +43,7 @@ dist/
 website/test.html
 website/demo.html
 website/demo-manager.html
+
+# Log files
+pdf_parsing/update_sir_summaries.log
+pdf_parsing/update_violation_levels.log

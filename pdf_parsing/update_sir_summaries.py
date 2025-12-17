@@ -31,6 +31,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Add file handler for detailed logging
+script_dir = Path(__file__).parent
+log_file = script_dir / 'update_sir_summaries.log'
+file_handler = logging.FileHandler(log_file, mode='a')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(file_handler)
+
 # OpenRouter API configuration
 OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 MODEL = 'deepseek/deepseek-v3.2'  # DeepSeek v3.2
@@ -208,10 +216,17 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         raise Exception(error_msg)
     
     data = response.json()
-    
+
+    # Extract completion ID
+    completion_id = data.get('id', '')
+    logger.info(f"Completion ID: {completion_id}")
+
     # Extract response and token usage
     ai_response = data.get('choices', [{}])[0].get('message', {}).get('content', 'No response received')
     usage = data.get('usage', {})
+
+    # Log raw response for debugging
+    logger.debug(f"Raw API response: {ai_response}")
     input_tokens = usage.get('prompt_tokens', 0)
     output_tokens = usage.get('completion_tokens', 0)
     
@@ -251,6 +266,7 @@ def query_openrouter(api_key: str, query: str, document_text: str) -> Dict:
         violation = ''
     
     return {
+        'completion_id': completion_id,
         'summary': summary,
         'violation': violation,
         'response': ai_response,  # Keep raw response for debugging
@@ -376,7 +392,15 @@ def main():
                 logger.info(f"  Cost: ${result['cost']:.6f}")
             logger.info(f"  Summary preview: {result['summary'][:150]}...")
             logger.info(f"  Violation: {result['violation']}")
-            
+
+            # Check if parsing succeeded - skip if both summary and violation are empty
+            if not result['summary'] or not result['violation']:
+                logger.error(f"JSON parsing failed for {sha} - skipping this document")
+                logger.error(f"  Summary empty: {not result['summary']}")
+                logger.error(f"  Violation empty: {not result['violation']}")
+                logger.error(f"  Raw response: {result['response']}")
+                continue
+
             # Store result
             results.append({
                 'sha256': sha,

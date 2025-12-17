@@ -31,6 +31,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Add file handler for detailed logging
+script_dir = Path(__file__).parent
+log_file = script_dir / 'update_violation_levels.log'
+file_handler = logging.FileHandler(log_file, mode='a')
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+logger.addHandler(file_handler)
+
 # OpenRouter API configuration
 OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 MODEL = 'deepseek/deepseek-v3.2'  # DeepSeek v3.2
@@ -267,18 +275,26 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
         raise Exception(error_msg)
     
     data = response.json()
-    
+
+    # Extract completion ID
+    completion_id = data.get('id', '')
+    logger.info(f"Completion ID: {completion_id}")
+
     # Extract response and token usage
     ai_response = data.get('choices', [{}])[0].get('message', {}).get('content', 'No response received')
     usage = data.get('usage', {})
     input_tokens = usage.get('prompt_tokens', 0)
     output_tokens = usage.get('completion_tokens', 0)
-    
+
     # Extract cost from usage object
     cost = usage.get('cost', None)
-    
+
     # Extract cache discount information (shows savings from prompt caching)
     cache_discount = usage.get('cache_discount', None)
+
+    # Extract cached tokens information
+    prompt_tokens_details = usage.get('prompt_tokens_details', {})
+    cached_tokens = prompt_tokens_details.get('cached_tokens', 0) if prompt_tokens_details else 0
     
     # Parse JSON response
     level = ''
@@ -340,18 +356,21 @@ def query_openrouter(api_key: str, theming_instructions: str, document_text: str
         # Raise error if level is empty (parsing failed)
         if not level:
             raise ValueError(f"Could not extract valid level from response: {ai_response[:200]}")
-    except (AttributeError, KeyError, ValueError) as e:
-        # If validation fails, raise exception to skip this result
-        logger.error(f"Failed to validate parsed response: {e}")
-        raise Exception(f"Response validation failed: {e}")
+    except (json.JSONDecodeError, AttributeError, KeyError, ValueError) as e:
+        # If JSON parsing or validation fails, raise exception to skip this result
+        logger.error(f"Failed to parse/validate JSON response: {e}")
+        logger.error(f"Raw response: {ai_response}")
+        raise Exception(f"JSON parsing/validation failed: {e}")
     
     return {
+        'completion_id': completion_id,
         'level': level,
         'justification': justification,
         'keywords': keywords,
         'response': ai_response,  # Keep raw response for debugging
         'input_tokens': input_tokens,
         'output_tokens': output_tokens,
+        'cached_tokens': cached_tokens,
         'cost': cost if cost else '',
         'cache_discount': cache_discount if cache_discount else '',
         'duration_ms': duration_ms
@@ -479,6 +498,7 @@ def main():
             logger.info(f"Response received:")
             logger.info(f"  Input tokens: {result['input_tokens']}")
             logger.info(f"  Output tokens: {result['output_tokens']}")
+            logger.info(f"  Cached tokens: {result['cached_tokens']}")
             logger.info(f"  Duration: {result['duration_ms']/1000:.2f}s")
             if result['cost']:
                 logger.info(f"  Cost: ${result['cost']:.6f}")
