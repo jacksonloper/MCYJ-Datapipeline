@@ -428,7 +428,7 @@ function renderKeywordBarChart() {
         const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
         return `
             <div class="bar-chart-row">
-                <div class="bar-chart-label" title="${escapeHtml(item.keyword)}">${escapeHtml(item.keyword)}</div>
+                <div class="bar-chart-label" title="Click to expand">${escapeHtml(item.keyword)}</div>
                 <div class="bar-chart-bar-container">
                     <div class="bar-chart-bar" style="width: ${percentage}%"></div>
                 </div>
@@ -438,7 +438,29 @@ function renderKeywordBarChart() {
     }).join('');
 
     container.innerHTML = barsHtml;
+
+    // Add click handlers to toggle label expansion
+    container.querySelectorAll('.bar-chart-label').forEach(label => {
+        label.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Collapse any other expanded labels first
+            container.querySelectorAll('.bar-chart-label.expanded').forEach(other => {
+                if (other !== label) other.classList.remove('expanded');
+            });
+            // Toggle this label
+            label.classList.toggle('expanded');
+        });
+    });
 }
+
+// Close expanded bar chart labels when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.bar-chart-label')) {
+        document.querySelectorAll('.bar-chart-label.expanded').forEach(label => {
+            label.classList.remove('expanded');
+        });
+    }
+});
 
 function displayAgencies(agencies) {
     const agenciesEl = document.getElementById('agencies');
