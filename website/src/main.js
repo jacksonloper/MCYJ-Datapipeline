@@ -4,6 +4,9 @@ import { getApiKey } from './encryption.js';
 import { queryDeepSeek } from './apiService.js';
 import { Trie } from './trie.js';
 
+// Constants
+const DOM_READY_DELAY = 100; // Delay in ms to ensure DOM is ready for operations
+
 let allAgencies = [];
 let filteredAgencies = [];
 let currentOpenAgencyId = null;
@@ -94,7 +97,7 @@ function applyFilters() {
             // Use setTimeout to ensure DOM is ready
             setTimeout(() => {
                 openAgencyCard(agencies[0].agencyId);
-            }, 100);
+            }, DOM_READY_DELAY);
         }
     }
     
@@ -375,14 +378,16 @@ function setupAgencyFilter() {
     });
 }
 
-function setAgencyFilter(agencyText, agencyId) {
+function setAgencyFilter(agencyText, agencyId, skipUrlUpdate = false) {
     filters.agency = agencyId;
     renderSelectedAgency(agencyText);
     
-    // Update URL query string
-    const url = new URL(window.location);
-    url.searchParams.set('agency', agencyId);
-    window.history.pushState({}, '', url);
+    // Update URL query string unless we're restoring from URL
+    if (!skipUrlUpdate) {
+        const url = new URL(window.location);
+        url.searchParams.set('agency', agencyId);
+        window.history.pushState({}, '', url);
+    }
     
     applyFilters();
 }
@@ -908,11 +913,9 @@ function handleUrlQueryString() {
         // Find the agency
         const agency = allAgencies.find(a => a.agencyId === agencyId);
         if (agency) {
-            // Set the agency filter
+            // Set the agency filter using the same function, but skip URL update to avoid circular loop
             const searchText = `${agency.AgencyName} (${agency.agencyId})`;
-            filters.agency = agencyId;
-            renderSelectedAgency(searchText);
-            applyFilters();
+            setAgencyFilter(searchText, agencyId, true);
         }
     }
 }
