@@ -23,6 +23,7 @@ let filters = {
 let keywordTrie = new Trie();
 let agencyTrie = new Trie();
 let allKeywords = new Set();
+let agencyIdMap = new Map(); // Maps lowercase agency text to original agencyId
 
 // Load and display data
 async function init() {
@@ -53,6 +54,9 @@ async function init() {
         setupAgencyFilter();
         handleUrlQueryString();
         handleQueryStringDocument();
+        
+        // Set commit hash
+        setCommitHash();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -186,6 +190,9 @@ function buildAgencyTrie() {
             // Store agencyId as the lookup value
             const searchText = `${agency.AgencyName} (${agency.agencyId})`;
             agencyTrie.insert(searchText, true, searchText);
+            
+            // Map lowercase searchText to original agencyId for case-insensitive lookup
+            agencyIdMap.set(searchText.toLowerCase(), agency.agencyId);
             
             // Also insert individual words from agency name for search
             const words = agency.AgencyName.trim().split(/\s+/);
@@ -332,9 +339,8 @@ function setupAgencyFilter() {
         }
         
         agencySuggestions.innerHTML = suggestions.map(s => {
-            // Extract agencyId from the keyword
-            const match = s.keyword.match(/\(([^)]+)\)$/);
-            const agencyId = match ? match[1] : '';
+            // Get the original agencyId from the map (case-sensitive)
+            const agencyId = agencyIdMap.get(s.keyword.toLowerCase()) || '';
             return `
                 <div class="agency-suggestion" data-agency-text="${escapeHtml(s.keyword)}" data-agency-id="${escapeHtml(agencyId)}">
                     <span>${escapeHtml(s.keyword)}</span>
@@ -1572,6 +1578,19 @@ async function confirmClearAllQueries() {
     } catch (error) {
         console.error('Error clearing all queries:', error);
         alert(`Failed to clear queries: ${error.message}`);
+    }
+}
+
+/**
+ * Set the commit hash at the bottom of the page
+ */
+function setCommitHash() {
+    const commitHashEl = document.getElementById('commitHash');
+    if (commitHashEl) {
+        // The commit hash will be injected during build
+        // For now, we'll use a placeholder that can be replaced during deployment
+        const commitHash = '__COMMIT_HASH__';
+        commitHashEl.textContent = `Version: ${commitHash}`;
     }
 }
 
