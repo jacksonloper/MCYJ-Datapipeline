@@ -566,23 +566,11 @@ function renderDocuments(documents) {
                         <a href="/document.html?sha=${d.sha256}" target="_blank" class="view-document-btn" style="text-decoration: none; display: inline-block;">
                             📄 View Full Document
                         </a>
-                        <div id="query-count-${d.sha256}" style="margin-top: 8px; font-size: 0.85em; color: #666; font-style: italic;">
-                            <span class="query-count-placeholder" data-sha="${d.sha256}">Loading query history...</span>
-                        </div>
                     </div>
                 ` : ''}
             </div>
         `;
     }).join('');
-    
-    // After rendering, load query counts for each document using microtask
-    queueMicrotask(() => {
-        sortedDocuments.forEach(d => {
-            if (d.sha256) {
-                loadQueryCount(d.sha256);
-            }
-        });
-    });
     
     return `
         <div class="documents-list">
@@ -844,7 +832,7 @@ function showDocumentModal(docData, docMetadata) {
     modal.style.display = 'flex';
     
     // Prevent body scroll when modal is open
-    document.body.style.overflow = '';
+    document.body.style.overflow = 'hidden';
     
     // Check if API key is already set
     if (apiKey) {
