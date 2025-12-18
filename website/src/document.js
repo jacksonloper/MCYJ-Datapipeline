@@ -193,6 +193,9 @@ function displayDocument(docData, docMetadata) {
                 <button class="copy-link-btn" onclick="copyDocumentLink()" title="Copy link to this document">
                     🔗 Copy URL to this document
                 </button>
+                <button class="copy-link-btn" onclick="copyDocumentText()" title="Copy full document text to clipboard for use with your own AI chatbot">
+                    📋 Copy Document Text
+                </button>
                 ${docMetadata && docMetadata.agencyId ? `
                     <a href="/?agency=${encodeURIComponent(docMetadata.agencyId)}" class="copy-link-btn" style="text-decoration: none;">
                         🏢 View Agency
@@ -251,6 +254,42 @@ function copyDocumentLink() {
     }
 }
 
+function copyDocumentText() {
+    if (!currentDocumentData || !currentDocumentData.pages) {
+        alert('Document not loaded');
+        return;
+    }
+    
+    // Concatenate all pages with double newlines between them
+    const fullText = currentDocumentData.pages.join('\n\n');
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(fullText).then(() => {
+            alert('Document text copied to clipboard! You can now paste it into your AI chatbot.');
+        }).catch(err => {
+            console.error('Failed to copy document text:', err);
+            alert('Failed to copy document text to clipboard');
+        });
+    } else {
+        // Fallback
+        const textarea = document.createElement('textarea');
+        textarea.value = fullText;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+            alert('Document text copied to clipboard! You can now paste it into your AI chatbot.');
+        } catch (err) {
+            console.error('Failed to copy document text:', err);
+            alert('Failed to copy document text to clipboard');
+        } finally {
+            document.body.removeChild(textarea);
+        }
+    }
+}
+
 function loadDocumentFromSearch() {
     const shaInput = document.getElementById('shaInput');
     const sha = shaInput.value.trim();
@@ -284,6 +323,7 @@ function setCommitHash() {
 
 // Make functions available globally
 window.copyDocumentLink = copyDocumentLink;
+window.copyDocumentText = copyDocumentText;
 window.loadDocumentFromSearch = loadDocumentFromSearch;
 
 // Initialize the page
