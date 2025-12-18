@@ -331,15 +331,32 @@ function renderSelectedKeywords() {
         const badges = filters.keywords.map(kw => `
             <span class="selected-keyword-badge">
                 ${escapeHtml(kw)}
-                <button class="remove-keyword-btn" onclick="window.removeKeywordFilter('${escapeHtml(kw)}')" title="Remove keyword">✕</button>
+                <button class="remove-keyword-btn" data-keyword="${escapeHtml(kw)}" title="Remove keyword">✕</button>
             </span>
         `).join('');
         
         const clearAllBtn = filters.keywords.length > 1 
-            ? '<button onclick="window.clearAllKeywords()" style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 16px; font-size: 0.85em; cursor: pointer; margin-left: 6px;">Clear All</button>'
+            ? '<button id="clearAllKeywordsBtn" style="background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 16px; font-size: 0.85em; cursor: pointer; margin-left: 6px;">Clear All</button>'
             : '';
         
         container.innerHTML = orLabel + '<div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">' + badges + clearAllBtn + '</div>';
+        
+        // Attach event listeners after rendering
+        container.querySelectorAll('.remove-keyword-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const keyword = btn.dataset.keyword;
+                removeKeywordFilter(keyword);
+            });
+        });
+        
+        const clearAllButton = document.getElementById('clearAllKeywordsBtn');
+        if (clearAllButton) {
+            clearAllButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clearAllKeywords();
+            });
+        }
     }
 }
 
@@ -464,8 +481,6 @@ function renderSelectedAgency(agencyText) {
 }
 
 // Export functions to window for inline onclick handlers
-window.removeKeywordFilter = removeKeywordFilter;
-window.clearAllKeywords = clearAllKeywords;
 window.removeAgencyFilter = removeAgencyFilter;
 
 function displayAgencies(agencies) {
@@ -951,6 +966,7 @@ function handleUrlQueryString() {
     }
     
     // Handle multiple keywords (new format)
+    // URLSearchParams automatically decodes URL-encoded values
     if (keywordsParam) {
         const keywords = keywordsParam.split(',').map(k => k.trim()).filter(k => k.length > 0);
         filters.keywords = keywords;
