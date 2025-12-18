@@ -149,9 +149,6 @@ async function init() {
         // Build keyword trie from all documents
         buildKeywordTrie();
 
-        // Render initial bar chart with top 10 keywords
-        renderKeywordBarChart();
-
         hideLoading();
         displayStats();
         displayAgencies(allAgencies);
@@ -179,23 +176,16 @@ function showError(message) {
 }
 
 function displayStats() {
-    const statsEl = document.getElementById('stats');
+    const statsEl = document.getElementById('statsCount');
     
     // Use filtered agencies for stats
     const agencies = filteredAgencies;
     const totalAgencies = agencies.length;
     const totalReports = agencies.reduce((sum, a) => sum + a.total_reports, 0);
     
-    statsEl.innerHTML = `
-        <div class="stat-card">
-            <div class="stat-number">${totalAgencies}</div>
-            <div class="stat-label">Total Agencies</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${totalReports}</div>
-            <div class="stat-label">Total Reports/Documents</div>
-        </div>
-    `;
+    if (statsEl) {
+        statsEl.textContent = `Showing ${totalAgencies} ${totalAgencies === 1 ? 'agency' : 'agencies'} with ${totalReports} ${totalReports === 1 ? 'document' : 'documents'}`;
+    }
 }
 
 function applyFilters() {
@@ -380,9 +370,6 @@ function renderSelectedKeywords() {
             </span>
         `).join('');
     }
-
-    // Update the bar chart to reflect selected keywords
-    renderKeywordBarChart();
 }
 
 // Export functions to window for inline onclick handlers
