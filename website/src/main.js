@@ -156,7 +156,6 @@ async function init() {
         displayStats();
         displayAgencies(allAgencies);
         setupSearch();
-        setupShaLookup();
         setupFilters();
         setupKeywordFilter();
         handleUrlHash();
@@ -721,16 +720,9 @@ function showDocumentModal(docData, docMetadata) {
                 ` : ''}
             ` : ''}
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <strong style="flex-shrink: 0;">SHA256:</strong>
-                <span style="overflow-x: auto; white-space: nowrap; font-family: monospace; font-size: 0.9em; flex: 1; min-width: 0;">${escapeHtml(docData.sha256)}</span>
-                <div style="display: flex; gap: 8px; flex-shrink: 0;">
-                    <button class="copy-link-btn" onclick="copySHA('${docData.sha256}', event)" title="Copy SHA256">
-                        📋
-                    </button>
-                    <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document">
-                        🔗
-                    </button>
-                </div>
+                <button class="copy-link-btn" onclick="copyDocumentLink('${docData.sha256}', event)" title="Copy link to this document" style="padding: 8px 16px; background: #3498db; color: white; opacity: 1; font-size: 0.9em;">
+                    🔗 Copy URL to this document
+                </button>
             </div>
             <div><strong>Date Processed:</strong> ${escapeHtml(docData.dateprocessed)}</div>
             <div><strong>Total Pages:</strong> ${totalPages}</div>
@@ -960,18 +952,21 @@ async function handleQueryStringDocument() {
         let foundAgency = null;
         
         for (const agency of allAgencies) {
-            if (agency.violations && Array.isArray(agency.violations)) {
-                const violation = agency.violations.find(v => v.sha256 === sha);
-                if (violation) {
+            if (agency.documents && Array.isArray(agency.documents)) {
+                const document = agency.documents.find(d => d.sha256 === sha);
+                if (document) {
                     foundAgency = agency;
                     break;
                 }
             }
         }
         
-        // If we found the agency, open it and scroll to it
+        // If we found the agency, open it and scroll to it BEFORE opening doc viewer
         if (foundAgency) {
             openAgencyCard(foundAgency.agencyId);
+            
+            // Wait for the scroll to complete before opening document
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
         
         // Open the document modal (this will handle errors if document doesn't exist)
@@ -1074,52 +1069,9 @@ function copyDocumentLink(sha256, event) {
     }
 }
 
-function copySHA(sha256, event) {
-    if (event) {
-        event.stopPropagation();
-    }
-    
-    // Helper function to show feedback on button
-    const showCopyFeedback = (btn) => {
-        const originalText = btn.textContent;
-        btn.textContent = '✓';
-        setTimeout(() => {
-            btn.textContent = originalText;
-        }, 1500);
-    };
-    
-    // Copy to clipboard
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(sha256).then(() => {
-            showCopyFeedback(event.target);
-        }).catch(err => {
-            console.error('Failed to copy SHA:', err);
-            alert('Failed to copy SHA to clipboard');
-        });
-    } else {
-        // Fallback for browsers without Clipboard API
-        const textarea = document.createElement('textarea');
-        textarea.value = sha256;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-            document.execCommand('copy');
-            showCopyFeedback(event.target);
-        } catch (err) {
-            console.error('Failed to copy SHA:', err);
-            alert('Failed to copy SHA to clipboard');
-        } finally {
-            document.body.removeChild(textarea);
-        }
-    }
-}
-
 // Make functions available globally
 window.copyAgencyLink = copyAgencyLink;
 window.copyDocumentLink = copyDocumentLink;
-window.copySHA = copySHA;
 
 // Listen for hash changes
 window.addEventListener('hashchange', handleUrlHash);
@@ -1146,38 +1098,6 @@ function setupSearch() {
         displayStats();
         displayAgencies(filteredAgencies);
     });
-}
-
-function setupShaLookup() {
-    const shaInput = document.getElementById('shaLookupInput');
-    const shaBtn = document.getElementById('shaLookupBtn');
-    
-    const performLookup = () => {
-        const sha = shaInput.value.trim();
-        if (sha) {
-            // Update URL with SHA query parameter
-            const newUrl = `${window.location.pathname}?sha=${encodeURIComponent(sha)}`;
-            window.location.href = newUrl;
-        }
-    };
-    
-    shaBtn.addEventListener('click', performLookup);
-    
-    shaInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            performLookup();
-        }
-    });
-}
-
-function checkShaQueryParam() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const sha = urlParams.get('sha');
-    
-    if (sha) {
-        // Automatically view the document for this SHA
-        viewDocument(sha, null);
-    }
 }
 
 function escapeHtml(text) {

@@ -793,16 +793,12 @@
     </header>
     
     <div class="container">
-        <div class="search-filter" style="margin-bottom: 10px;">
+        <div class="search-filter">
             <input 
                 type="text" 
-                id="shaLookupInput" 
-                placeholder="Enter SHA256 to view document (e.g., 6e5b899cf078b4bf0829e4dce8113aaac61edfa5bc0958efa725ae8607008f68)..."
-                style="margin-bottom: 5px;"
+                id="searchInput" 
+                placeholder="Search agencies by name or ID..."
             />
-            <button id="shaLookupBtn" style="width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 5px;">
-                🔍 View Document by SHA
-            </button>
         </div>
         
         <div id="stats" class="stats"></div>
@@ -853,14 +849,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="search-filter">
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="Search agencies by name or ID..."
-            />
         </div>
         
         <div id="loading" class="loading">Loading data...</div>
