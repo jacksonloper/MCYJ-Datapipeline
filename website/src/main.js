@@ -141,9 +141,6 @@ async function init() {
         // Build keyword trie from all documents
         buildKeywordTrie();
 
-        // Render initial bar chart with top 10 keywords
-        renderKeywordBarChart();
-
         hideLoading();
         displayStats();
         displayAgencies(allAgencies);
@@ -152,6 +149,7 @@ async function init() {
         setupKeywordFilter();
         handleUrlHash();
         handleQueryStringDocument();
+        handleQueryStringKeyword();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -171,23 +169,24 @@ function showError(message) {
 }
 
 function displayStats() {
-    const statsEl = document.getElementById('stats');
-    
+    const statsEl = document.getElementById('filterStats');
+    if (!statsEl) return;
+
     // Use filtered agencies for stats
     const agencies = filteredAgencies;
     const totalAgencies = agencies.length;
     const totalReports = agencies.reduce((sum, a) => sum + a.total_reports, 0);
-    
-    statsEl.innerHTML = `
-        <div class="stat-card">
-            <div class="stat-number">${totalAgencies}</div>
-            <div class="stat-label">Total Agencies</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${totalReports}</div>
-            <div class="stat-label">Total Reports/Documents</div>
-        </div>
-    `;
+
+    // Check if filters are active
+    const hasFilters = filters.sirOnly || filters.keywords.length > 0;
+    const allTotalAgencies = allAgencies.length;
+    const allTotalReports = allAgencies.reduce((sum, a) => sum + a.total_reports, 0);
+
+    if (hasFilters) {
+        statsEl.textContent = `Showing ${totalAgencies} agencies with ${totalReports} documents (filtered from ${allTotalAgencies} agencies, ${allTotalReports} documents)`;
+    } else {
+        statsEl.textContent = `${totalAgencies} agencies · ${totalReports} documents`;
+    }
 }
 
 function applyFilters() {
@@ -372,64 +371,10 @@ function renderSelectedKeywords() {
             </span>
         `).join('');
     }
-
-    // Update the bar chart to reflect selected keywords
-    renderKeywordBarChart();
 }
 
 // Export functions to window for inline onclick handlers
 window.removeKeywordFilter = removeKeywordFilter;
-
-/**
- * Render the keyword bar chart
- * When no keywords are selected: show top 10 keywords
- * When keywords are selected: show those keywords
- */
-function renderKeywordBarChart() {
-    const container = document.getElementById('barChartContainer');
-    const titleEl = document.querySelector('.bar-chart-title');
-
-    if (!container) return;
-
-    let keywordsToShow = [];
-
-    if (filters.keywords.length > 0) {
-        // Show selected keywords with their counts
-        titleEl.textContent = 'Selected Keywords by Document Count';
-        keywordsToShow = filters.keywords.map(keyword => {
-            const count = keywordTrie.keywordCounts.get(keyword.toLowerCase()) || 0;
-            return { keyword, count };
-        }).sort((a, b) => b.count - a.count);
-    } else {
-        // Show top 10 keywords
-        titleEl.textContent = 'Top 10 Keywords by Document Count';
-        keywordsToShow = keywordTrie.getAllKeywords().slice(0, 10);
-    }
-
-    if (keywordsToShow.length === 0) {
-        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic;">No keyword data available</div>';
-        return;
-    }
-
-    // Find max count for scaling
-    const maxCount = Math.max(...keywordsToShow.map(k => k.count));
-
-    // Build bar chart HTML
-    const barsHtml = keywordsToShow.map(item => {
-        const percentage = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
-        return `
-            <div class="bar-chart-row">
-                <div class="bar-chart-label">${escapeHtml(item.keyword)}</div>
-                <div class="bar-chart-bar-container">
-                    <div class="bar-chart-bar" style="width: ${percentage}%"></div>
-                </div>
-                <div class="bar-chart-count">${item.count}</div>
-            </div>
-        `;
-    }).join('');
-
-    container.innerHTML = barsHtml;
-}
 
 function displayAgencies(agencies) {
     const agenciesEl = document.getElementById('agencies');
@@ -664,10 +609,7 @@ function findTextPositions(text, pattern, flags = 'gi') {
 function showDocumentModal(docData, docMetadata) {
     const modal = document.getElementById('documentModal') || createDocumentModal();
     const modalContent = modal.querySelector('.modal-document-content');
-    
-    // Store current document data for queries
-    currentDocumentData = docData;
-    
+
     // Validate document data
     if (!docData.pages || !Array.isArray(docData.pages)) {
         console.error('Invalid document data: pages array missing or invalid');
@@ -860,11 +802,24 @@ function handleUrlHash() {
     }
 }
 
+function handleQueryStringKeyword() {
+    // Parse query string for keyword parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyword = urlParams.get('keyword');
+
+    if (!keyword) {
+        return;
+    }
+
+    // Add the keyword to filters
+    addKeywordFilter(keyword);
+}
+
 async function handleQueryStringDocument() {
     // Parse query string for sha parameter
     const urlParams = new URLSearchParams(window.location.search);
     const sha = urlParams.get('sha');
-    
+
     if (!sha) {
         return;
     }
@@ -1041,13 +996,13 @@ window.addEventListener('hashchange', handleUrlHash);
 
 function setupSearch() {
     const searchInput = document.getElementById('searchInput');
-    
+
     searchInput.addEventListener('input', (e) => {
         const searchTerm = e.target.value.toLowerCase().trim();
-        
+
         // Apply filters first, then search
         applyFilters();
-        
+
         if (searchTerm) {
             filteredAgencies = filteredAgencies.filter(agency => {
                 return (
@@ -1056,10 +1011,33 @@ function setupSearch() {
                 );
             });
         }
-        
+
         displayStats();
         displayAgencies(filteredAgencies);
     });
+
+    // Setup Document ID lookup
+    const docIdInput = document.getElementById('docIdInput');
+    const docIdBtn = document.getElementById('docIdBtn');
+
+    if (docIdInput && docIdBtn) {
+        const performLookup = () => {
+            const docId = docIdInput.value.trim();
+            if (docId) {
+                // Update URL with SHA query parameter
+                const newUrl = `${window.location.pathname}?sha=${encodeURIComponent(docId)}`;
+                window.location.href = newUrl;
+            }
+        };
+
+        docIdBtn.addEventListener('click', performLookup);
+
+        docIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performLookup();
+            }
+        });
+    }
 }
 
 function escapeHtml(text) {

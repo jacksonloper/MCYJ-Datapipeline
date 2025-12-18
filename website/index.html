@@ -601,8 +601,6 @@
     </header>
     
     <div class="container">
-        <div id="stats" class="stats"></div>
-        
         <div class="search-filter" style="margin-bottom: 20px;">
             <h3 style="margin-bottom: 12px; color: #2c3e50; font-size: 1.1em;">Filters</h3>
             <div style="display: grid; gap: 15px;">
@@ -610,15 +608,15 @@
                     <input type="checkbox" id="filterSirOnly" style="cursor: pointer;">
                     <span>Special Investigation Reports Only</span>
                 </label>
-                
+
                 <div style="border-top: 1px solid #ddd; padding-top: 15px;">
                     <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50;">
                         🏷️ Filter by Keywords
                     </label>
                     <div style="position: relative;">
-                        <input 
-                            type="text" 
-                            id="keywordFilterInput" 
+                        <input
+                            type="text"
+                            id="keywordFilterInput"
                             placeholder="Type to search keywords (e.g., 'supervision', 'assault')..."
                             style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
                         />
@@ -641,22 +639,42 @@
                     <div id="selectedKeywords" style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px;">
                         <div style="color: #666; font-size: 0.9em; font-style: italic;">No keywords selected</div>
                     </div>
-
-                    <!-- Keyword Bar Chart -->
-                    <div id="keywordBarChart" class="keyword-bar-chart">
-                        <div class="bar-chart-title">Top Keywords by Document Count</div>
-                        <div id="barChartContainer" class="bar-chart-container"></div>
+                    <div style="margin-top: 10px;">
+                        <a href="keywords.html" style="color: #3498db; font-size: 0.9em;">View all keywords →</a>
                     </div>
                 </div>
             </div>
+
+            <!-- Subtle stats after filters -->
+            <div id="filterStats" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; color: #666; font-size: 0.9em;"></div>
         </div>
-        
-        <div class="search-filter">
-            <input 
-                type="text" 
-                id="searchInput" 
-                placeholder="Search agencies by name or ID..."
-            />
+
+        <div class="search-filter" style="margin-bottom: 20px;">
+            <div style="display: grid; gap: 10px;">
+                <div>
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search agencies by name or ID..."
+                    />
+                </div>
+                <div style="border-top: 1px solid #ddd; padding-top: 10px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.9em;">
+                        📄 Look up by Document ID
+                    </label>
+                    <div style="display: flex; gap: 10px;">
+                        <input
+                            type="text"
+                            id="docIdInput"
+                            placeholder="Enter document ID..."
+                            style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                        />
+                        <button id="docIdBtn" style="padding: 10px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; white-space: nowrap;">
+                            View
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div id="loading" class="loading">Loading data...</div>
