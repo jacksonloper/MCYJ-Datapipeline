@@ -965,8 +965,20 @@ async function handleQueryStringDocument() {
         if (foundAgency) {
             openAgencyCard(foundAgency.agencyId);
             
-            // Wait for the scroll to complete before opening document
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Wait for the scroll animation to complete
+            // Using a Promise-based approach with requestAnimationFrame to ensure smooth scrolling completes
+            await new Promise(resolve => {
+                const card = document.getElementById(`agency-${foundAgency.agencyId}`);
+                if (card) {
+                    // Wait for next animation frame, then add a small delay for smooth scroll
+                    requestAnimationFrame(() => {
+                        setTimeout(resolve, 600);
+                    });
+                } else {
+                    // If card not found, resolve immediately
+                    resolve();
+                }
+            });
         }
         
         // Open the document modal (this will handle errors if document doesn't exist)
