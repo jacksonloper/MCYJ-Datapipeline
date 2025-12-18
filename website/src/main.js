@@ -1232,22 +1232,3 @@ function setCommitHash() {
 // Initialize the application
 init();
 
-// Make AI query functions available globally
-window.setApiKey = setApiKey;
-window.submitAiQuery = submitAiQuery;
-
-/**
- * Set the commit hash at the bottom of the page
- */
-function setCommitHash() {
-    const commitHashEl = document.getElementById('commitHash');
-    if (commitHashEl) {
-        // The commit hash will be injected during build
-        // For now, we'll use a placeholder that can be replaced during deployment
-        const commitHash = '__COMMIT_HASH__';
-        commitHashEl.textContent = `Version: ${commitHash}`;
-    }
-}
-
-// Initialize the application
-init();
