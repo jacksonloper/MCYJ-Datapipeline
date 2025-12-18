@@ -123,14 +123,55 @@ function displayDocument(docData, docMetadata) {
     // Build SIR summary section if available
     let sirSummaryHtml = '';
     if (docData.sir_summary && docData.sir_summary.summary) {
+        // Determine violation level badge
+        let violationLevelBadge = '';
+        if (docData.sir_violation_level && docData.sir_violation_level.level) {
+            const level = docData.sir_violation_level.level.toLowerCase();
+            let levelColor = '#95a5a6';
+            let levelEmoji = '⚪';
+            
+            if (level === 'low') {
+                levelColor = '#f39c12';
+                levelEmoji = '🟡';
+            } else if (level === 'moderate') {
+                levelColor = '#e67e22';
+                levelEmoji = '🟠';
+            } else if (level === 'severe') {
+                levelColor = '#e74c3c';
+                levelEmoji = '🔴';
+            }
+            
+            violationLevelBadge = `<span style="color: ${levelColor}; margin-left: 8px; font-size: 0.9em;">${levelEmoji} ${level.charAt(0).toUpperCase() + level.slice(1)} Severity</span>`;
+        }
+        
         sirSummaryHtml = `
             <div class="sir-summary">
                 <h3>
                     📋 Special Investigation Report Summary (AI-generated)
                     ${docData.sir_summary.violation === 'y' ? `<span class="violation-badge violation-yes">⚠️ Violation Substantiated</span>` : ''}
                     ${docData.sir_summary.violation === 'n' ? '<span class="violation-badge violation-no">✓ No Violation</span>' : ''}
+                    ${violationLevelBadge}
                 </h3>
-                <p>${escapeHtml(docData.sir_summary.summary)}</p>
+                <div style="margin-bottom: ${docData.sir_violation_level && (docData.sir_violation_level.justification || (docData.sir_violation_level.keywords && docData.sir_violation_level.keywords.length > 0)) ? '15px' : '0'};">
+                    <strong style="color: #2c3e50;">Summary:</strong>
+                    <div style="margin-top: 8px;">${escapeHtml(docData.sir_summary.summary)}</div>
+                </div>
+                ${docData.sir_violation_level && docData.sir_violation_level.keywords && docData.sir_violation_level.keywords.length > 0 ? `
+                    <div style="padding-top: 15px; border-top: 1px solid #ecf0f1; margin-bottom: ${docData.sir_violation_level.justification ? '15px' : '0'};">
+                        <strong style="color: #2c3e50;">Keywords:</strong>
+                        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px;">
+                            ${docData.sir_violation_level.keywords.map(kw => 
+                                `<span style="background: #e8f4f8; color: #2980b9; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; border: 1px solid #3498db;">${escapeHtml(kw)}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                ${docData.sir_violation_level && docData.sir_violation_level.justification ? `
+                    <div style="padding-top: 15px; border-top: 1px solid #ecf0f1;">
+                        <strong style="color: #2c3e50;">Severity Justification:</strong>
+                        <div style="margin-top: 8px;">${escapeHtml(docData.sir_violation_level.justification)}</div>
+                    </div>
+                ` : ''}
             </div>
         `;
     }
