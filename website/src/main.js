@@ -48,7 +48,7 @@ async function init() {
         setupFilters();
         setupKeywordFilter();
         setupAgencyFilter();
-        handleUrlHash();
+        handleUrlQueryString();
         handleQueryStringDocument();
         
     } catch (error) {
@@ -88,6 +88,14 @@ function applyFilters() {
     // Filter by selected agency first
     if (filters.agency) {
         agencies = agencies.filter(agency => agency.agencyId === filters.agency);
+        
+        // Auto-open the single filtered agency card
+        if (agencies.length === 1) {
+            // Use setTimeout to ensure DOM is ready
+            setTimeout(() => {
+                openAgencyCard(agencies[0].agencyId);
+            }, 100);
+        }
     }
     
     // Apply filters to each agency's documents
@@ -370,12 +378,24 @@ function setupAgencyFilter() {
 function setAgencyFilter(agencyText, agencyId) {
     filters.agency = agencyId;
     renderSelectedAgency(agencyText);
+    
+    // Update URL query string
+    const url = new URL(window.location);
+    url.searchParams.set('agency', agencyId);
+    window.history.pushState({}, '', url);
+    
     applyFilters();
 }
 
 function removeAgencyFilter() {
     filters.agency = null;
     renderSelectedAgency(null);
+    
+    // Remove agency from URL query string
+    const url = new URL(window.location);
+    url.searchParams.delete('agency');
+    window.history.pushState({}, '', url);
+    
     applyFilters();
 }
 
@@ -872,9 +892,6 @@ function openAgencyCard(agencyId) {
         details.classList.add('visible');
         currentOpenAgencyId = agencyId;
         
-        // Update URL hash without triggering scroll
-        history.replaceState(null, null, `#${agencyId}`);
-        
         // Scroll to the card - position top of card at top of viewport
         const card = document.getElementById(`agency-${agencyId}`);
         if (card) {
@@ -883,21 +900,19 @@ function openAgencyCard(agencyId) {
     }
 }
 
-function handleUrlHash() {
-    const hash = window.location.hash.slice(1); // Remove the '#'
-    if (hash) {
-        // Check if the agency card exists before trying to open it
-        const card = document.getElementById(`agency-${hash}`);
-        if (card) {
-            openAgencyCard(hash);
-        } else {
-            // If DOM is not ready, wait a bit and try again
-            setTimeout(() => {
-                const retryCard = document.getElementById(`agency-${hash}`);
-                if (retryCard) {
-                    openAgencyCard(hash);
-                }
-            }, 100);
+function handleUrlQueryString() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const agencyId = urlParams.get('agency');
+    
+    if (agencyId) {
+        // Find the agency
+        const agency = allAgencies.find(a => a.agencyId === agencyId);
+        if (agency) {
+            // Set the agency filter
+            const searchText = `${agency.AgencyName} (${agency.agencyId})`;
+            filters.agency = agencyId;
+            renderSelectedAgency(searchText);
+            applyFilters();
         }
     }
 }
@@ -958,7 +973,7 @@ function copyAgencyLink(agencyId, event) {
         event.stopPropagation();
     }
     
-    const url = `${window.location.origin}${window.location.pathname}#${agencyId}`;
+    const url = `${window.location.origin}${window.location.pathname}?agency=${agencyId}`;
     
     // Copy to clipboard
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1048,11 +1063,6 @@ function copyDocumentLink(sha256, event) {
 // Make functions available globally
 window.copyAgencyLink = copyAgencyLink;
 window.copyDocumentLink = copyDocumentLink;
-
-// Listen for hash changes
-window.addEventListener('hashchange', handleUrlHash);
-
-
 
 function escapeHtml(text) {
     if (!text) return '';
