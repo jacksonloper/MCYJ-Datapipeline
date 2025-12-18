@@ -34,7 +34,8 @@ def load_keyword_reduction_map(csv_path: str) -> Dict[str, str]:
             original = row.get('original_keyword', '').strip()
             reduced = row.get('reduced_keyword', '').strip()
             # Load mapping even if reduced is empty (empty = discard keyword)
-            if original:
+            # Only skip if original is empty string
+            if original != '':
                 keyword_map[original] = reduced
     
     print(f"Loaded {len(keyword_map)} keyword reduction mappings")
