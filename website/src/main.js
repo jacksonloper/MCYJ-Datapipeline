@@ -15,7 +15,7 @@ let apiKey = null; // Store decrypted API key
 
 // Filter state
 let filters = {
-    sirOnly: false,
+    sirOnly: true, // Enable SIR-only by default
     keyword: null, // Single selected keyword
     agency: null // Single selected agency (agencyId)
 };
@@ -52,6 +52,10 @@ async function init() {
         setupFilters();
         setupKeywordFilter();
         setupAgencyFilter();
+        
+        // Apply filters to respect default settings (SIR-only is enabled by default)
+        applyFilters();
+        
         handleUrlQueryString();
         handleQueryStringDocument();
         
