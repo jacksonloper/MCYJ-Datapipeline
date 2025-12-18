@@ -19,7 +19,8 @@ def load_keyword_reduction_map(csv_path: str) -> Dict[str, str]:
         csv_path: Path to the violation_curation_keyword_reduction.csv file
         
     Returns:
-        Dictionary mapping original_keyword to reduced_keyword
+        Dictionary mapping original_keyword to reduced_keyword.
+        Empty string values indicate the keyword should be discarded.
     """
     keyword_map = {}
     
@@ -32,7 +33,8 @@ def load_keyword_reduction_map(csv_path: str) -> Dict[str, str]:
         for row in reader:
             original = row.get('original_keyword', '').strip()
             reduced = row.get('reduced_keyword', '').strip()
-            if original and reduced:
+            # Load mapping even if reduced is empty (empty = discard keyword)
+            if original:
                 keyword_map[original] = reduced
     
     print(f"Loaded {len(keyword_map)} keyword reduction mappings")
@@ -45,10 +47,12 @@ def apply_keyword_reduction(keywords: List[str], keyword_map: Dict[str, str]) ->
     
     Args:
         keywords: List of original keywords
-        keyword_map: Dictionary mapping original_keyword to reduced_keyword
+        keyword_map: Dictionary mapping original_keyword to reduced_keyword.
+                    Empty string values cause the keyword to be discarded.
         
     Returns:
-        List of reduced keywords (with duplicates removed, preserving order)
+        List of reduced keywords (with duplicates removed, preserving order).
+        Keywords mapped to empty string are discarded.
     """
     if not keyword_map:
         return keywords
@@ -59,6 +63,10 @@ def apply_keyword_reduction(keywords: List[str], keyword_map: Dict[str, str]) ->
     for keyword in keywords:
         # Apply reduction if mapping exists, otherwise keep original
         reduced = keyword_map.get(keyword, keyword)
+        
+        # Discard keywords mapped to empty string
+        if not reduced:
+            continue
         
         # Add to result list only if not already seen (removes duplicates)
         if reduced not in seen:
