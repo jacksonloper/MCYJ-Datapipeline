@@ -65,7 +65,7 @@ def apply_keyword_reduction(keywords: List[str], keyword_map: Dict[str, str]) ->
         reduced = keyword_map.get(keyword, keyword)
         
         # Discard keywords mapped to empty string
-        if not reduced:
+        if reduced == '':
             continue
         
         # Add to result list only if not already seen (removes duplicates)
