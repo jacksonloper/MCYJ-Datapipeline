@@ -110,6 +110,8 @@ function applyFilters() {
             return agency;
         }
         
+        const originalReportCount = agency.documents.length;
+        
         let filteredDocuments = agency.documents.filter(d => {
             // Filter by SIR only
             if (filters.sirOnly && !d.is_special_investigation) {
@@ -131,23 +133,31 @@ function applyFilters() {
             return true;
         });
         
+        const filteredReportCount = filteredDocuments.length;
+        const filteredOutCount = originalReportCount - filteredReportCount;
+        
         // Update agency stats based on filtered documents
         return {
             ...agency,
             documents: filteredDocuments,
-            total_reports: filteredDocuments.length
+            total_reports: filteredReportCount,
+            original_total_reports: originalReportCount,
+            filtered_out_count: filteredOutCount
         };
     });
     
-    // Remove agencies with no reports after filtering
-    agencies = agencies.filter(agency => agency.total_reports > 0);
+    // If a specific agency is selected, keep it even if it has no reports after filtering
+    // Otherwise, remove agencies with no reports after filtering
+    if (!filters.agency) {
+        agencies = agencies.filter(agency => agency.total_reports > 0);
+    }
     
     filteredAgencies = agencies;
     displayStats();
     displayAgencies(filteredAgencies);
     
-    // Auto-open the agency card only if it still exists after filtering
-    if (selectedAgencyId && agencies.some(agency => agency.agencyId === selectedAgencyId)) {
+    // Auto-open the agency card if a specific agency is selected
+    if (selectedAgencyId) {
         // Use setTimeout to ensure DOM is ready
         setTimeout(() => {
             openAgencyCard(selectedAgencyId);
@@ -521,12 +531,12 @@ function displayAgencies(agencies) {
                 
                 <div class="agency-stats">
                     <span class="stat-badge reports-badge">
-                        📋 ${agency.total_reports} Reports
+                        📋 ${agency.total_reports} ${agency.total_reports === 1 ? 'Report' : 'Reports'}${agency.filtered_out_count > 0 ? ` <span style="color: #e67e22;">(${agency.filtered_out_count} filtered out)</span>` : ''}
                     </span>
                 </div>
                 
                 <div class="agency-details" id="details-${agency.agencyId}">
-                    ${renderDocuments(agency.documents)}
+                    ${renderDocuments(agency)}
                 </div>
             </div>
         `;
@@ -546,12 +556,23 @@ function displayAgencies(agencies) {
     });
 }
 
-function renderDocuments(documents) {
-    if (!documents || documents.length === 0) {
+function renderDocuments(agency) {
+    const documents = agency.documents || [];
+    const filteredOutCount = agency.filtered_out_count || 0;
+    
+    if (documents.length === 0) {
+        // Show different message depending on whether documents were filtered out
+        const noDocsMessage = filteredOutCount > 0 
+            ? `<p style="color: #e67e22; background: #fff3cd; padding: 12px; border-radius: 4px; border-left: 3px solid #f39c12;">
+                   <strong>All ${filteredOutCount} ${filteredOutCount === 1 ? 'report' : 'reports'} have been filtered out.</strong><br>
+                   <span style="font-size: 0.9em;">Try adjusting the filters above to see more reports.</span>
+               </p>`
+            : `<p style="color: #666;">No reports available.</p>`;
+        
         return `
             <div class="documents-list">
                 <div class="section-title">Documents & Reports</div>
-                <p style="color: #666;">No reports available.</p>
+                ${noDocsMessage}
             </div>
         `;
     }
