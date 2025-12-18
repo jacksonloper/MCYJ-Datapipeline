@@ -190,10 +190,10 @@ function displayDocument(docData, docMetadata) {
                 ` : ''}
             ` : ''}
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
-                <button class="copy-link-btn" onclick="copyDocumentLink()" title="Copy link to this document">
+                <button class="copy-link-btn" onclick="copyDocumentLink(event)" title="Copy link to this document">
                     🔗 Copy URL to this document
                 </button>
-                <button class="copy-link-btn" onclick="copyDocumentText()" title="Copy full document text to clipboard for use with your own AI chatbot">
+                <button class="copy-link-btn" onclick="copyDocumentText(event)" title="Copy full document text to clipboard for use with your own AI chatbot">
                     📋 Copy Document Text
                 </button>
                 ${docMetadata && docMetadata.agencyId ? `
@@ -224,9 +224,9 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function copyDocumentLink() {
+function copyDocumentLink(event) {
     const url = window.location.href;
-    const btn = event?.target || document.querySelector('button[onclick*="copyDocumentLink"]');
+    const btn = event?.target;
     
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(url).then(() => {
@@ -279,13 +279,13 @@ function copyDocumentLink() {
     }
 }
 
-function copyDocumentText() {
+function copyDocumentText(event) {
     if (!currentDocumentData || !currentDocumentData.pages) {
         console.error('Document not loaded');
         return;
     }
     
-    const btn = event?.target || document.querySelector('button[onclick*="copyDocumentText"]');
+    const btn = event?.target;
     
     // Concatenate all pages with double newlines between them
     const fullText = currentDocumentData.pages.join('\n\n');
