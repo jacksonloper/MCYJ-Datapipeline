@@ -13,10 +13,12 @@ let apiKey = null; // Store decrypted API key
 // Filter state
 let filters = {
     sirOnly: false,
-    keywords: [] // Array of selected keywords
+    keyword: null, // Single selected keyword
+    agency: null // Single selected agency (agencyId)
 };
 
 let keywordTrie = new Trie();
+let agencyTrie = new Trie();
 let allKeywords = new Set();
 
 // Load and display data
@@ -36,13 +38,16 @@ async function init() {
         
         // Build keyword trie from all documents
         buildKeywordTrie();
+        
+        // Build agency trie from all agencies
+        buildAgencyTrie();
 
         hideLoading();
         displayStats();
         displayAgencies(allAgencies);
-        setupSearch();
         setupFilters();
         setupKeywordFilter();
+        setupAgencyFilter();
         handleUrlHash();
         handleQueryStringDocument();
         
@@ -80,6 +85,11 @@ function applyFilters() {
     // Start with all agencies
     let agencies = JSON.parse(JSON.stringify(allAgencies)); // Deep clone
     
+    // Filter by selected agency first
+    if (filters.agency) {
+        agencies = agencies.filter(agency => agency.agencyId === filters.agency);
+    }
+    
     // Apply filters to each agency's documents
     agencies = agencies.map(agency => {
         if (!agency.documents || !Array.isArray(agency.documents)) {
@@ -92,14 +102,12 @@ function applyFilters() {
                 return false;
             }
             
-            // Filter by keywords (OR logic - match ANY keyword)
-            if (filters.keywords && filters.keywords.length > 0) {
+            // Filter by keyword (single selection)
+            if (filters.keyword) {
                 const docKeywords = d.sir_violation_level?.keywords || [];
                 const docKeywordsLower = docKeywords.map(k => k.toLowerCase());
-                const hasAnyKeyword = filters.keywords.some(filterKw => 
-                    docKeywordsLower.includes(filterKw.toLowerCase())
-                );
-                if (!hasAnyKeyword) {
+                const hasKeyword = docKeywordsLower.includes(filters.keyword.toLowerCase());
+                if (!hasKeyword) {
                     return false;
                 }
             }
@@ -160,16 +168,44 @@ function buildKeywordTrie() {
     console.log(`Built keyword trie with ${allKeywords.size} unique keywords`);
 }
 
+function buildAgencyTrie() {
+    allAgencies.forEach(agency => {
+        if (agency.AgencyName && agency.agencyId) {
+            // Insert agency name and ID into the trie
+            // Store agencyId as the lookup value
+            const searchText = `${agency.AgencyName} (${agency.agencyId})`;
+            agencyTrie.insert(searchText, true, searchText);
+            
+            // Also insert individual words from agency name for search
+            const words = agency.AgencyName.trim().split(/\s+/);
+            words.forEach(word => {
+                if (word.length > 0) {
+                    agencyTrie.insert(word, false, searchText);
+                }
+            });
+            
+            // Insert agency ID for direct ID search
+            agencyTrie.insert(agency.agencyId, false, searchText);
+        }
+    });
+    console.log(`Built agency trie with ${allAgencies.length} agencies`);
+}
+
 function setupKeywordFilter() {
     const keywordInput = document.getElementById('keywordFilterInput');
     const keywordSuggestions = document.getElementById('keywordSuggestions');
-    const selectedKeywordsContainer = document.getElementById('selectedKeywords');
+    const selectedKeywordContainer = document.getElementById('selectedKeyword');
     
-    if (!keywordInput) return; // Element not added yet
+    if (!keywordInput) return;
     
     // Handle input for autocomplete
     keywordInput.addEventListener('input', (e) => {
         const query = e.target.value.trim();
+        
+        // If a keyword is already selected, hide input and show selected
+        if (filters.keyword) {
+            return;
+        }
         
         if (query.length < 2) {
             keywordSuggestions.style.display = 'none';
@@ -195,7 +231,7 @@ function setupKeywordFilter() {
         keywordSuggestions.querySelectorAll('.keyword-suggestion').forEach(div => {
             div.addEventListener('click', () => {
                 const keyword = div.dataset.keyword;
-                addKeywordFilter(keyword);
+                setKeywordFilter(keyword);
                 keywordInput.value = '';
                 keywordSuggestions.style.display = 'none';
             });
@@ -216,7 +252,7 @@ function setupKeywordFilter() {
             const firstSuggestion = keywordSuggestions.querySelector('.keyword-suggestion');
             if (firstSuggestion) {
                 const keyword = firstSuggestion.dataset.keyword;
-                addKeywordFilter(keyword);
+                setKeywordFilter(keyword);
                 keywordInput.value = '';
                 keywordSuggestions.style.display = 'none';
             }
@@ -224,44 +260,148 @@ function setupKeywordFilter() {
     });
 }
 
-function addKeywordFilter(keyword) {
-    const keywordLower = keyword.toLowerCase();
-    
-    // Check if keyword is already selected
-    if (filters.keywords.includes(keywordLower)) {
-        return;
-    }
-    
-    filters.keywords.push(keywordLower);
-    renderSelectedKeywords();
+function setKeywordFilter(keyword) {
+    filters.keyword = keyword.toLowerCase();
+    renderSelectedKeyword();
     applyFilters();
 }
 
-function removeKeywordFilter(keyword) {
-    filters.keywords = filters.keywords.filter(k => k !== keyword.toLowerCase());
-    renderSelectedKeywords();
+function removeKeywordFilter() {
+    filters.keyword = null;
+    renderSelectedKeyword();
     applyFilters();
 }
 
-function renderSelectedKeywords() {
-    const container = document.getElementById('selectedKeywords');
+function renderSelectedKeyword() {
+    const container = document.getElementById('selectedKeyword');
+    const input = document.getElementById('keywordFilterInput');
 
-    if (!container) return;
+    if (!container || !input) return;
 
-    if (filters.keywords.length === 0) {
-        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic;">No keywords selected</div>';
+    if (!filters.keyword) {
+        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic;">No keyword selected</div>';
+        input.style.display = 'block';
     } else {
-        container.innerHTML = filters.keywords.map(keyword => `
+        container.innerHTML = `
             <span class="selected-keyword-badge">
-                ${escapeHtml(keyword)}
-                <button class="remove-keyword-btn" onclick="window.removeKeywordFilter('${escapeHtml(keyword)}')" title="Remove keyword">✕</button>
+                ${escapeHtml(filters.keyword)}
+                <button class="remove-keyword-btn" onclick="window.removeKeywordFilter()" title="Remove keyword">✕</button>
             </span>
-        `).join('');
+        `;
+        input.style.display = 'none';
+    }
+}
+
+function setupAgencyFilter() {
+    const agencyInput = document.getElementById('agencyFilterInput');
+    const agencySuggestions = document.getElementById('agencySuggestions');
+    const selectedAgencyContainer = document.getElementById('selectedAgency');
+    
+    if (!agencyInput) return;
+    
+    // Handle input for autocomplete
+    agencyInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        
+        // If an agency is already selected, hide input and show selected
+        if (filters.agency) {
+            return;
+        }
+        
+        if (query.length < 2) {
+            agencySuggestions.style.display = 'none';
+            return;
+        }
+        
+        const suggestions = agencyTrie.search(query);
+        
+        if (suggestions.length === 0) {
+            agencySuggestions.style.display = 'none';
+            return;
+        }
+        
+        agencySuggestions.innerHTML = suggestions.map(s => {
+            // Extract agencyId from the keyword
+            const match = s.keyword.match(/\(([^)]+)\)$/);
+            const agencyId = match ? match[1] : '';
+            return `
+                <div class="agency-suggestion" data-agency-text="${escapeHtml(s.keyword)}" data-agency-id="${escapeHtml(agencyId)}">
+                    <span>${escapeHtml(s.keyword)}</span>
+                </div>
+            `;
+        }).join('');
+        agencySuggestions.style.display = 'block';
+        
+        // Add click handlers to suggestions
+        agencySuggestions.querySelectorAll('.agency-suggestion').forEach(div => {
+            div.addEventListener('click', () => {
+                const agencyText = div.dataset.agencyText;
+                const agencyId = div.dataset.agencyId;
+                setAgencyFilter(agencyText, agencyId);
+                agencyInput.value = '';
+                agencySuggestions.style.display = 'none';
+            });
+        });
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#agencyFilterInput') && !e.target.closest('#agencySuggestions')) {
+            agencySuggestions.style.display = 'none';
+        }
+    });
+    
+    // Allow pressing Enter to add the first suggestion
+    agencyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const firstSuggestion = agencySuggestions.querySelector('.agency-suggestion');
+            if (firstSuggestion) {
+                const agencyText = firstSuggestion.dataset.agencyText;
+                const agencyId = firstSuggestion.dataset.agencyId;
+                setAgencyFilter(agencyText, agencyId);
+                agencyInput.value = '';
+                agencySuggestions.style.display = 'none';
+            }
+        }
+    });
+}
+
+function setAgencyFilter(agencyText, agencyId) {
+    filters.agency = agencyId;
+    renderSelectedAgency(agencyText);
+    applyFilters();
+}
+
+function removeAgencyFilter() {
+    filters.agency = null;
+    renderSelectedAgency(null);
+    applyFilters();
+}
+
+function renderSelectedAgency(agencyText) {
+    const container = document.getElementById('selectedAgency');
+    const input = document.getElementById('agencyFilterInput');
+
+    if (!container || !input) return;
+
+    if (!filters.agency) {
+        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic;">No agency selected</div>';
+        input.style.display = 'block';
+    } else {
+        container.innerHTML = `
+            <span class="selected-keyword-badge">
+                ${escapeHtml(agencyText || filters.agency)}
+                <button class="remove-keyword-btn" onclick="window.removeAgencyFilter()" title="Remove agency">✕</button>
+            </span>
+        `;
+        input.style.display = 'none';
     }
 }
 
 // Export functions to window for inline onclick handlers
 window.removeKeywordFilter = removeKeywordFilter;
+window.removeAgencyFilter = removeAgencyFilter;
 
 /**
  * Render the keyword bar chart
@@ -964,28 +1104,6 @@ window.copyDocumentLink = copyDocumentLink;
 window.addEventListener('hashchange', handleUrlHash);
 
 
-function setupSearch() {
-    const searchInput = document.getElementById('searchInput');
-    
-    searchInput.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.toLowerCase().trim();
-        
-        // Apply filters first, then search
-        applyFilters();
-        
-        if (searchTerm) {
-            filteredAgencies = filteredAgencies.filter(agency => {
-                return (
-                    agency.AgencyName?.toLowerCase().includes(searchTerm) ||
-                    agency.agencyId?.toLowerCase().includes(searchTerm)
-                );
-            });
-        }
-        
-        displayStats();
-        displayAgencies(filteredAgencies);
-    });
-}
 
 function escapeHtml(text) {
     if (!text) return '';
