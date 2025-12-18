@@ -91,16 +91,16 @@ function applyFilters() {
     // Start with all agencies
     let agencies = JSON.parse(JSON.stringify(allAgencies)); // Deep clone
     
+    // Store the selected agency ID for auto-open (before filtering)
+    let selectedAgencyId = null;
+    
     // Filter by selected agency first
     if (filters.agency) {
         agencies = agencies.filter(agency => agency.agencyId === filters.agency);
         
-        // Auto-open the single filtered agency card
+        // Store the agency ID if there's exactly one agency selected
         if (agencies.length === 1) {
-            // Use setTimeout to ensure DOM is ready
-            setTimeout(() => {
-                openAgencyCard(agencies[0].agencyId);
-            }, DOM_READY_DELAY);
+            selectedAgencyId = agencies[0].agencyId;
         }
     }
     
@@ -145,6 +145,14 @@ function applyFilters() {
     filteredAgencies = agencies;
     displayStats();
     displayAgencies(filteredAgencies);
+    
+    // Auto-open the agency card only if it still exists after filtering
+    if (selectedAgencyId && agencies.some(agency => agency.agencyId === selectedAgencyId)) {
+        // Use setTimeout to ensure DOM is ready
+        setTimeout(() => {
+            openAgencyCard(selectedAgencyId);
+        }, DOM_READY_DELAY);
+    }
 }
 
 function setupFilters() {
@@ -450,6 +458,7 @@ function setAgencyFilter(agencyText, agencyId, skipUrlUpdate = false) {
 
 function removeAgencyFilter() {
     filters.agency = null;
+    currentOpenAgencyId = null; // Reset the currently open agency so it can be reopened
     renderSelectedAgency(null);
     
     // Remove agency from URL query string
