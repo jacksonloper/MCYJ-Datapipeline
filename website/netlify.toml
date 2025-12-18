@@ -8,7 +8,9 @@
   # Python version
   PYTHON_VERSION = "3.11"
   
+# Serve actual files first, only redirect unknown routes to index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = false
