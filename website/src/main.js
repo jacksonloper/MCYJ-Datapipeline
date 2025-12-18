@@ -564,9 +564,9 @@ function renderDocuments(documents) {
                 ` : ''}
                 ${d.sha256 ? `
                     <div style="margin-top: 8px;">
-                        <button class="view-document-btn" onclick="viewDocument('${d.sha256}', event)">
+                        <a href="/document.html?sha=${d.sha256}" target="_blank" class="view-document-btn" style="text-decoration: none; display: inline-block;">
                             📄 View Full Document
-                        </button>
+                        </a>
                         <div id="query-count-${d.sha256}" style="margin-top: 8px; font-size: 0.85em; color: #666; font-style: italic;">
                             <span class="query-count-placeholder" data-sha="${d.sha256}">Loading query history...</span>
                         </div>
@@ -935,46 +935,8 @@ async function handleQueryStringDocument() {
         return;
     }
     
-    try {
-        // Find the agency that contains this document
-        let foundAgency = null;
-        
-        for (const agency of allAgencies) {
-            if (agency.documents && Array.isArray(agency.documents)) {
-                const document = agency.documents.find(d => d.sha256 === sha);
-                if (document) {
-                    foundAgency = agency;
-                    break;
-                }
-            }
-        }
-        
-        // If we found the agency, open it and scroll to it BEFORE opening doc viewer
-        if (foundAgency) {
-            openAgencyCard(foundAgency.agencyId);
-            
-            // Wait for the scroll animation to complete
-            // Using a Promise-based approach with requestAnimationFrame to ensure smooth scrolling completes
-            await new Promise(resolve => {
-                const card = document.getElementById(`agency-${foundAgency.agencyId}`);
-                if (card) {
-                    // Wait for next animation frame, then add a small delay for smooth scroll
-                    requestAnimationFrame(() => {
-                        setTimeout(resolve, 600);
-                    });
-                } else {
-                    // If card not found, resolve immediately
-                    resolve();
-                }
-            });
-        }
-        
-        // Open the document modal (this will handle errors if document doesn't exist)
-        await viewDocument(sha);
-    } catch (error) {
-        console.error('Error handling query string document:', error);
-        showError(`Failed to load document with SHA: ${sha}. ${error.message}`);
-    }
+    // Redirect to document viewer page
+    window.location.href = `/document.html?sha=${sha}`;
 }
 
 function copyAgencyLink(agencyId, event) {
@@ -1030,7 +992,7 @@ function copyDocumentLink(sha256, event) {
         event.stopPropagation();
     }
     
-    const url = `${window.location.origin}${window.location.pathname}?sha=${sha256}`;
+    const url = `${window.location.origin}/document.html?sha=${sha256}`;
     
     // Helper function to show feedback on button
     const showCopyFeedback = (btn) => {
