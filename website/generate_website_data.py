@@ -13,6 +13,8 @@ import os
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Dict, Optional
+
 from keyword_reduction import load_keyword_reduction_map, apply_keyword_reduction
 
 
@@ -39,7 +41,7 @@ def load_sir_summaries_csv(csv_path):
     return summaries_by_sha
 
 
-def load_sir_violation_levels_csv(csv_path, keyword_map=None):
+def load_sir_violation_levels_csv(csv_path, keyword_map: Optional[Dict[str, str]] = None):
     """Load SIR violation levels CSV and create a lookup by SHA256."""
     levels_by_sha = {}
     
