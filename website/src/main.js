@@ -277,19 +277,33 @@ function setupKeywordFilter() {
     });
 }
 
-function setKeywordFilter(keyword) {
+function setKeywordFilter(keyword, displayKeyword = null, skipUrlUpdate = false) {
     filters.keyword = keyword.toLowerCase();
-    renderSelectedKeyword();
+    renderSelectedKeyword(displayKeyword || keyword);
+    
+    // Update URL query string unless we're restoring from URL
+    if (!skipUrlUpdate) {
+        const url = new URL(window.location);
+        url.searchParams.set('keyword', keyword);
+        window.history.pushState({}, '', url);
+    }
+    
     applyFilters();
 }
 
 function removeKeywordFilter() {
     filters.keyword = null;
     renderSelectedKeyword();
+    
+    // Remove keyword from URL query string
+    const url = new URL(window.location);
+    url.searchParams.delete('keyword');
+    window.history.pushState({}, '', url);
+    
     applyFilters();
 }
 
-function renderSelectedKeyword() {
+function renderSelectedKeyword(displayText = null) {
     const container = document.getElementById('selectedKeyword');
     const input = document.getElementById('keywordFilterInput');
 
@@ -301,7 +315,7 @@ function renderSelectedKeyword() {
     } else {
         container.innerHTML = `
             <span class="selected-keyword-badge">
-                ${escapeHtml(filters.keyword)}
+                ${escapeHtml(displayText || filters.keyword)}
                 <button class="remove-keyword-btn" onclick="window.removeKeywordFilter()" title="Remove keyword">✕</button>
             </span>
         `;
@@ -902,6 +916,7 @@ function openAgencyCard(agencyId) {
 function handleUrlQueryString() {
     const urlParams = new URLSearchParams(window.location.search);
     const agencyId = urlParams.get('agency');
+    const keyword = urlParams.get('keyword');
     
     if (agencyId) {
         // Find the agency
@@ -911,6 +926,11 @@ function handleUrlQueryString() {
             const searchText = `${agency.AgencyName} (${agency.agencyId})`;
             setAgencyFilter(searchText, agencyId, true);
         }
+    }
+    
+    if (keyword) {
+        // Set the keyword filter, skip URL update to avoid circular loop
+        setKeywordFilter(keyword, keyword, true);
     }
 }
 
