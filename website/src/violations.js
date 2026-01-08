@@ -139,15 +139,15 @@ function renderByMonthChart() {
     
     let data = [...violationsData.by_month];
     
-    // Filter based on current view
+    // Sort months chronologically before filtering to ensure recent months are correct
+    data.sort((a, b) => a.month.localeCompare(b.month));
+    
+    // Filter based on current view (after sorting)
     if (currentMonthView === 'recent12') {
         data = data.slice(-12);
     } else if (currentMonthView === 'recent24') {
         data = data.slice(-24);
     }
-    
-    // Sort months chronologically
-    data.sort((a, b) => a.month.localeCompare(b.month));
     
     renderStackedBarChart('byMonthChart', data, 'month', false);
 }

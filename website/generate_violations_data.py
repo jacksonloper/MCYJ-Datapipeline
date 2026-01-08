@@ -118,24 +118,29 @@ def load_facility_annotations(csv_path: str) -> Dict[str, Dict]:
         print(f"Warning: Facility annotations file not found: {csv_path}")
         return annotations
     
+    def get_field(row: Dict, name: str) -> str:
+        """Get field from row, handling columns with trailing spaces in names."""
+        # Try exact match first, then with trailing space
+        return row.get(name, row.get(name + ' ', '')).strip()
+    
     with open(csv_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            license_number = row.get('LicenseNumber', '').strip()
+            license_number = get_field(row, 'LicenseNumber')
             if not license_number:
                 continue
             
             annotations[license_number] = {
-                'facility_name': row.get('Facility Name', ''),
-                'county': row.get('County', ''),
-                'region': row.get('Region', ''),
-                'agency_type': row.get('Agency Type', ''),
-                'capacity': row.get('Capacity ', ''),  # Note the space in column name
-                'genders_served': row.get('Genders Served', ''),
-                'ages_served': row.get('Ages Served', ''),
-                'ages_served_normalized': normalize_age_group(row.get('Ages Served', '')),
-                'shelter_services': row.get('Shelter / Respite / Crisis Stabilization Services ', ''),
-                'specialization': row.get('Specialization (substance use, CSC, acute)', '')
+                'facility_name': get_field(row, 'Facility Name'),
+                'county': get_field(row, 'County'),
+                'region': get_field(row, 'Region'),
+                'agency_type': get_field(row, 'Agency Type'),
+                'capacity': get_field(row, 'Capacity'),
+                'genders_served': get_field(row, 'Genders Served'),
+                'ages_served': get_field(row, 'Ages Served'),
+                'ages_served_normalized': normalize_age_group(get_field(row, 'Ages Served')),
+                'shelter_services': get_field(row, 'Shelter / Respite / Crisis Stabilization Services'),
+                'specialization': get_field(row, 'Specialization (substance use, CSC, acute)')
             }
     
     print(f"Loaded {len(annotations)} facility annotations")
@@ -233,9 +238,9 @@ def categorize_age_group(normalized_age: Optional[str]) -> str:
     Categorize normalized age ranges into broader groups for visualization.
     
     Categories:
-    - "Young Children (0-10)": facilities serving primarily younger children
-    - "Adolescents (11-17)": facilities serving primarily adolescents
-    - "Mixed Ages": facilities serving a wide age range
+    - "Young Children (≤10)": facilities serving only children 10 and under
+    - "Adolescents (11+)": facilities serving only children 11 and older
+    - "Mixed Ages": facilities serving both younger children and adolescents
     - "Unknown": no age information available
     """
     if not normalized_age:
@@ -249,13 +254,14 @@ def categorize_age_group(normalized_age: Optional[str]) -> str:
     min_age = int(match.group(1))
     max_age = int(match.group(2))
     
-    # Categorize based on age range
+    # Categorize based on age range into broad groups
+    # These are simplified categories for visualization purposes
     if max_age <= 10:
-        return "Young Children (0-10)"
+        return "Young Children (≤10)"
     elif min_age >= 11:
-        return "Adolescents (11-17)"
+        return "Adolescents (11+)"
     elif min_age <= 10 and max_age >= 11:
-        return "Mixed Ages (spans 10+)"
+        return "Mixed Ages"
     else:
         return "Other"
 
