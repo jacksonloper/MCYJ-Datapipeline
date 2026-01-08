@@ -8,7 +8,4 @@
   # Python version
   PYTHON_VERSION = "3.11"
   
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# No catch-all redirect needed for MPA - Netlify will serve static files directly
