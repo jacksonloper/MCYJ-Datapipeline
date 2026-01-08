@@ -20,7 +20,16 @@ python3 generate_website_data.py \
   --output-dir public/data
 
 echo ""
-echo "==> Step 2: Exporting parquet documents to individual JSON files..."
+echo "==> Step 2: Generating violations analytics data..."
+python3 generate_violations_data.py \
+  --document-csv ../pdf_parsing/document_info.csv \
+  --facility-info-csv ../facility_information/facility_information.csv \
+  --facility-annotations-csv ../facility_information/MCYJ_annotations.csv \
+  --violation-levels-csv ../pdf_parsing/sir_violation_levels.csv \
+  --output-dir public/data
+
+echo ""
+echo "==> Step 3: Exporting parquet documents to individual JSON files..."
 python3 export_parquet_to_json.py \
   --parquet-dir ../pdf_parsing/parquet_files \
   --output-dir public/documents \
@@ -30,7 +39,7 @@ python3 export_parquet_to_json.py \
   --keyword-reduction-csv ../pdf_parsing/violation_curation_keyword_reduction.csv
 
 echo ""
-echo "==> Step 3: Building website with Vite..."
+echo "==> Step 4: Building website with Vite..."
 npm run build
 
 echo ""

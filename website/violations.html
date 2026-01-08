@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Violations Analytics - Michigan Child Welfare Licensing Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #3498db;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .chart-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .chart-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .chart-header h2 {
+            color: #2c3e50;
+            font-size: 1.4em;
+            margin-bottom: 8px;
+        }
+        
+        .chart-description {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        /* Bar Chart Styles */
+        .bar-chart-container {
+            display: grid;
+            grid-template-columns: minmax(150px, auto) 1fr auto;
+            gap: 8px 12px;
+            align-items: center;
+        }
+
+        .bar-chart-row {
+            display: contents;
+        }
+
+        .bar-chart-label {
+            font-size: 0.9em;
+            color: #333;
+            text-align: right;
+            word-break: break-word;
+            padding-right: 8px;
+        }
+
+        .bar-chart-bar-container {
+            height: 28px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+        }
+
+        .bar-segment {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .bar-segment-low {
+            background: #f1c40f;
+        }
+        
+        .bar-segment-moderate {
+            background: #e67e22;
+        }
+        
+        .bar-segment-severe {
+            background: #e74c3c;
+        }
+
+        .bar-chart-count {
+            font-size: 0.9em;
+            color: #666;
+            text-align: right;
+            font-weight: 500;
+            min-width: 50px;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9em;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        
+        .legend-color-low {
+            background: #f1c40f;
+        }
+        
+        .legend-color-moderate {
+            background: #e67e22;
+        }
+        
+        .legend-color-severe {
+            background: #e74c3c;
+        }
+        
+        /* Summary Stats */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-number-low {
+            color: #f1c40f;
+        }
+        
+        .stat-number-moderate {
+            color: #e67e22;
+        }
+        
+        .stat-number-severe {
+            color: #e74c3c;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        /* View Toggle */
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .view-toggle button {
+            padding: 8px 16px;
+            border: 1px solid #3498db;
+            background: white;
+            color: #3498db;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .view-toggle button:hover {
+            background: #ecf5fc;
+        }
+        
+        .view-toggle button.active {
+            background: #3498db;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .bar-chart-container {
+                grid-template-columns: minmax(100px, auto) 1fr auto;
+                gap: 6px 8px;
+            }
+
+            .bar-chart-label {
+                font-size: 0.8em;
+            }
+
+            .bar-chart-count {
+                font-size: 0.8em;
+            }
+
+            .bar-chart-bar-container {
+                height: 24px;
+            }
+            
+            .legend {
+                gap: 10px;
+            }
+            
+            .legend-item {
+                font-size: 0.8em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .bar-chart-container {
+                gap: 5px 6px;
+            }
+
+            .bar-chart-label {
+                font-size: 0.75em;
+            }
+
+            .bar-chart-count {
+                font-size: 0.75em;
+            }
+
+            .bar-chart-bar-container {
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📊 Violations Analytics</h1>
+            <p class="subtitle">Substantiated Violations by Date, Facility Type, and Age Group</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <a href="/" class="back-link">← Back to Dashboard</a>
+        
+        <div id="loading" class="loading">Loading violations data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="content" style="display: none;">
+            <!-- Summary Stats -->
+            <div id="summaryStats" class="summary-stats"></div>
+            
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color legend-color-low"></div>
+                    <span>Low Severity</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-color-moderate"></div>
+                    <span>Moderate Severity</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color legend-color-severe"></div>
+                    <span>Severe Severity</span>
+                </div>
+            </div>
+            
+            <!-- Violations by Year -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2>📅 Violations by Year</h2>
+                    <p class="chart-description">Number of substantiated violations per year, broken down by severity level.</p>
+                </div>
+                <div id="byYearChart" class="bar-chart-container"></div>
+            </div>
+            
+            <!-- Violations by Month -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2>📆 Violations by Month</h2>
+                    <p class="chart-description">Detailed monthly breakdown of substantiated violations.</p>
+                </div>
+                <div class="view-toggle">
+                    <button id="showAllMonths" class="active">Show All Months</button>
+                    <button id="showRecent12">Last 12 Months</button>
+                    <button id="showRecent24">Last 24 Months</button>
+                </div>
+                <div id="byMonthChart" class="bar-chart-container"></div>
+            </div>
+            
+            <!-- Violations by Facility Type -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2>🏢 Violations by Facility Type</h2>
+                    <p class="chart-description">Number of substantiated violations by type of facility.</p>
+                </div>
+                <div id="byFacilityTypeChart" class="bar-chart-container"></div>
+            </div>
+            
+            <!-- Violations by Age Group -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2>👥 Violations by Age Group Served</h2>
+                    <p class="chart-description">
+                        Number of substantiated violations by the age group served at the facility.
+                        Age groups are derived from facility annotations and may not be available for all facilities.
+                    </p>
+                </div>
+                <div id="byAgeGroupChart" class="bar-chart-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="/src/violations.js"></script>
+</body>
+</html>
