@@ -364,10 +364,12 @@
             <!-- Violations by Age Group -->
             <div class="chart-section">
                 <div class="chart-header">
-                    <h2>👥 Violations by Age Group Served</h2>
+                    <h2>👥 Violations by Age Range Served</h2>
                     <p class="chart-description">
-                        Number of substantiated violations by the age group served at the facility.
-                        Age groups are derived from facility annotations and may not be available for all facilities.
+                        Per-facility violations visualized by age range served. Each bar represents a facility,
+                        positioned vertically by its age range (min to max age served). Bar area is proportional 
+                        to the number of violations. Bars are stacked horizontally, sorted by starting age.
+                        Hover over bars for facility details.
                     </p>
                 </div>
                 <div id="byAgeGroupChart" class="bar-chart-container"></div>

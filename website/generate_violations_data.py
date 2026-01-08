@@ -323,6 +323,18 @@ def generate_violations_data(
     violations_by_age_group = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
     violations_by_year = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
     
+    # Per-facility age data for granular visualization
+    # Key: license_number, Value: {facility_name, min_age, max_age, total, low, moderate, severe}
+    violations_by_facility_age = defaultdict(lambda: {
+        'facility_name': '',
+        'min_age': None,
+        'max_age': None,
+        'total': 0,
+        'low': 0,
+        'moderate': 0,
+        'severe': 0
+    })
+    
     # Track unique violations (some documents may be duplicated)
     processed_sha256 = set()
     
@@ -381,6 +393,21 @@ def generate_violations_data(
         # Aggregate by age group
         violations_by_age_group[age_category]['total'] += 1
         violations_by_age_group[age_category][level] += 1
+        
+        # Aggregate by facility with age range for granular visualization
+        if ages_normalized:
+            match = re.match(r'(\d+)-(\d+)', ages_normalized)
+            if match:
+                min_age = int(match.group(1))
+                max_age = int(match.group(2))
+                facility_name = annotation.get('facility_name', '') or facility.get('agency_name', '') or license_number
+                
+                fac_data = violations_by_facility_age[license_number]
+                fac_data['facility_name'] = facility_name
+                fac_data['min_age'] = min_age
+                fac_data['max_age'] = max_age
+                fac_data['total'] += 1
+                fac_data[level] += 1
     
     # Convert to sorted lists for JSON output
     def dict_to_sorted_list(d: dict, key_name: str = 'key') -> list:
@@ -390,6 +417,27 @@ def generate_violations_data(
             entry = {key_name: key}
             entry.update(counts)
             result.append(entry)
+        return result
+    
+    # Convert facility age data to sorted list (sorted by min_age, then by total violations)
+    def facility_age_to_list(d: dict) -> list:
+        """Convert facility age data to list sorted by starting age."""
+        result = []
+        for license_num, data in d.items():
+            if data['min_age'] is not None and data['max_age'] is not None:
+                entry = {
+                    'license_number': license_num,
+                    'facility_name': data['facility_name'],
+                    'min_age': data['min_age'],
+                    'max_age': data['max_age'],
+                    'total': data['total'],
+                    'low': data['low'],
+                    'moderate': data['moderate'],
+                    'severe': data['severe']
+                }
+                result.append(entry)
+        # Sort by min_age, then by max_age
+        result.sort(key=lambda x: (x['min_age'], x['max_age']))
         return result
     
     # Prepare output data
@@ -402,7 +450,8 @@ def generate_violations_data(
         'by_month': dict_to_sorted_list(violations_by_date, 'month'),
         'by_year': dict_to_sorted_list(violations_by_year, 'year'),
         'by_facility_type': dict_to_sorted_list(violations_by_facility_type, 'facility_type'),
-        'by_age_group': dict_to_sorted_list(violations_by_age_group, 'age_group')
+        'by_age_group': dict_to_sorted_list(violations_by_age_group, 'age_group'),
+        'by_facility_age': facility_age_to_list(violations_by_facility_age)
     }
     
     # Write output
