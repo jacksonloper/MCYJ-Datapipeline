@@ -82,3 +82,10 @@ Defines the criteria for categorizing SIR severity:
 - **Moderate**: Administrative/rights issues, supervision failures, non-violent staff misconduct
 - **Low**: Paperwork issues, non-safety policy compliance, non-hazardous facility conditions
 
+### `violation_curation_keyword_reduction.csv`
+
+Maps raw violation keywords to consolidated terms for consistency in analysis and display. Contains:
+- `original_keyword` - Raw keyword from AI classification
+- `reduced_keyword` - Normalized/consolidated keyword (empty if keyword should be removed)
+- `frequency` - How often this keyword appears in the data
+
