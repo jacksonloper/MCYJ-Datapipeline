@@ -1,8 +1,9 @@
 // Violations analytics page - displays violation statistics
-// with views by date and facility type/region/gender.
+// with views by date and facility type/region/gender/capacity.
 
 let violationsData = null;
-let currentGroupBy = 'facility_type'; // 'facility_type', 'region', 'gender'
+let currentGroupBy = 'facility_type'; // 'facility_type', 'region', 'gender', 'capacity'
+let capacityNormalized = false;
 
 // Load and display data
 async function init() {
@@ -20,6 +21,7 @@ async function init() {
         renderByYearChart();
         renderGroupedChart();
         setupGroupByDropdown();
+        setupCapacityNormalizedCheckbox();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -76,7 +78,7 @@ function renderSummaryStats() {
     `;
 }
 
-function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true) {
+function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, normalized = false) {
     const container = document.getElementById(containerId);
     if (!container || !data || data.length === 0) {
         if (container) {
@@ -85,37 +87,76 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true) 
         return;
     }
     
-    // Sort data by total (descending) if requested, otherwise keep original order
-    let sortedData = [...data];
-    if (sortByTotal) {
-        sortedData.sort((a, b) => (b.total || 0) - (a.total || 0));
+    // Filter out items with no capacity if normalized mode is on
+    let filteredData = [...data];
+    if (normalized) {
+        filteredData = filteredData.filter(d => d.capacity && d.capacity > 0);
+        if (filteredData.length === 0) {
+            container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No data available with known capacity</div>';
+            return;
+        }
     }
     
-    // Find max total for scaling
-    const maxTotal = Math.max(...sortedData.map(d => d.total || 0));
+    // Sort data by total (descending) if requested, otherwise keep original order
+    let sortedData = [...filteredData];
+    if (sortByTotal) {
+        if (normalized) {
+            // Sort by normalized value (total / capacity)
+            sortedData.sort((a, b) => {
+                const aVal = a.capacity > 0 ? a.total / a.capacity : 0;
+                const bVal = b.capacity > 0 ? b.total / b.capacity : 0;
+                return bVal - aVal;
+            });
+        } else {
+            sortedData.sort((a, b) => (b.total || 0) - (a.total || 0));
+        }
+    }
+    
+    // Calculate max value for scaling
+    let maxValue;
+    if (normalized) {
+        maxValue = Math.max(...sortedData.map(d => d.capacity > 0 ? d.total / d.capacity : 0));
+    } else {
+        maxValue = Math.max(...sortedData.map(d => d.total || 0));
+    }
     
     const barsHtml = sortedData.map(item => {
         const total = item.total || 0;
         const low = item.low || 0;
         const moderate = item.moderate || 0;
         const severe = item.severe || 0;
+        const capacity = item.capacity || 0;
         
-        // Calculate percentages for stacked bar
-        const lowPct = maxTotal > 0 ? (low / maxTotal) * 100 : 0;
-        const moderatePct = maxTotal > 0 ? (moderate / maxTotal) * 100 : 0;
-        const severePct = maxTotal > 0 ? (severe / maxTotal) * 100 : 0;
+        let displayValue, lowPct, moderatePct, severePct;
+        
+        if (normalized && capacity > 0) {
+            // Normalized mode: divide by capacity
+            const normalizedTotal = total / capacity;
+            displayValue = normalizedTotal.toFixed(2);
+            lowPct = maxValue > 0 ? ((low / capacity) / maxValue) * 100 : 0;
+            moderatePct = maxValue > 0 ? ((moderate / capacity) / maxValue) * 100 : 0;
+            severePct = maxValue > 0 ? ((severe / capacity) / maxValue) * 100 : 0;
+        } else {
+            displayValue = total.toString();
+            lowPct = maxValue > 0 ? (low / maxValue) * 100 : 0;
+            moderatePct = maxValue > 0 ? (moderate / maxValue) * 100 : 0;
+            severePct = maxValue > 0 ? (severe / maxValue) * 100 : 0;
+        }
         
         const label = item[labelKey] || 'Unknown';
+        const tooltip = normalized && capacity > 0
+            ? `Low: ${low}, Moderate: ${moderate}, Severe: ${severe} (Capacity: ${capacity})`
+            : `Low: ${low}, Moderate: ${moderate}, Severe: ${severe}`;
         
         return `
             <div class="bar-chart-row">
                 <div class="bar-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
-                <div class="bar-chart-bar-container" title="Low: ${low}, Moderate: ${moderate}, Severe: ${severe}">
+                <div class="bar-chart-bar-container" title="${tooltip}">
                     <div class="bar-segment bar-segment-low" style="width: ${lowPct}%"></div>
                     <div class="bar-segment bar-segment-moderate" style="width: ${moderatePct}%"></div>
                     <div class="bar-segment bar-segment-severe" style="width: ${severePct}%"></div>
                 </div>
-                <div class="bar-chart-count">${total}</div>
+                <div class="bar-chart-count">${displayValue}</div>
             </div>
         `;
     }).join('');
@@ -148,6 +189,9 @@ function renderGroupedChart() {
     } else if (currentGroupBy === 'gender') {
         data = violationsData.by_gender || [];
         labelKey = 'gender';
+    } else if (currentGroupBy === 'capacity') {
+        data = violationsData.by_capacity || [];
+        labelKey = 'capacity_bin';
     }
     
     if (!data || data.length === 0) {
@@ -155,7 +199,13 @@ function renderGroupedChart() {
         return;
     }
     
-    renderStackedBarChart('byGroupedChart', data, labelKey, true);
+    // For capacity grouping, don't allow capacity normalization (doesn't make sense)
+    const useNormalized = capacityNormalized && currentGroupBy !== 'capacity';
+    
+    // Keep capacity bins in original order (already sorted by bins), sort others by total
+    const sortByTotal = currentGroupBy !== 'capacity';
+    
+    renderStackedBarChart('byGroupedChart', data, labelKey, sortByTotal, useNormalized);
 }
 
 function setupGroupByDropdown() {
@@ -164,6 +214,16 @@ function setupGroupByDropdown() {
     
     dropdown.addEventListener('change', (e) => {
         currentGroupBy = e.target.value;
+        renderGroupedChart();
+    });
+}
+
+function setupCapacityNormalizedCheckbox() {
+    const checkbox = document.getElementById('capacityNormalizedCheckbox');
+    if (!checkbox) return;
+    
+    checkbox.addEventListener('change', (e) => {
+        capacityNormalized = e.target.checked;
         renderGroupedChart();
     });
 }

@@ -307,6 +307,44 @@ def normalize_gender(gender: str) -> str:
         return "Unknown"
 
 
+def parse_capacity(capacity_str: str) -> Optional[int]:
+    """Parse capacity string to integer, returning None for invalid/unknown values."""
+    if not capacity_str:
+        return None
+    
+    capacity_str = capacity_str.strip()
+    
+    # Handle N/A and other non-numeric values
+    if capacity_str.upper() in ('N/A', '', 'PRIVATE', 'CONTRACT ONLY'):
+        return None
+    
+    # Try to parse as integer
+    try:
+        capacity = int(capacity_str)
+        return capacity if capacity > 0 else None
+    except ValueError:
+        return None
+
+
+def get_capacity_bin(capacity: Optional[int]) -> str:
+    """Categorize capacity into histogram bins."""
+    if capacity is None:
+        return "Unknown"
+    
+    if capacity <= 10:
+        return "1-10"
+    elif capacity <= 20:
+        return "11-20"
+    elif capacity <= 30:
+        return "21-30"
+    elif capacity <= 50:
+        return "31-50"
+    elif capacity <= 100:
+        return "51-100"
+    else:
+        return "100+"
+
+
 def simplify_facility_type(agency_type: str) -> str:
     """Simplify facility types for cleaner visualization."""
     if not agency_type:
@@ -358,12 +396,19 @@ def generate_violations_data(
     annotations = load_facility_annotations(facility_annotations_csv)
     violation_levels = load_violation_levels(violation_levels_csv)
     
-    # Aggregation containers
+    # Aggregation containers - now with capacity tracking for normalization
     violations_by_date = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
-    violations_by_facility_type = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
-    violations_by_region = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
-    violations_by_gender = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
+    violations_by_facility_type = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
+    violations_by_region = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
+    violations_by_gender = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
+    violations_by_capacity = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
     violations_by_year = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
+    
+    # Track facilities we've seen for each bin (to avoid double-counting capacity)
+    facilities_by_type = defaultdict(set)
+    facilities_by_region = defaultdict(set)
+    facilities_by_gender = defaultdict(set)
+    facilities_by_capacity_bin = defaultdict(set)
     
     # Track unique violations (some documents may be duplicated)
     processed_sha256 = set()
@@ -407,6 +452,10 @@ def generate_violations_data(
         # Determine gender served
         gender = normalize_gender(annotation.get('genders_served', ''))
         
+        # Determine capacity
+        capacity = parse_capacity(annotation.get('capacity', ''))
+        capacity_bin = get_capacity_bin(capacity)
+        
         # Aggregate by date (month)
         if parsed_date:
             year, month = parsed_date
@@ -421,14 +470,30 @@ def generate_violations_data(
         # Aggregate by facility type
         violations_by_facility_type[simplified_type]['total'] += 1
         violations_by_facility_type[simplified_type][level] += 1
+        if license_number not in facilities_by_type[simplified_type] and capacity is not None:
+            violations_by_facility_type[simplified_type]['capacity'] += capacity
+            facilities_by_type[simplified_type].add(license_number)
         
         # Aggregate by region
         violations_by_region[region]['total'] += 1
         violations_by_region[region][level] += 1
+        if license_number not in facilities_by_region[region] and capacity is not None:
+            violations_by_region[region]['capacity'] += capacity
+            facilities_by_region[region].add(license_number)
         
         # Aggregate by gender
         violations_by_gender[gender]['total'] += 1
         violations_by_gender[gender][level] += 1
+        if license_number not in facilities_by_gender[gender] and capacity is not None:
+            violations_by_gender[gender]['capacity'] += capacity
+            facilities_by_gender[gender].add(license_number)
+        
+        # Aggregate by capacity bin
+        violations_by_capacity[capacity_bin]['total'] += 1
+        violations_by_capacity[capacity_bin][level] += 1
+        if license_number not in facilities_by_capacity_bin[capacity_bin] and capacity is not None:
+            violations_by_capacity[capacity_bin]['capacity'] += capacity
+            facilities_by_capacity_bin[capacity_bin].add(license_number)
     
     # Convert to sorted lists for JSON output
     def dict_to_sorted_list(d: dict, key_name: str = 'key') -> list:
@@ -439,6 +504,15 @@ def generate_violations_data(
             entry.update(counts)
             result.append(entry)
         return result
+    
+    # Custom sort for capacity bins
+    def capacity_bin_sort_key(item):
+        """Sort capacity bins in logical order."""
+        order = {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6}
+        return order.get(item['capacity_bin'], 99)
+    
+    capacity_list = dict_to_sorted_list(violations_by_capacity, 'capacity_bin')
+    capacity_list.sort(key=capacity_bin_sort_key)
     
     # Prepare output data
     output_data = {
@@ -451,6 +525,7 @@ def generate_violations_data(
         'by_facility_type': dict_to_sorted_list(violations_by_facility_type, 'facility_type'),
         'by_region': dict_to_sorted_list(violations_by_region, 'region'),
         'by_gender': dict_to_sorted_list(violations_by_gender, 'gender'),
+        'by_capacity': capacity_list,
     }
     
     # Write output

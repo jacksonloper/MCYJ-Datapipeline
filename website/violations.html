@@ -254,6 +254,23 @@
             border-color: #2980b9;
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
+        
+        /* Checkbox Styles */
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.95em;
+            color: #666;
+            cursor: pointer;
+            margin-left: 15px;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
 
         @media (max-width: 768px) {
             .bar-chart-container {
@@ -373,7 +390,7 @@
                 <div id="byYearChart" class="bar-chart-container"></div>
             </div>
             
-            <!-- Violations by Type/Region/Gender -->
+            <!-- Violations by Type/Region/Gender/Capacity -->
             <div class="chart-section">
                 <div class="chart-header">
                     <h2>🏢 Violations by Facility</h2>
@@ -385,7 +402,12 @@
                         <option value="facility_type">Facility Type</option>
                         <option value="region">Region</option>
                         <option value="gender">Gender Served</option>
+                        <option value="capacity">Capacity</option>
                     </select>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="capacityNormalizedCheckbox">
+                        <span>Normalize by capacity</span>
+                    </label>
                 </div>
                 <div id="byGroupedChart" class="bar-chart-container"></div>
             </div>
