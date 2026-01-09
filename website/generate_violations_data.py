@@ -410,6 +410,31 @@ def generate_violations_data(
     facilities_by_gender = defaultdict(set)
     facilities_by_capacity_bin = defaultdict(set)
     
+    # Per-year data for year range filtering
+    # Structure: {year: {grouping_type: {group_key: {counts}}}}
+    violations_by_year_grouped = defaultdict(lambda: {
+        'facility_type': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
+        'region': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
+        'gender': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
+        'capacity_bin': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
+    })
+    
+    # Track facilities per year for facility counts
+    facilities_per_year = defaultdict(lambda: {
+        'facility_type': defaultdict(set),
+        'region': defaultdict(set),
+        'gender': defaultdict(set),
+        'capacity_bin': defaultdict(set),
+    })
+    
+    # Track capacity per year per grouping (to avoid double-counting)
+    capacity_tracked_per_year = defaultdict(lambda: {
+        'facility_type': defaultdict(set),
+        'region': defaultdict(set),
+        'gender': defaultdict(set),
+        'capacity_bin': defaultdict(set),
+    })
+    
     # Track unique violations (some documents may be duplicated)
     processed_sha256 = set()
     
@@ -457,15 +482,48 @@ def generate_violations_data(
         capacity_bin = get_capacity_bin(capacity)
         
         # Aggregate by date (month)
+        year_str = None
         if parsed_date:
             year, month = parsed_date
+            year_str = str(year)
             date_key = f"{year}-{month:02d}"
             violations_by_date[date_key]['total'] += 1
             violations_by_date[date_key][level] += 1
             
             # Also aggregate by year
-            violations_by_year[str(year)]['total'] += 1
-            violations_by_year[str(year)][level] += 1
+            violations_by_year[year_str]['total'] += 1
+            violations_by_year[year_str][level] += 1
+            
+            # Per-year grouped data for year range filtering
+            violations_by_year_grouped[year_str]['facility_type'][simplified_type]['total'] += 1
+            violations_by_year_grouped[year_str]['facility_type'][simplified_type][level] += 1
+            violations_by_year_grouped[year_str]['region'][region]['total'] += 1
+            violations_by_year_grouped[year_str]['region'][region][level] += 1
+            violations_by_year_grouped[year_str]['gender'][gender]['total'] += 1
+            violations_by_year_grouped[year_str]['gender'][gender][level] += 1
+            violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin]['total'] += 1
+            violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin][level] += 1
+            
+            # Track facilities per year (for facility counts)
+            facilities_per_year[year_str]['facility_type'][simplified_type].add(license_number)
+            facilities_per_year[year_str]['region'][region].add(license_number)
+            facilities_per_year[year_str]['gender'][gender].add(license_number)
+            facilities_per_year[year_str]['capacity_bin'][capacity_bin].add(license_number)
+            
+            # Track capacity per year per grouping
+            if capacity is not None:
+                if license_number not in capacity_tracked_per_year[year_str]['facility_type'][simplified_type]:
+                    violations_by_year_grouped[year_str]['facility_type'][simplified_type]['capacity'] += capacity
+                    capacity_tracked_per_year[year_str]['facility_type'][simplified_type].add(license_number)
+                if license_number not in capacity_tracked_per_year[year_str]['region'][region]:
+                    violations_by_year_grouped[year_str]['region'][region]['capacity'] += capacity
+                    capacity_tracked_per_year[year_str]['region'][region].add(license_number)
+                if license_number not in capacity_tracked_per_year[year_str]['gender'][gender]:
+                    violations_by_year_grouped[year_str]['gender'][gender]['capacity'] += capacity
+                    capacity_tracked_per_year[year_str]['gender'][gender].add(license_number)
+                if license_number not in capacity_tracked_per_year[year_str]['capacity_bin'][capacity_bin]:
+                    violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin]['capacity'] += capacity
+                    capacity_tracked_per_year[year_str]['capacity_bin'][capacity_bin].add(license_number)
         
         # Aggregate by facility type
         violations_by_facility_type[simplified_type]['total'] += 1
@@ -514,18 +572,52 @@ def generate_violations_data(
     capacity_list = dict_to_sorted_list(violations_by_capacity, 'capacity_bin')
     capacity_list.sort(key=capacity_bin_sort_key)
     
+    # Process per-year grouped data
+    per_year_data = {}
+    for year_str in sorted(violations_by_year_grouped.keys()):
+        year_data = violations_by_year_grouped[year_str]
+        per_year_data[year_str] = {
+            'facility_type': dict_to_sorted_list(year_data['facility_type'], 'facility_type'),
+            'region': dict_to_sorted_list(year_data['region'], 'region'),
+            'gender': dict_to_sorted_list(year_data['gender'], 'gender'),
+            'capacity_bin': sorted(
+                [{'capacity_bin': k, **dict(v)} for k, v in year_data['capacity_bin'].items()],
+                key=lambda x: {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6}.get(x['capacity_bin'], 99)
+            ),
+        }
+    
+    # Process facility counts per year
+    facility_counts_per_year = {}
+    for year_str in sorted(facilities_per_year.keys()):
+        year_facilities = facilities_per_year[year_str]
+        facility_counts_per_year[year_str] = {
+            'facility_type': [{'facility_type': k, 'count': len(v)} for k, v in sorted(year_facilities['facility_type'].items())],
+            'region': [{'region': k, 'count': len(v)} for k, v in sorted(year_facilities['region'].items())],
+            'gender': [{'gender': k, 'count': len(v)} for k, v in sorted(year_facilities['gender'].items())],
+            'capacity_bin': sorted(
+                [{'capacity_bin': k, 'count': len(v)} for k, v in year_facilities['capacity_bin'].items()],
+                key=lambda x: {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6}.get(x['capacity_bin'], 99)
+            ),
+        }
+    
     # Prepare output data
     output_data = {
         'metadata': {
             'generated_at': datetime.now().isoformat(),
             'total_documents_processed': len(processed_sha256),
-            'total_violations_with_level': sum(v['total'] for v in violations_by_date.values())
+            'total_violations_with_level': sum(v['total'] for v in violations_by_date.values()),
+            'year_range': {
+                'min': min(violations_by_year.keys()) if violations_by_year else None,
+                'max': max(violations_by_year.keys()) if violations_by_year else None,
+            }
         },
         'by_year': dict_to_sorted_list(violations_by_year, 'year'),
         'by_facility_type': dict_to_sorted_list(violations_by_facility_type, 'facility_type'),
         'by_region': dict_to_sorted_list(violations_by_region, 'region'),
         'by_gender': dict_to_sorted_list(violations_by_gender, 'gender'),
         'by_capacity': capacity_list,
+        'per_year': per_year_data,
+        'facility_counts_per_year': facility_counts_per_year,
     }
     
     # Write output

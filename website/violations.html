@@ -271,6 +271,39 @@
             height: 16px;
             cursor: pointer;
         }
+        
+        /* Year Range Slider Styles */
+        .controls-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .year-range-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .year-slider {
+            width: 120px;
+            cursor: pointer;
+        }
+        
+        .year-label {
+            font-size: 0.95em;
+            font-weight: 500;
+            color: #333;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .year-separator {
+            font-size: 0.9em;
+            color: #666;
+        }
 
         @media (max-width: 768px) {
             .bar-chart-container {
@@ -396,20 +429,48 @@
                     <h2>🏢 Violations by Facility</h2>
                     <p class="chart-description">Number of substantiated violations grouped by facility characteristics.</p>
                 </div>
+                <div class="controls-container">
+                    <div class="dropdown-container">
+                        <span class="dropdown-label">Group by:</span>
+                        <select id="groupBySelect" class="dropdown-select">
+                            <option value="facility_type">Facility Type</option>
+                            <option value="region">Region</option>
+                            <option value="gender">Gender Served</option>
+                            <option value="capacity">Capacity</option>
+                        </select>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="capacityNormalizedCheckbox">
+                            <span>Normalize by capacity</span>
+                        </label>
+                    </div>
+                    <div class="year-range-container">
+                        <span class="dropdown-label">Year range:</span>
+                        <span id="yearRangeMinLabel" class="year-label">2019</span>
+                        <input type="range" id="yearRangeMin" class="year-slider" min="2019" max="2025" value="2019">
+                        <span class="year-separator">to</span>
+                        <input type="range" id="yearRangeMax" class="year-slider" min="2019" max="2025" value="2025">
+                        <span id="yearRangeMaxLabel" class="year-label">2025</span>
+                    </div>
+                </div>
+                <div id="byGroupedChart" class="bar-chart-container"></div>
+            </div>
+            
+            <!-- Facility Counts Section -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h2>🏠 Facility Counts</h2>
+                    <p class="chart-description">Number of facilities with violations, grouped by facility characteristics (within selected year range).</p>
+                </div>
                 <div class="dropdown-container">
                     <span class="dropdown-label">Group by:</span>
-                    <select id="groupBySelect" class="dropdown-select">
+                    <select id="facilityCountGroupBySelect" class="dropdown-select">
                         <option value="facility_type">Facility Type</option>
                         <option value="region">Region</option>
                         <option value="gender">Gender Served</option>
                         <option value="capacity">Capacity</option>
                     </select>
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="capacityNormalizedCheckbox">
-                        <span>Normalize by capacity</span>
-                    </label>
                 </div>
-                <div id="byGroupedChart" class="bar-chart-container"></div>
+                <div id="facilityCountChart" class="bar-chart-container"></div>
             </div>
         </div>
     </div>

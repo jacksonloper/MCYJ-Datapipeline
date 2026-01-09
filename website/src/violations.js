@@ -3,7 +3,10 @@
 
 let violationsData = null;
 let currentGroupBy = 'facility_type'; // 'facility_type', 'region', 'gender', 'capacity'
+let facilityCountGroupBy = 'facility_type';
 let capacityNormalized = false;
+let yearRangeMin = null;
+let yearRangeMax = null;
 
 // Load and display data
 async function init() {
@@ -15,13 +18,25 @@ async function init() {
         
         violationsData = await response.json();
         
+        // Initialize year range from data
+        if (violationsData.metadata && violationsData.metadata.year_range) {
+            yearRangeMin = parseInt(violationsData.metadata.year_range.min);
+            yearRangeMax = parseInt(violationsData.metadata.year_range.max);
+        } else if (violationsData.by_year && violationsData.by_year.length > 0) {
+            yearRangeMin = parseInt(violationsData.by_year[0].year);
+            yearRangeMax = parseInt(violationsData.by_year[violationsData.by_year.length - 1].year);
+        }
+        
         hideLoading();
         showContent();
         renderSummaryStats();
         renderByYearChart();
+        setupYearRangeSlider();
         renderGroupedChart();
         setupGroupByDropdown();
         setupCapacityNormalizedCheckbox();
+        renderFacilityCountChart();
+        setupFacilityCountDropdown();
         
     } catch (error) {
         console.error('Error loading data:', error);
@@ -179,6 +194,97 @@ function renderByYearChart() {
     renderStackedBarChart('byYearChart', sortedData, 'year', false);
 }
 
+function setupYearRangeSlider() {
+    const minSlider = document.getElementById('yearRangeMin');
+    const maxSlider = document.getElementById('yearRangeMax');
+    const minLabel = document.getElementById('yearRangeMinLabel');
+    const maxLabel = document.getElementById('yearRangeMaxLabel');
+    
+    if (!minSlider || !maxSlider || !violationsData.by_year || violationsData.by_year.length === 0) return;
+    
+    const years = violationsData.by_year.map(y => parseInt(y.year)).sort((a, b) => a - b);
+    const minYear = years[0];
+    const maxYear = years[years.length - 1];
+    
+    // Set slider attributes
+    minSlider.min = minYear;
+    minSlider.max = maxYear;
+    minSlider.value = yearRangeMin || minYear;
+    
+    maxSlider.min = minYear;
+    maxSlider.max = maxYear;
+    maxSlider.value = yearRangeMax || maxYear;
+    
+    // Update labels
+    if (minLabel) minLabel.textContent = minSlider.value;
+    if (maxLabel) maxLabel.textContent = maxSlider.value;
+    
+    // Add event listeners
+    minSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        if (val > parseInt(maxSlider.value)) {
+            minSlider.value = maxSlider.value;
+        }
+        yearRangeMin = parseInt(minSlider.value);
+        if (minLabel) minLabel.textContent = yearRangeMin;
+        renderGroupedChart();
+        renderFacilityCountChart();
+    });
+    
+    maxSlider.addEventListener('input', (e) => {
+        const val = parseInt(e.target.value);
+        if (val < parseInt(minSlider.value)) {
+            maxSlider.value = minSlider.value;
+        }
+        yearRangeMax = parseInt(maxSlider.value);
+        if (maxLabel) maxLabel.textContent = yearRangeMax;
+        renderGroupedChart();
+        renderFacilityCountChart();
+    });
+}
+
+function getFilteredDataByYearRange(groupingType) {
+    if (!violationsData.per_year) return null;
+    
+    const labelKey = groupingType === 'capacity' ? 'capacity_bin' : groupingType;
+    
+    // Aggregate data across selected years
+    const aggregated = {};
+    
+    for (let year = yearRangeMin; year <= yearRangeMax; year++) {
+        const yearStr = String(year);
+        const yearData = violationsData.per_year[yearStr];
+        if (!yearData) continue;
+        
+        const groupData = yearData[labelKey] || [];
+        for (const item of groupData) {
+            const key = item[labelKey];
+            if (!aggregated[key]) {
+                aggregated[key] = { total: 0, low: 0, moderate: 0, severe: 0, capacity: 0 };
+            }
+            aggregated[key].total += item.total || 0;
+            aggregated[key].low += item.low || 0;
+            aggregated[key].moderate += item.moderate || 0;
+            aggregated[key].severe += item.severe || 0;
+            aggregated[key].capacity += item.capacity || 0;
+        }
+    }
+    
+    // Convert to array
+    const result = Object.entries(aggregated).map(([key, counts]) => ({
+        [labelKey]: key,
+        ...counts
+    }));
+    
+    // Sort capacity bins in order
+    if (groupingType === 'capacity') {
+        const order = {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6};
+        result.sort((a, b) => (order[a.capacity_bin] || 99) - (order[b.capacity_bin] || 99));
+    }
+    
+    return result;
+}
+
 function renderGroupedChart() {
     const container = document.getElementById('byGroupedChart');
     if (!container) return;
@@ -186,18 +292,25 @@ function renderGroupedChart() {
     let data = [];
     let labelKey = '';
     
-    if (currentGroupBy === 'facility_type') {
-        data = violationsData.by_facility_type || [];
-        labelKey = 'facility_type';
-    } else if (currentGroupBy === 'region') {
-        data = violationsData.by_region || [];
-        labelKey = 'region';
-    } else if (currentGroupBy === 'gender') {
-        data = violationsData.by_gender || [];
-        labelKey = 'gender';
-    } else if (currentGroupBy === 'capacity') {
-        data = violationsData.by_capacity || [];
-        labelKey = 'capacity_bin';
+    // Try to use year-filtered data if available
+    if (violationsData.per_year && yearRangeMin && yearRangeMax) {
+        data = getFilteredDataByYearRange(currentGroupBy);
+        labelKey = currentGroupBy === 'capacity' ? 'capacity_bin' : currentGroupBy;
+    } else {
+        // Fall back to pre-aggregated data
+        if (currentGroupBy === 'facility_type') {
+            data = violationsData.by_facility_type || [];
+            labelKey = 'facility_type';
+        } else if (currentGroupBy === 'region') {
+            data = violationsData.by_region || [];
+            labelKey = 'region';
+        } else if (currentGroupBy === 'gender') {
+            data = violationsData.by_gender || [];
+            labelKey = 'gender';
+        } else if (currentGroupBy === 'capacity') {
+            data = violationsData.by_capacity || [];
+            labelKey = 'capacity_bin';
+        }
     }
     
     if (!data || data.length === 0) {
@@ -231,6 +344,98 @@ function setupCapacityNormalizedCheckbox() {
     checkbox.addEventListener('change', (e) => {
         capacityNormalized = e.target.checked;
         renderGroupedChart();
+    });
+}
+
+// Facility Count Section
+function getFilteredFacilityCountsByYearRange(groupingType) {
+    if (!violationsData.facility_counts_per_year) return null;
+    
+    const labelKey = groupingType === 'capacity' ? 'capacity_bin' : groupingType;
+    
+    // Aggregate unique facilities across selected years
+    const aggregated = {};
+    
+    for (let year = yearRangeMin; year <= yearRangeMax; year++) {
+        const yearStr = String(year);
+        const yearData = violationsData.facility_counts_per_year[yearStr];
+        if (!yearData) continue;
+        
+        const groupData = yearData[labelKey] || [];
+        for (const item of groupData) {
+            const key = item[labelKey];
+            if (!aggregated[key]) {
+                aggregated[key] = 0;
+            }
+            // Note: This will double-count facilities across years
+            // For accurate unique counts, we'd need to track facility IDs
+            // For now, use the max count across years as an approximation
+            aggregated[key] = Math.max(aggregated[key], item.count || 0);
+        }
+    }
+    
+    // Convert to array
+    const result = Object.entries(aggregated).map(([key, count]) => ({
+        [labelKey]: key,
+        count
+    }));
+    
+    // Sort capacity bins in order
+    if (groupingType === 'capacity') {
+        const order = {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6};
+        result.sort((a, b) => (order[a.capacity_bin] || 99) - (order[b.capacity_bin] || 99));
+    }
+    
+    return result;
+}
+
+function renderFacilityCountChart() {
+    const container = document.getElementById('facilityCountChart');
+    if (!container) return;
+    
+    let data = getFilteredFacilityCountsByYearRange(facilityCountGroupBy);
+    const labelKey = facilityCountGroupBy === 'capacity' ? 'capacity_bin' : facilityCountGroupBy;
+    
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No data available</div>';
+        return;
+    }
+    
+    // Sort by count descending (except capacity bins)
+    let sortedData = [...data];
+    if (facilityCountGroupBy !== 'capacity') {
+        sortedData.sort((a, b) => (b.count || 0) - (a.count || 0));
+    }
+    
+    // Find max for scaling
+    const maxCount = Math.max(...sortedData.map(d => d.count || 0));
+    
+    const barsHtml = sortedData.map(item => {
+        const count = item.count || 0;
+        const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+        const label = item[labelKey] || 'Unknown';
+        
+        return `
+            <div class="bar-chart-row">
+                <div class="bar-chart-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+                <div class="bar-chart-bar-container" title="${count} facilities">
+                    <div class="bar-segment" style="width: ${pct}%; background: #3498db;"></div>
+                </div>
+                <div class="bar-chart-count">${count}</div>
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = barsHtml;
+}
+
+function setupFacilityCountDropdown() {
+    const dropdown = document.getElementById('facilityCountGroupBySelect');
+    if (!dropdown) return;
+    
+    dropdown.addEventListener('change', (e) => {
+        facilityCountGroupBy = e.target.value;
+        renderFacilityCountChart();
     });
 }
 
