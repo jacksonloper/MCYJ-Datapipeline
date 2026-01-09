@@ -266,6 +266,47 @@ def categorize_age_group(normalized_age: Optional[str]) -> str:
         return "Other"
 
 
+def normalize_region(region: str) -> str:
+    """Normalize region names for consistent display."""
+    if not region or region.strip().upper() in ('N/A', ''):
+        return "Unknown"
+    
+    region = region.strip()
+    
+    # Map to standard region names
+    region_map = {
+        'NE': 'NE',
+        'SE': 'SE',
+        'SW': 'SW',
+        'N': 'N',
+        'S': 'S',
+        'E': 'E',
+        'W': 'W',
+        'Mid': 'Mid',
+        'Ingham': 'Mid',  # Ingham is in the mid region
+    }
+    
+    return region_map.get(region, region)
+
+
+def normalize_gender(gender: str) -> str:
+    """Normalize gender served values for consistent display."""
+    if not gender or gender.strip().upper() in ('N/A', '', 'CONTRACT ONLY'):
+        return "Unknown"
+    
+    gender = gender.strip().lower()
+    
+    # Normalize variations
+    if gender in ('male', 'males'):
+        return "Male"
+    elif gender in ('female', 'females') or 'girl' in gender:
+        return "Female"
+    elif gender in ('co-ed', 'coed'):
+        return "Co-ed"
+    else:
+        return "Unknown"
+
+
 def simplify_facility_type(agency_type: str) -> str:
     """Simplify facility types for cleaner visualization."""
     if not agency_type:
@@ -320,20 +361,9 @@ def generate_violations_data(
     # Aggregation containers
     violations_by_date = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
     violations_by_facility_type = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
-    violations_by_age_group = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
+    violations_by_region = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
+    violations_by_gender = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
     violations_by_year = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
-    
-    # Per-facility age data for granular visualization
-    # Key: license_number, Value: {facility_name, min_age, max_age, total, low, moderate, severe}
-    violations_by_facility_age = defaultdict(lambda: {
-        'facility_name': '',
-        'min_age': None,
-        'max_age': None,
-        'total': 0,
-        'low': 0,
-        'moderate': 0,
-        'severe': 0
-    })
     
     # Track unique violations (some documents may be duplicated)
     processed_sha256 = set()
@@ -371,9 +401,11 @@ def generate_violations_data(
         facility_type = annotation.get('agency_type', '') or facility.get('agency_type', '')
         simplified_type = simplify_facility_type(facility_type)
         
-        # Determine age group
-        ages_normalized = annotation.get('ages_served_normalized')
-        age_category = categorize_age_group(ages_normalized)
+        # Determine region
+        region = normalize_region(annotation.get('region', ''))
+        
+        # Determine gender served
+        gender = normalize_gender(annotation.get('genders_served', ''))
         
         # Aggregate by date (month)
         if parsed_date:
@@ -390,24 +422,13 @@ def generate_violations_data(
         violations_by_facility_type[simplified_type]['total'] += 1
         violations_by_facility_type[simplified_type][level] += 1
         
-        # Aggregate by age group
-        violations_by_age_group[age_category]['total'] += 1
-        violations_by_age_group[age_category][level] += 1
+        # Aggregate by region
+        violations_by_region[region]['total'] += 1
+        violations_by_region[region][level] += 1
         
-        # Aggregate by facility with age range for granular visualization
-        if ages_normalized:
-            match = re.match(r'(\d+)-(\d+)', ages_normalized)
-            if match:
-                min_age = int(match.group(1))
-                max_age = int(match.group(2))
-                facility_name = annotation.get('facility_name', '') or facility.get('agency_name', '') or license_number
-                
-                fac_data = violations_by_facility_age[license_number]
-                fac_data['facility_name'] = facility_name
-                fac_data['min_age'] = min_age
-                fac_data['max_age'] = max_age
-                fac_data['total'] += 1
-                fac_data[level] += 1
+        # Aggregate by gender
+        violations_by_gender[gender]['total'] += 1
+        violations_by_gender[gender][level] += 1
     
     # Convert to sorted lists for JSON output
     def dict_to_sorted_list(d: dict, key_name: str = 'key') -> list:
@@ -419,27 +440,6 @@ def generate_violations_data(
             result.append(entry)
         return result
     
-    # Convert facility age data to sorted list (sorted by min_age, then by total violations)
-    def facility_age_to_list(d: dict) -> list:
-        """Convert facility age data to list sorted by starting age."""
-        result = []
-        for license_num, data in d.items():
-            if data['min_age'] is not None and data['max_age'] is not None:
-                entry = {
-                    'license_number': license_num,
-                    'facility_name': data['facility_name'],
-                    'min_age': data['min_age'],
-                    'max_age': data['max_age'],
-                    'total': data['total'],
-                    'low': data['low'],
-                    'moderate': data['moderate'],
-                    'severe': data['severe']
-                }
-                result.append(entry)
-        # Sort by min_age, then by max_age
-        result.sort(key=lambda x: (x['min_age'], x['max_age']))
-        return result
-    
     # Prepare output data
     output_data = {
         'metadata': {
@@ -447,11 +447,10 @@ def generate_violations_data(
             'total_documents_processed': len(processed_sha256),
             'total_violations_with_level': sum(v['total'] for v in violations_by_date.values())
         },
-        'by_month': dict_to_sorted_list(violations_by_date, 'month'),
         'by_year': dict_to_sorted_list(violations_by_year, 'year'),
         'by_facility_type': dict_to_sorted_list(violations_by_facility_type, 'facility_type'),
-        'by_age_group': dict_to_sorted_list(violations_by_age_group, 'age_group'),
-        'by_facility_age': facility_age_to_list(violations_by_facility_age)
+        'by_region': dict_to_sorted_list(violations_by_region, 'region'),
+        'by_gender': dict_to_sorted_list(violations_by_gender, 'gender'),
     }
     
     # Write output
@@ -461,7 +460,7 @@ def generate_violations_data(
     
     print(f"\nWrote violations data to {output_file}")
     print(f"Total violations with severity level: {output_data['metadata']['total_violations_with_level']}")
-    print(f"Date range: {output_data['by_month'][0]['month'] if output_data['by_month'] else 'N/A'} to {output_data['by_month'][-1]['month'] if output_data['by_month'] else 'N/A'}")
+    print(f"Year range: {output_data['by_year'][0]['year'] if output_data['by_year'] else 'N/A'} to {output_data['by_year'][-1]['year'] if output_data['by_year'] else 'N/A'}")
 
 
 def main():
