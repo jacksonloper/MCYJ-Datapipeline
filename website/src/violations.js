@@ -202,7 +202,7 @@ function renderSeverityAgeChart(containerId, data, severityKey, fillColor, title
     // Find age range for scaling (y-axis) - use full data range for consistency across charts
     const minAge = Math.min(...data.map(d => d.min_age));
     const maxAge = Math.max(...data.map(d => d.max_age));
-    const ageRange = maxAge - minAge || 1;
+    const ageRange = (maxAge - minAge) > 0 ? (maxAge - minAge) : 1;
     
     // Y scale: age (younger ages at bottom, older at top)
     const yScale = (age) => innerHeight - ((age - minAge) / ageRange) * innerHeight;
@@ -212,7 +212,7 @@ function renderSeverityAgeChart(containerId, data, severityKey, fillColor, title
     
     // Calculate bar widths such that area is proportional to violations of this severity
     const barsWithMetrics = sortedData.map(item => {
-        const heightInYears = item.max_age - item.min_age || 1;
+        const heightInYears = (item.max_age - item.min_age) > 0 ? (item.max_age - item.min_age) : 1;
         const violations = item[severityKey];
         // Area should be proportional to violations, so width = violations / heightInYears
         const widthRatio = violations / heightInYears;
@@ -220,7 +220,7 @@ function renderSeverityAgeChart(containerId, data, severityKey, fillColor, title
     });
     
     const maxWidthRatio = Math.max(...barsWithMetrics.map(d => d.widthRatio));
-    const widthScale = (widthRatio) => maxWidthRatio > 0 ? (widthRatio / maxWidthRatio) * innerWidth * 0.9 : 0;
+    const widthScale = (widthRatio) => maxWidthRatio > 0 ? (widthRatio / maxWidthRatio) * innerWidth * 0.9 : 2;
     
     // Build SVG with proper viewBox for responsiveness
     let svg = `<svg viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: auto; display: block; max-width: 100%;">`;
