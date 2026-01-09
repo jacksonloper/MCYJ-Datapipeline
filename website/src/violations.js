@@ -88,9 +88,15 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, 
     }
     
     // Filter out items with no capacity if normalized mode is on
+    // Also filter out "Unknown" category since those facilities don't have capacity data
     let filteredData = [...data];
     if (normalized) {
-        filteredData = filteredData.filter(d => d.capacity && d.capacity > 0);
+        filteredData = filteredData.filter(d => {
+            const label = d[labelKey] || '';
+            // Exclude Unknown categories and items with no capacity
+            if (label === 'Unknown') return false;
+            return d.capacity && d.capacity > 0;
+        });
         if (filteredData.length === 0) {
             container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No data available with known capacity</div>';
             return;
@@ -199,8 +205,8 @@ function renderGroupedChart() {
         return;
     }
     
-    // For capacity grouping, don't allow capacity normalization (doesn't make sense)
-    const useNormalized = capacityNormalized && currentGroupBy !== 'capacity';
+    // Allow capacity normalization for all groupings including capacity
+    const useNormalized = capacityNormalized;
     
     // Keep capacity bins in original order (already sorted by bins), sort others by total
     const sortByTotal = currentGroupBy !== 'capacity';
