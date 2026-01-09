@@ -351,6 +351,15 @@
             margin-top: 3px;
         }
         
+        /* Year slider section - ensure pips don't overlap content below */
+        .year-filter-section {
+            padding: 20px 30px 50px 30px; /* Extra bottom padding for pips */
+        }
+        
+        .year-slider-wrapper {
+            margin-bottom: 30px; /* Space below slider for pips */
+        }
+        
         /* Methodology Note */
         .methodology-note {
             margin-bottom: 20px;
@@ -521,14 +530,16 @@
             </div>
             
             <!-- Year Range Filter (applies to both Violations by Facility and Facility Counts) -->
-            <div class="chart-section" style="padding: 20px 30px;">
-                <div class="year-range-container" style="justify-content: center;">
-                    <span class="dropdown-label"><strong>Filter by Year Range:</strong></span>
-                    <span id="yearRangeMinLabel" class="year-label">2019</span>
-                    <div id="yearRangeSlider" class="year-range-slider"></div>
-                    <span id="yearRangeMaxLabel" class="year-label">2025</span>
+            <div class="chart-section year-filter-section">
+                <div class="year-slider-wrapper">
+                    <div class="year-range-container" style="justify-content: center;">
+                        <span class="dropdown-label"><strong>Filter by Year Range:</strong></span>
+                        <span id="yearRangeMinLabel" class="year-label">2019</span>
+                        <div id="yearRangeSlider" class="year-range-slider"></div>
+                        <span id="yearRangeMaxLabel" class="year-label">2025</span>
+                    </div>
                 </div>
-                <p style="text-align: center; color: #666; font-size: 0.85em; margin-top: 10px;">This filter applies to both charts below</p>
+                <p style="text-align: center; color: #666; font-size: 0.85em;">This filter applies to both charts below</p>
             </div>
             
             <!-- Violations by Type/Region/Gender/Capacity/Years Active -->
