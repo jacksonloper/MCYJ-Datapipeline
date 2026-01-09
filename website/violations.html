@@ -293,6 +293,90 @@
                 height: 20px;
             }
         }
+        
+        /* Age Charts Grid Layout */
+        .age-charts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .age-chart-wrapper {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .age-chart-title {
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .age-chart-container {
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .age-chart-container svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        @media (max-width: 1024px) {
+            .age-charts-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .age-chart-wrapper {
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .chart-section {
+                padding: 15px;
+            }
+            
+            .chart-header h2 {
+                font-size: 1.2em;
+            }
+            
+            .chart-description {
+                font-size: 0.85em;
+            }
+            
+            .age-chart-title {
+                font-size: 0.9em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .chart-section {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+            
+            .stat-card {
+                padding: 12px;
+            }
+            
+            .stat-number {
+                font-size: 1.6em;
+            }
+            
+            .age-chart-wrapper {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -366,13 +450,26 @@
                 <div class="chart-header">
                     <h2>👥 Violations by Age Range Served</h2>
                     <p class="chart-description">
-                        Per-facility violations visualized by age range served. Each bar represents a facility,
-                        positioned vertically by its age range (min to max age served). Bar area is proportional 
-                        to the number of violations. Bars are stacked horizontally, sorted by starting age.
+                        Per-facility violations visualized by age range served, split by severity level.
+                        Each bar represents a facility, positioned vertically by its age range (min to max age served).
+                        Bar area is proportional to the number of violations. Bars are stacked horizontally, sorted by starting age.
                         Hover over bars for facility details.
                     </p>
                 </div>
-                <div id="byAgeGroupChart" class="bar-chart-container"></div>
+                <div class="age-charts-grid">
+                    <div class="age-chart-wrapper">
+                        <h3 class="age-chart-title" style="color: #f1c40f;">🟡 Low Severity</h3>
+                        <div id="byAgeGroupChartLow" class="age-chart-container"></div>
+                    </div>
+                    <div class="age-chart-wrapper">
+                        <h3 class="age-chart-title" style="color: #e67e22;">🟠 Moderate Severity</h3>
+                        <div id="byAgeGroupChartModerate" class="age-chart-container"></div>
+                    </div>
+                    <div class="age-chart-wrapper">
+                        <h3 class="age-chart-title" style="color: #e74c3c;">🔴 Severe Severity</h3>
+                        <div id="byAgeGroupChartSevere" class="age-chart-container"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

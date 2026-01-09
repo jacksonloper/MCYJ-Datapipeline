@@ -161,55 +161,69 @@ function renderByFacilityTypeChart() {
 function renderByAgeGroupChart() {
     if (!violationsData || !violationsData.by_facility_age) return;
     
-    const container = document.getElementById('byAgeGroupChart');
-    if (!container) return;
-    
     const data = violationsData.by_facility_age;
     
     if (!data || data.length === 0) {
-        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No age data available</div>';
+        const containers = ['byAgeGroupChartLow', 'byAgeGroupChartModerate', 'byAgeGroupChartSevere'];
+        containers.forEach(id => {
+            const container = document.getElementById(id);
+            if (container) {
+                container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No age data available</div>';
+            }
+        });
         return;
     }
     
-    // Chart dimensions
-    const chartWidth = 900;
-    const chartHeight = 500;
-    const margin = { top: 30, right: 30, bottom: 50, left: 60 };
+    // Render three separate charts for each severity level
+    renderSeverityAgeChart('byAgeGroupChartLow', data, 'low', '#f1c40f', 'Low Severity');
+    renderSeverityAgeChart('byAgeGroupChartModerate', data, 'moderate', '#e67e22', 'Moderate Severity');
+    renderSeverityAgeChart('byAgeGroupChartSevere', data, 'severe', '#e74c3c', 'Severe Severity');
+}
+
+function renderSeverityAgeChart(containerId, data, severityKey, fillColor, title) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Filter to only facilities that have violations of this severity
+    const filteredData = data.filter(d => d[severityKey] > 0);
+    
+    if (filteredData.length === 0) {
+        container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No violations of this severity</div>';
+        return;
+    }
+    
+    // Chart dimensions - responsive
+    const chartWidth = 400;
+    const chartHeight = 300;
+    const margin = { top: 20, right: 20, bottom: 40, left: 50 };
     const innerWidth = chartWidth - margin.left - margin.right;
     const innerHeight = chartHeight - margin.top - margin.bottom;
     
-    // Find age range for scaling (y-axis)
+    // Find age range for scaling (y-axis) - use full data range for consistency across charts
     const minAge = Math.min(...data.map(d => d.min_age));
     const maxAge = Math.max(...data.map(d => d.max_age));
-    const ageRange = maxAge - minAge;
+    const ageRange = maxAge - minAge || 1;
     
-    // Y scale: age (inverted so younger ages at top)
-    const yScale = (age) => ((maxAge - age) / ageRange) * innerHeight;
-    
-    // For width: we want area proportional to violations
-    // Since height is determined by age range, width = violations / height_in_pixels * scale
-    // To make area proportional: width = k * violations / bar_height
-    const maxViolations = Math.max(...data.map(d => d.total));
+    // Y scale: age (younger ages at bottom, older at top)
+    const yScale = (age) => innerHeight - ((age - minAge) / ageRange) * innerHeight;
     
     // Sort by starting age, then by ending age
-    const sortedData = [...data].sort((a, b) => a.min_age - b.min_age || a.max_age - b.max_age);
+    const sortedData = [...filteredData].sort((a, b) => a.min_age - b.min_age || a.max_age - b.max_age);
     
-    // Calculate bar widths such that area is proportional to violations
-    // First, calculate the total "area units" needed
+    // Calculate bar widths such that area is proportional to violations of this severity
     const barsWithMetrics = sortedData.map(item => {
-        const barHeightPixels = Math.abs(yScale(item.min_age) - yScale(item.max_age));
-        const heightInYears = item.max_age - item.min_age;
+        const heightInYears = item.max_age - item.min_age || 1;
+        const violations = item[severityKey];
         // Area should be proportional to violations, so width = violations / heightInYears
-        // This ensures area (width * height) ~ violations
-        const widthRatio = heightInYears > 0 ? item.total / heightInYears : item.total;
-        return { ...item, barHeightPixels: Math.max(barHeightPixels, 4), widthRatio };
+        const widthRatio = violations / heightInYears;
+        return { ...item, widthRatio, violations };
     });
     
     const maxWidthRatio = Math.max(...barsWithMetrics.map(d => d.widthRatio));
-    const widthScale = (widthRatio) => (widthRatio / maxWidthRatio) * innerWidth * 0.9;
+    const widthScale = (widthRatio) => maxWidthRatio > 0 ? (widthRatio / maxWidthRatio) * innerWidth * 0.9 : 0;
     
-    // Build SVG
-    let svg = `<svg viewBox="0 0 ${chartWidth} ${chartHeight}" style="width: 100%; max-width: ${chartWidth}px; height: auto; display: block;">`;
+    // Build SVG with proper viewBox for responsiveness
+    let svg = `<svg viewBox="0 0 ${chartWidth} ${chartHeight}" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: auto; display: block; max-width: 100%;">`;
     
     // Background
     svg += `<rect x="0" y="0" width="${chartWidth}" height="${chartHeight}" fill="#fafafa"/>`;
@@ -218,27 +232,25 @@ function renderByAgeGroupChart() {
     svg += `<g transform="translate(${margin.left}, ${margin.top})">`;
     
     // Y-axis gridlines and labels (age)
-    for (let age = minAge; age <= maxAge; age += 1) {
+    for (let age = minAge; age <= maxAge; age += 2) {
         const y = yScale(age);
         // Gridline
         svg += `<line x1="0" y1="${y}" x2="${innerWidth}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>`;
-        // Label every 2 years
-        if (age % 2 === 0 || age === minAge || age === maxAge) {
-            svg += `<text x="-8" y="${y}" dy="0.35em" text-anchor="end" font-size="11" fill="#666">${age}</text>`;
-        }
+        // Label
+        svg += `<text x="-8" y="${y}" dy="0.35em" text-anchor="end" font-size="10" fill="#666">${age}</text>`;
     }
     
     // Y-axis line
     svg += `<line x1="0" y1="0" x2="0" y2="${innerHeight}" stroke="#333" stroke-width="1"/>`;
     
     // Y-axis label
-    svg += `<text x="${-margin.left + 15}" y="${innerHeight / 2}" transform="rotate(-90, ${-margin.left + 15}, ${innerHeight / 2})" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">Age Served</text>`;
+    svg += `<text x="${-margin.left + 12}" y="${innerHeight / 2}" transform="rotate(-90, ${-margin.left + 12}, ${innerHeight / 2})" text-anchor="middle" font-size="10" fill="#333">Age</text>`;
     
     // X-axis line
     svg += `<line x1="0" y1="${innerHeight}" x2="${innerWidth}" y2="${innerHeight}" stroke="#333" stroke-width="1"/>`;
     
     // X-axis label
-    svg += `<text x="${innerWidth / 2}" y="${innerHeight + 35}" text-anchor="middle" font-size="12" fill="#666">← Stacked by starting age | Bar area ∝ violation count →</text>`;
+    svg += `<text x="${innerWidth / 2}" y="${innerHeight + 30}" text-anchor="middle" font-size="10" fill="#666">Violations (area ∝ count)</text>`;
     
     // Draw bars - stack horizontally (x position increases as we go)
     let xOffset = 0;
@@ -246,37 +258,14 @@ function renderByAgeGroupChart() {
     for (const item of barsWithMetrics) {
         const y1 = yScale(item.max_age); // top of bar (older age)
         const y2 = yScale(item.min_age); // bottom of bar (younger age)
-        const barHeight = Math.max(y2 - y1, 4); // minimum 4px height
+        const barHeight = Math.max(Math.abs(y2 - y1), 3); // minimum 3px height
         const barWidth = Math.max(widthScale(item.widthRatio), 2); // minimum 2px width
         
-        // Calculate severity segment widths (proportional to severity counts)
-        const total = item.total || 1;
-        const lowWidth = (item.low / total) * barWidth;
-        const modWidth = (item.moderate / total) * barWidth;
-        const sevWidth = (item.severe / total) * barWidth;
-        
         // Tooltip content
-        const tooltip = `${item.facility_name}\nAges: ${item.min_age}-${item.max_age}\nTotal: ${item.total} (Low: ${item.low}, Mod: ${item.moderate}, Sev: ${item.severe})`;
+        const tooltip = `${item.facility_name}\nAges: ${item.min_age}-${item.max_age}\n${title}: ${item.violations}`;
         
-        // Draw severity segments stacked horizontally within bar
-        let segX = xOffset;
-        
-        // Low severity (yellow)
-        if (lowWidth > 0) {
-            svg += `<rect x="${segX}" y="${y1}" width="${lowWidth}" height="${barHeight}" fill="#f1c40f" stroke="#fff" stroke-width="0.5"><title>${tooltip}</title></rect>`;
-            segX += lowWidth;
-        }
-        
-        // Moderate severity (orange)
-        if (modWidth > 0) {
-            svg += `<rect x="${segX}" y="${y1}" width="${modWidth}" height="${barHeight}" fill="#e67e22" stroke="#fff" stroke-width="0.5"><title>${tooltip}</title></rect>`;
-            segX += modWidth;
-        }
-        
-        // Severe severity (red)
-        if (sevWidth > 0) {
-            svg += `<rect x="${segX}" y="${y1}" width="${sevWidth}" height="${barHeight}" fill="#e74c3c" stroke="#fff" stroke-width="0.5"><title>${tooltip}</title></rect>`;
-        }
+        // Draw bar
+        svg += `<rect x="${xOffset}" y="${Math.min(y1, y2)}" width="${barWidth}" height="${barHeight}" fill="${fillColor}" stroke="#fff" stroke-width="0.5" opacity="0.85"><title>${tooltip}</title></rect>`;
         
         // Move x offset for next bar
         xOffset += barWidth;
@@ -285,11 +274,11 @@ function renderByAgeGroupChart() {
     svg += `</g></svg>`;
     
     // Add summary info
+    const totalViolations = filteredData.reduce((sum, d) => sum + d[severityKey], 0);
     const summaryHtml = `
-        <div style="margin-bottom: 15px; font-size: 0.9em; color: #666;">
-            <strong>${data.length}</strong> facilities with age range data, 
-            <strong>${data.reduce((sum, d) => sum + d.total, 0)}</strong> total violations.
-            Each bar's vertical span shows the age range served; bar area is proportional to violation count.
+        <div style="margin-bottom: 8px; font-size: 0.85em; color: #666;">
+            <strong>${filteredData.length}</strong> facilities, 
+            <strong>${totalViolations}</strong> violations
         </div>
     `;
     
