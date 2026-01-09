@@ -1,12 +1,16 @@
 // Violations analytics page - displays violation statistics
 // with views by date and facility type/region/gender/capacity.
 
+import noUiSlider from 'nouislider';
+import 'nouislider/dist/nouislider.css';
+
 let violationsData = null;
 let currentGroupBy = 'facility_type'; // 'facility_type', 'region', 'gender', 'capacity'
 let facilityCountGroupBy = 'facility_type';
 let capacityNormalized = false;
 let yearRangeMin = null;
 let yearRangeMax = null;
+let yearSlider = null;
 
 // Load and display data
 async function init() {
@@ -195,49 +199,57 @@ function renderByYearChart() {
 }
 
 function setupYearRangeSlider() {
-    const minSlider = document.getElementById('yearRangeMin');
-    const maxSlider = document.getElementById('yearRangeMax');
+    const sliderContainer = document.getElementById('yearRangeSlider');
     const minLabel = document.getElementById('yearRangeMinLabel');
     const maxLabel = document.getElementById('yearRangeMaxLabel');
     
-    if (!minSlider || !maxSlider || !violationsData.by_year || violationsData.by_year.length === 0) return;
+    if (!sliderContainer || !violationsData.by_year || violationsData.by_year.length === 0) return;
     
     const years = violationsData.by_year.map(y => parseInt(y.year)).sort((a, b) => a - b);
     const minYear = years[0];
     const maxYear = years[years.length - 1];
     
-    // Set slider attributes
-    minSlider.min = minYear;
-    minSlider.max = maxYear;
-    minSlider.value = yearRangeMin || minYear;
+    // Initialize year range
+    if (!yearRangeMin) yearRangeMin = minYear;
+    if (!yearRangeMax) yearRangeMax = maxYear;
     
-    maxSlider.min = minYear;
-    maxSlider.max = maxYear;
-    maxSlider.value = yearRangeMax || maxYear;
-    
-    // Update labels
-    if (minLabel) minLabel.textContent = minSlider.value;
-    if (maxLabel) maxLabel.textContent = maxSlider.value;
-    
-    // Add event listeners
-    minSlider.addEventListener('input', (e) => {
-        const val = parseInt(e.target.value);
-        if (val > parseInt(maxSlider.value)) {
-            minSlider.value = maxSlider.value;
+    // Create noUiSlider with dual handles
+    yearSlider = noUiSlider.create(sliderContainer, {
+        start: [yearRangeMin, yearRangeMax],
+        connect: true,
+        step: 1,
+        range: {
+            'min': minYear,
+            'max': maxYear
+        },
+        format: {
+            to: value => Math.round(value),
+            from: value => Math.round(value)
+        },
+        tooltips: false,
+        pips: {
+            mode: 'steps',
+            density: 100
         }
-        yearRangeMin = parseInt(minSlider.value);
-        if (minLabel) minLabel.textContent = yearRangeMin;
-        renderGroupedChart();
-        renderFacilityCountChart();
     });
     
-    maxSlider.addEventListener('input', (e) => {
-        const val = parseInt(e.target.value);
-        if (val < parseInt(minSlider.value)) {
-            maxSlider.value = minSlider.value;
-        }
-        yearRangeMax = parseInt(maxSlider.value);
-        if (maxLabel) maxLabel.textContent = yearRangeMax;
+    // Update labels initially
+    if (minLabel) minLabel.textContent = yearRangeMin;
+    if (maxLabel) maxLabel.textContent = yearRangeMax;
+    
+    // Listen for slider changes
+    yearSlider.on('update', (values) => {
+        const newMin = parseInt(values[0]);
+        const newMax = parseInt(values[1]);
+        
+        if (minLabel) minLabel.textContent = newMin;
+        if (maxLabel) maxLabel.textContent = newMax;
+    });
+    
+    yearSlider.on('change', (values) => {
+        yearRangeMin = parseInt(values[0]);
+        yearRangeMax = parseInt(values[1]);
+        
         renderGroupedChart();
         renderFacilityCountChart();
     });
