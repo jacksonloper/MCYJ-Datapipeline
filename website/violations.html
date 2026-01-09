@@ -520,33 +520,36 @@
                 <div id="byYearChart" class="bar-chart-container"></div>
             </div>
             
+            <!-- Year Range Filter (applies to both Violations by Facility and Facility Counts) -->
+            <div class="chart-section" style="padding: 20px 30px;">
+                <div class="year-range-container" style="justify-content: center;">
+                    <span class="dropdown-label"><strong>Filter by Year Range:</strong></span>
+                    <span id="yearRangeMinLabel" class="year-label">2019</span>
+                    <div id="yearRangeSlider" class="year-range-slider"></div>
+                    <span id="yearRangeMaxLabel" class="year-label">2025</span>
+                </div>
+                <p style="text-align: center; color: #666; font-size: 0.85em; margin-top: 10px;">This filter applies to both charts below</p>
+            </div>
+            
             <!-- Violations by Type/Region/Gender/Capacity/Years Active -->
             <div class="chart-section">
                 <div class="chart-header">
                     <h2>🏢 Violations by Facility</h2>
-                    <p class="chart-description">Number of substantiated violations grouped by facility characteristics. Only facilities with currently active licenses are included.</p>
+                    <p class="chart-description">Number of substantiated violations grouped by facility characteristics. Only facilities with confirmed active licenses are included.</p>
                 </div>
-                <div class="controls-container">
-                    <div class="dropdown-container">
-                        <span class="dropdown-label">Group by:</span>
-                        <select id="groupBySelect" class="dropdown-select">
-                            <option value="facility_type">Facility Type</option>
-                            <option value="region">Region</option>
-                            <option value="gender">Gender Served</option>
-                            <option value="capacity">Capacity</option>
-                            <option value="years_active">Years Active</option>
-                        </select>
-                        <label class="checkbox-label" title="Normalize by (capacity × years active) to compare facilities of different sizes and ages">
-                            <input type="checkbox" id="capacityNormalizedCheckbox">
-                            <span>Normalize by capacity×years</span>
-                        </label>
-                    </div>
-                    <div class="year-range-container">
-                        <span class="dropdown-label">Year range:</span>
-                        <span id="yearRangeMinLabel" class="year-label">2019</span>
-                        <div id="yearRangeSlider" class="year-range-slider"></div>
-                        <span id="yearRangeMaxLabel" class="year-label">2025</span>
-                    </div>
+                <div class="dropdown-container">
+                    <span class="dropdown-label">Group by:</span>
+                    <select id="groupBySelect" class="dropdown-select">
+                        <option value="facility_type">Facility Type</option>
+                        <option value="region">Region</option>
+                        <option value="gender">Gender Served</option>
+                        <option value="capacity">Capacity</option>
+                        <option value="years_active">Years Active</option>
+                    </select>
+                    <label class="checkbox-label" title="Normalize by (capacity × years active) to compare facilities of different sizes and ages">
+                        <input type="checkbox" id="capacityNormalizedCheckbox">
+                        <span>Normalize by capacity×years</span>
+                    </label>
                 </div>
                 <div id="byGroupedChart" class="bar-chart-container"></div>
             </div>
@@ -555,7 +558,7 @@
             <div class="chart-section">
                 <div class="chart-header">
                     <h2>🏠 Facility Counts</h2>
-                    <p class="chart-description">Number of facilities with violations, grouped by facility characteristics (within selected year range).</p>
+                    <p class="chart-description">Number of facilities with violations, grouped by facility characteristics.</p>
                 </div>
                 <div class="dropdown-container">
                     <span class="dropdown-label">Group by:</span>

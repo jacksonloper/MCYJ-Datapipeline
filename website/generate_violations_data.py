@@ -570,11 +570,10 @@ def generate_violations_data(
         facility = facilities.get(license_number, {})
         
         # Filter: Only include facilities with active licenses
+        # Facilities not in our records are considered inactive/unknown and excluded
         if license_number not in active_license_numbers:
-            # Also allow facilities not in facility_information.csv (might be in annotations)
-            if license_number in facilities:
-                skipped_inactive += 1
-                continue
+            skipped_inactive += 1
+            continue
         
         # Parse date
         date_str = doc['date'] or vl_info.get('date', '')
@@ -787,13 +786,14 @@ def generate_violations_data(
                 'max': max(violations_by_year.keys()) if violations_by_year else None,
             },
             'methodology': {
-                'filtering': 'Only facilities with currently active licenses (Regular, Original, Inspected, 1st/2nd Provisional) are included. Facilities with expired or inactive licenses are excluded.',
+                'filtering': 'Only facilities with confirmed active licenses (Regular, Original, Inspected, 1st/2nd Provisional) are included. Facilities not in our license database or with inactive/unknown license status are excluded.',
                 'years_active_estimation': 'Years active is estimated from the earliest document we have for each facility. This is an approximation - actual facility opening dates may differ.',
                 'capacity_normalization': 'When normalizing by capacity, values are divided by (capacity × years_active) to account for both facility size and operating duration.',
                 'caveats': [
                     'Capacity may have changed over time - we use current capacity for all calculations.',
                     'Years active is estimated from document history, not actual licensing records.',
-                    'Some facilities may have documents predating our records.'
+                    'Some facilities may have documents predating our records.',
+                    'Facilities with unknown license status are treated as inactive and excluded.'
                 ]
             }
         },
