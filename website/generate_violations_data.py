@@ -167,17 +167,47 @@ def load_facility_info(csv_path: str) -> Dict[str, Dict]:
                 continue
             
             # Key by LicenseNumber since that's what document_info and violation_levels use
+            license_status = row.get('LicenseStatus', '').strip()
             facilities[license_number] = {
                 'agency_id': row.get('agencyId', ''),
                 'license_number': license_number,
                 'agency_name': row.get('AgencyName', ''),
                 'agency_type': row.get('AgencyType', ''),
                 'county': row.get('County', ''),
-                'city': row.get('City', '')
+                'city': row.get('City', ''),
+                'license_status': license_status,
+                'license_effective_date': row.get('LicenseEffectiveDate', ''),
+                'license_expiration_date': row.get('LicenseExpirationDate', ''),
             }
     
     print(f"Loaded {len(facilities)} facility records")
     return facilities
+
+
+def is_active_license(license_status: str) -> bool:
+    """Check if a license status indicates an active license."""
+    # Active statuses in the Michigan system
+    active_statuses = {'Regular', 'Original', 'Inspected', '1st Provisional', '2nd Provisional'}
+    return license_status in active_statuses
+
+
+def get_years_active_bin(years_active: Optional[float]) -> str:
+    """Categorize years active into bins for visualization."""
+    if years_active is None:
+        return "Unknown"
+    
+    if years_active < 1:
+        return "<1 year"
+    elif years_active < 2:
+        return "1-2 years"
+    elif years_active < 3:
+        return "2-3 years"
+    elif years_active < 5:
+        return "3-5 years"
+    elif years_active < 10:
+        return "5-10 years"
+    else:
+        return "10+ years"
 
 
 def load_violation_levels(csv_path: str) -> Dict[str, Dict]:
@@ -208,29 +238,50 @@ def load_violation_levels(csv_path: str) -> Dict[str, Dict]:
     return levels
 
 
-def load_document_info(csv_path: str) -> List[Dict]:
-    """Load document info and return list of SIR documents."""
-    documents = []
+def load_document_info(csv_path: str) -> Tuple[List[Dict], Dict[str, str]]:
+    """Load document info and return list of SIR documents and earliest doc dates per facility.
+    
+    Returns:
+        Tuple of (list of SIR documents, dict mapping license_number to earliest_doc_date)
+    """
+    sir_documents = []
+    earliest_doc_by_facility = {}  # license_number -> earliest date string (for years active calculation)
     
     with open(csv_path, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            # Only include Special Investigation Reports
+            agency_id = row.get('agency_id', '').strip()
+            date_str = row.get('date', '')
+            
+            # Track earliest document date for each facility
+            if agency_id and date_str:
+                parsed = parse_date(date_str)
+                if parsed:
+                    year, month = parsed
+                    date_key = f"{year}-{month:02d}"
+                    
+                    if agency_id not in earliest_doc_by_facility:
+                        earliest_doc_by_facility[agency_id] = date_key
+                    elif date_key < earliest_doc_by_facility[agency_id]:
+                        earliest_doc_by_facility[agency_id] = date_key
+            
+            # Only include Special Investigation Reports in the main list
             is_sir = row.get('is_special_investigation', 'False').lower() in ('true', '1', 'yes')
             if not is_sir:
                 continue
             
-            documents.append({
-                'agency_id': row.get('agency_id', '').strip(),
-                'date': row.get('date', ''),
+            sir_documents.append({
+                'agency_id': agency_id,
+                'date': date_str,
                 'agency_name': row.get('agency_name', ''),
                 'document_title': row.get('document_title', ''),
                 'sha256': row.get('sha256', ''),
                 'date_processed': row.get('date_processed', '')
             })
     
-    print(f"Loaded {len(documents)} SIR documents")
-    return documents
+    print(f"Loaded {len(sir_documents)} SIR documents")
+    print(f"Found earliest document dates for {len(earliest_doc_by_facility)} facilities")
+    return sir_documents, earliest_doc_by_facility
 
 
 def categorize_age_group(normalized_age: Optional[str]) -> str:
@@ -379,6 +430,33 @@ def simplify_facility_type(agency_type: str) -> str:
     return agency_type
 
 
+def calculate_years_active(earliest_doc_date: Optional[str], reference_year: int = 2025) -> Optional[float]:
+    """Calculate years active from earliest document date to reference year.
+    
+    Args:
+        earliest_doc_date: Date string in YYYY-MM format
+        reference_year: Year to calculate up to (default 2025, current year)
+    
+    Returns:
+        Number of years active, or None if date is invalid
+    """
+    if not earliest_doc_date:
+        return None
+    
+    try:
+        parts = earliest_doc_date.split('-')
+        if len(parts) >= 2:
+            start_year = int(parts[0])
+            start_month = int(parts[1])
+            # Calculate years as decimal (roughly)
+            years = (reference_year - start_year) + (12 - start_month) / 12.0
+            return max(0, years)
+    except (ValueError, IndexError):
+        pass
+    
+    return None
+
+
 def generate_violations_data(
     document_csv: str,
     facility_info_csv: str,
@@ -386,37 +464,63 @@ def generate_violations_data(
     violation_levels_csv: str,
     output_dir: str
 ):
-    """Generate violations analytics data."""
+    """Generate violations analytics data.
+    
+    FILTERING: Only facilities with currently active licenses are included.
+    This ensures comparisons are meaningful - inactive facilities may have 
+    stopped operating years ago and should not be compared to currently 
+    active facilities.
+    
+    NORMALIZATION: When "normalize by capacity" is checked, we divide by
+    (capacity × years_active) to account for both facility size and how
+    long it has been operating. Years active is estimated from the earliest
+    document we have for that facility.
+    """
     
     os.makedirs(output_dir, exist_ok=True)
     
-    # Load all data
-    documents = load_document_info(document_csv)
+    # Load all data - documents now returns (sir_documents, earliest_doc_dates)
+    documents, earliest_doc_by_facility = load_document_info(document_csv)
     facilities = load_facility_info(facility_info_csv)
     annotations = load_facility_annotations(facility_annotations_csv)
     violation_levels = load_violation_levels(violation_levels_csv)
     
-    # Aggregation containers - now with capacity tracking for normalization
+    # Determine which facilities have active licenses
+    active_license_numbers = set()
+    inactive_count = 0
+    for license_number, fac_info in facilities.items():
+        if is_active_license(fac_info.get('license_status', '')):
+            active_license_numbers.add(license_number)
+        else:
+            inactive_count += 1
+    
+    print(f"Found {len(active_license_numbers)} facilities with active licenses, {inactive_count} inactive")
+    
+    # Aggregation containers - now with capacity_years tracking for normalization
+    # capacity_years = sum of (capacity × years_active) for each facility
     violations_by_date = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
-    violations_by_facility_type = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
-    violations_by_region = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
-    violations_by_gender = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
-    violations_by_capacity = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0})
+    violations_by_facility_type = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0})
+    violations_by_region = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0})
+    violations_by_gender = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0})
+    violations_by_capacity = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0})
     violations_by_year = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
+    violations_by_years_active = defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0})
     
     # Track facilities we've seen for each bin (to avoid double-counting capacity)
     facilities_by_type = defaultdict(set)
     facilities_by_region = defaultdict(set)
     facilities_by_gender = defaultdict(set)
     facilities_by_capacity_bin = defaultdict(set)
+    facilities_by_years_active_bin = defaultdict(set)
     
     # Per-year data for year range filtering
     # Structure: {year: {grouping_type: {group_key: {counts}}}}
     violations_by_year_grouped = defaultdict(lambda: {
-        'facility_type': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
-        'region': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
-        'gender': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
-        'capacity_bin': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0}),
+        'facility_type': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0}),
+        'region': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0}),
+        'gender': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0}),
+        'capacity_bin': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0, 'capacity': 0, 'capacity_years': 0.0}),
+        'years_active_bin': defaultdict(lambda: {'total': 0, 'low': 0, 'moderate': 0, 'severe': 0}),
     })
     
     # Track facilities per year for facility counts
@@ -425,6 +529,7 @@ def generate_violations_data(
         'region': defaultdict(set),
         'gender': defaultdict(set),
         'capacity_bin': defaultdict(set),
+        'years_active_bin': defaultdict(set),
     })
     
     # Track capacity per year per grouping (to avoid double-counting)
@@ -437,6 +542,10 @@ def generate_violations_data(
     
     # Track unique violations (some documents may be duplicated)
     processed_sha256 = set()
+    
+    # Track skipped violations for reporting
+    skipped_inactive = 0
+    skipped_unknown_facility = 0
     
     for doc in documents:
         sha256 = doc['sha256']
@@ -456,13 +565,20 @@ def generate_violations_data(
         if not level or level not in ('low', 'moderate', 'severe'):
             continue
         
-        # Parse date
-        date_str = doc['date'] or vl_info.get('date', '')
-        parsed_date = parse_date(date_str)
-        
         # Get facility info - agency_id from documents is actually the LicenseNumber
         license_number = agency_id  # agency_id in document_info is the LicenseNumber
         facility = facilities.get(license_number, {})
+        
+        # Filter: Only include facilities with active licenses
+        if license_number not in active_license_numbers:
+            # Also allow facilities not in facility_information.csv (might be in annotations)
+            if license_number in facilities:
+                skipped_inactive += 1
+                continue
+        
+        # Parse date
+        date_str = doc['date'] or vl_info.get('date', '')
+        parsed_date = parse_date(date_str)
         
         # Get annotation info
         annotation = annotations.get(license_number, {})
@@ -481,6 +597,16 @@ def generate_violations_data(
         capacity = parse_capacity(annotation.get('capacity', ''))
         capacity_bin = get_capacity_bin(capacity)
         
+        # Calculate years active from earliest document
+        earliest_doc = earliest_doc_by_facility.get(license_number)
+        years_active = calculate_years_active(earliest_doc)
+        years_active_bin = get_years_active_bin(years_active)
+        
+        # Calculate capacity_years (capacity × years_active) for normalization
+        capacity_years = None
+        if capacity is not None and years_active is not None:
+            capacity_years = capacity * years_active
+        
         # Aggregate by date (month)
         year_str = None
         if parsed_date:
@@ -494,6 +620,12 @@ def generate_violations_data(
             violations_by_year[year_str]['total'] += 1
             violations_by_year[year_str][level] += 1
             
+            # Aggregate by years active bin
+            violations_by_years_active[years_active_bin]['total'] += 1
+            violations_by_years_active[years_active_bin][level] += 1
+            if license_number not in facilities_by_years_active_bin[years_active_bin]:
+                facilities_by_years_active_bin[years_active_bin].add(license_number)
+            
             # Per-year grouped data for year range filtering
             violations_by_year_grouped[year_str]['facility_type'][simplified_type]['total'] += 1
             violations_by_year_grouped[year_str]['facility_type'][simplified_type][level] += 1
@@ -503,55 +635,80 @@ def generate_violations_data(
             violations_by_year_grouped[year_str]['gender'][gender][level] += 1
             violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin]['total'] += 1
             violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin][level] += 1
+            violations_by_year_grouped[year_str]['years_active_bin'][years_active_bin]['total'] += 1
+            violations_by_year_grouped[year_str]['years_active_bin'][years_active_bin][level] += 1
             
             # Track facilities per year (for facility counts)
             facilities_per_year[year_str]['facility_type'][simplified_type].add(license_number)
             facilities_per_year[year_str]['region'][region].add(license_number)
             facilities_per_year[year_str]['gender'][gender].add(license_number)
             facilities_per_year[year_str]['capacity_bin'][capacity_bin].add(license_number)
+            facilities_per_year[year_str]['years_active_bin'][years_active_bin].add(license_number)
             
-            # Track capacity per year per grouping
+            # Track capacity and capacity_years per year per grouping
             if capacity is not None:
                 if license_number not in capacity_tracked_per_year[year_str]['facility_type'][simplified_type]:
                     violations_by_year_grouped[year_str]['facility_type'][simplified_type]['capacity'] += capacity
+                    if capacity_years is not None:
+                        violations_by_year_grouped[year_str]['facility_type'][simplified_type]['capacity_years'] += capacity_years
                     capacity_tracked_per_year[year_str]['facility_type'][simplified_type].add(license_number)
                 if license_number not in capacity_tracked_per_year[year_str]['region'][region]:
                     violations_by_year_grouped[year_str]['region'][region]['capacity'] += capacity
+                    if capacity_years is not None:
+                        violations_by_year_grouped[year_str]['region'][region]['capacity_years'] += capacity_years
                     capacity_tracked_per_year[year_str]['region'][region].add(license_number)
                 if license_number not in capacity_tracked_per_year[year_str]['gender'][gender]:
                     violations_by_year_grouped[year_str]['gender'][gender]['capacity'] += capacity
+                    if capacity_years is not None:
+                        violations_by_year_grouped[year_str]['gender'][gender]['capacity_years'] += capacity_years
                     capacity_tracked_per_year[year_str]['gender'][gender].add(license_number)
                 if license_number not in capacity_tracked_per_year[year_str]['capacity_bin'][capacity_bin]:
                     violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin]['capacity'] += capacity
+                    if capacity_years is not None:
+                        violations_by_year_grouped[year_str]['capacity_bin'][capacity_bin]['capacity_years'] += capacity_years
                     capacity_tracked_per_year[year_str]['capacity_bin'][capacity_bin].add(license_number)
         
         # Aggregate by facility type
         violations_by_facility_type[simplified_type]['total'] += 1
         violations_by_facility_type[simplified_type][level] += 1
-        if license_number not in facilities_by_type[simplified_type] and capacity is not None:
-            violations_by_facility_type[simplified_type]['capacity'] += capacity
+        if license_number not in facilities_by_type[simplified_type]:
+            if capacity is not None:
+                violations_by_facility_type[simplified_type]['capacity'] += capacity
+            if capacity_years is not None:
+                violations_by_facility_type[simplified_type]['capacity_years'] += capacity_years
             facilities_by_type[simplified_type].add(license_number)
         
         # Aggregate by region
         violations_by_region[region]['total'] += 1
         violations_by_region[region][level] += 1
-        if license_number not in facilities_by_region[region] and capacity is not None:
-            violations_by_region[region]['capacity'] += capacity
+        if license_number not in facilities_by_region[region]:
+            if capacity is not None:
+                violations_by_region[region]['capacity'] += capacity
+            if capacity_years is not None:
+                violations_by_region[region]['capacity_years'] += capacity_years
             facilities_by_region[region].add(license_number)
         
         # Aggregate by gender
         violations_by_gender[gender]['total'] += 1
         violations_by_gender[gender][level] += 1
-        if license_number not in facilities_by_gender[gender] and capacity is not None:
-            violations_by_gender[gender]['capacity'] += capacity
+        if license_number not in facilities_by_gender[gender]:
+            if capacity is not None:
+                violations_by_gender[gender]['capacity'] += capacity
+            if capacity_years is not None:
+                violations_by_gender[gender]['capacity_years'] += capacity_years
             facilities_by_gender[gender].add(license_number)
         
         # Aggregate by capacity bin
         violations_by_capacity[capacity_bin]['total'] += 1
         violations_by_capacity[capacity_bin][level] += 1
-        if license_number not in facilities_by_capacity_bin[capacity_bin] and capacity is not None:
-            violations_by_capacity[capacity_bin]['capacity'] += capacity
+        if license_number not in facilities_by_capacity_bin[capacity_bin]:
+            if capacity is not None:
+                violations_by_capacity[capacity_bin]['capacity'] += capacity
+            if capacity_years is not None:
+                violations_by_capacity[capacity_bin]['capacity_years'] += capacity_years
             facilities_by_capacity_bin[capacity_bin].add(license_number)
+    
+    print(f"Skipped {skipped_inactive} violations from facilities with inactive licenses")
     
     # Convert to sorted lists for JSON output
     def dict_to_sorted_list(d: dict, key_name: str = 'key') -> list:
@@ -569,8 +726,17 @@ def generate_violations_data(
         order = {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6}
         return order.get(item['capacity_bin'], 99)
     
+    # Custom sort for years active bins
+    def years_active_bin_sort_key(item):
+        """Sort years active bins in logical order."""
+        order = {'<1 year': 0, '1-2 years': 1, '2-3 years': 2, '3-5 years': 3, '5-10 years': 4, '10+ years': 5, 'Unknown': 6}
+        return order.get(item['years_active_bin'], 99)
+    
     capacity_list = dict_to_sorted_list(violations_by_capacity, 'capacity_bin')
     capacity_list.sort(key=capacity_bin_sort_key)
+    
+    years_active_list = dict_to_sorted_list(violations_by_years_active, 'years_active_bin')
+    years_active_list.sort(key=years_active_bin_sort_key)
     
     # Process per-year grouped data
     per_year_data = {}
@@ -583,6 +749,10 @@ def generate_violations_data(
             'capacity_bin': sorted(
                 [{'capacity_bin': k, **dict(v)} for k, v in year_data['capacity_bin'].items()],
                 key=lambda x: {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6}.get(x['capacity_bin'], 99)
+            ),
+            'years_active_bin': sorted(
+                [{'years_active_bin': k, **dict(v)} for k, v in year_data['years_active_bin'].items()],
+                key=lambda x: {'<1 year': 0, '1-2 years': 1, '2-3 years': 2, '3-5 years': 3, '5-10 years': 4, '10+ years': 5, 'Unknown': 6}.get(x['years_active_bin'], 99)
             ),
         }
     
@@ -598,6 +768,10 @@ def generate_violations_data(
                 [{'capacity_bin': k, 'count': len(v)} for k, v in year_facilities['capacity_bin'].items()],
                 key=lambda x: {'1-10': 0, '11-20': 1, '21-30': 2, '31-50': 3, '51-100': 4, '100+': 5, 'Unknown': 6}.get(x['capacity_bin'], 99)
             ),
+            'years_active_bin': sorted(
+                [{'years_active_bin': k, 'count': len(v)} for k, v in year_facilities['years_active_bin'].items()],
+                key=lambda x: {'<1 year': 0, '1-2 years': 1, '2-3 years': 2, '3-5 years': 3, '5-10 years': 4, '10+ years': 5, 'Unknown': 6}.get(x['years_active_bin'], 99)
+            ),
         }
     
     # Prepare output data
@@ -606,9 +780,21 @@ def generate_violations_data(
             'generated_at': datetime.now().isoformat(),
             'total_documents_processed': len(processed_sha256),
             'total_violations_with_level': sum(v['total'] for v in violations_by_date.values()),
+            'skipped_inactive_facilities': skipped_inactive,
+            'active_facility_count': len(active_license_numbers),
             'year_range': {
                 'min': min(violations_by_year.keys()) if violations_by_year else None,
                 'max': max(violations_by_year.keys()) if violations_by_year else None,
+            },
+            'methodology': {
+                'filtering': 'Only facilities with currently active licenses (Regular, Original, Inspected, 1st/2nd Provisional) are included. Facilities with expired or inactive licenses are excluded.',
+                'years_active_estimation': 'Years active is estimated from the earliest document we have for each facility. This is an approximation - actual facility opening dates may differ.',
+                'capacity_normalization': 'When normalizing by capacity, values are divided by (capacity × years_active) to account for both facility size and operating duration.',
+                'caveats': [
+                    'Capacity may have changed over time - we use current capacity for all calculations.',
+                    'Years active is estimated from document history, not actual licensing records.',
+                    'Some facilities may have documents predating our records.'
+                ]
             }
         },
         'by_year': dict_to_sorted_list(violations_by_year, 'year'),
@@ -616,6 +802,7 @@ def generate_violations_data(
         'by_region': dict_to_sorted_list(violations_by_region, 'region'),
         'by_gender': dict_to_sorted_list(violations_by_gender, 'gender'),
         'by_capacity': capacity_list,
+        'by_years_active': years_active_list,
         'per_year': per_year_data,
         'facility_counts_per_year': facility_counts_per_year,
     }

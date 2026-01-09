@@ -1,11 +1,15 @@
 // Violations analytics page - displays violation statistics
 // with views by date and facility type/region/gender/capacity.
+// 
+// IMPORTANT: Only facilities with currently active licenses are included.
+// Normalization divides by (capacity × years_active) to account for both
+// facility size and how long it has been operating.
 
 import noUiSlider from 'nouislider';
 import 'nouislider/dist/nouislider.css';
 
 let violationsData = null;
-let currentGroupBy = 'facility_type'; // 'facility_type', 'region', 'gender', 'capacity'
+let currentGroupBy = 'facility_type'; // 'facility_type', 'region', 'gender', 'capacity', 'years_active'
 let facilityCountGroupBy = 'facility_type';
 let capacityNormalized = false;
 let yearRangeMin = null;
@@ -33,6 +37,7 @@ async function init() {
         
         hideLoading();
         showContent();
+        renderMethodologyNote();
         renderSummaryStats();
         renderByYearChart();
         setupYearRangeSlider();
@@ -47,6 +52,35 @@ async function init() {
         showError(`Failed to load violations data: ${error.message}`);
         hideLoading();
     }
+}
+
+function renderMethodologyNote() {
+    const container = document.getElementById('methodologyNote');
+    if (!container || !violationsData || !violationsData.metadata) return;
+    
+    const meta = violationsData.metadata;
+    const methodology = meta.methodology || {};
+    
+    container.innerHTML = `
+        <details>
+            <summary>📋 Data Methodology & Filtering</summary>
+            <div class="methodology-content">
+                <p><strong>Filtering:</strong> ${escapeHtml(methodology.filtering || 'Only facilities with currently active licenses are included.')}</p>
+                <p><strong>Years Active Estimation:</strong> ${escapeHtml(methodology.years_active_estimation || 'Years active is estimated from the earliest document we have for each facility.')}</p>
+                <p><strong>Capacity Normalization:</strong> ${escapeHtml(methodology.capacity_normalization || 'When normalizing, values are divided by (capacity × years_active).')}</p>
+                ${methodology.caveats && methodology.caveats.length > 0 ? `
+                <p><strong>Caveats:</strong></p>
+                <ul>
+                    ${methodology.caveats.map(c => `<li>${escapeHtml(c)}</li>`).join('')}
+                </ul>
+                ` : ''}
+                <p class="metadata-stats">
+                    <em>Active facilities: ${meta.active_facility_count || 'N/A'} • 
+                    Violations from inactive facilities excluded: ${meta.skipped_inactive_facilities || 0}</em>
+                </p>
+            </div>
+        </details>
+    `;
 }
 
 function hideLoading() {
@@ -106,18 +140,20 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, 
         return;
     }
     
-    // Filter out items with no capacity if normalized mode is on
+    // Filter out items with no capacity_years if normalized mode is on
     // Also filter out "Unknown" category since those facilities don't have capacity data
     let filteredData = [...data];
     if (normalized) {
         filteredData = filteredData.filter(d => {
             const label = d[labelKey] || '';
-            // Exclude Unknown categories and items with no capacity
+            // Exclude Unknown categories and items with no capacity_years
             if (label === 'Unknown') return false;
-            return d.capacity && d.capacity > 0;
+            // Use capacity_years if available, fall back to capacity
+            const normValue = d.capacity_years || d.capacity || 0;
+            return normValue > 0;
         });
         if (filteredData.length === 0) {
-            container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No data available with known capacity</div>';
+            container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No data available with known capacity and years active</div>';
             return;
         }
     }
@@ -126,10 +162,12 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, 
     let sortedData = [...filteredData];
     if (sortByTotal) {
         if (normalized) {
-            // Sort by normalized value (total / capacity)
+            // Sort by normalized value (total / capacity_years)
             sortedData.sort((a, b) => {
-                const aVal = a.capacity > 0 ? a.total / a.capacity : 0;
-                const bVal = b.capacity > 0 ? b.total / b.capacity : 0;
+                const aNorm = a.capacity_years || a.capacity || 0;
+                const bNorm = b.capacity_years || b.capacity || 0;
+                const aVal = aNorm > 0 ? a.total / aNorm : 0;
+                const bVal = bNorm > 0 ? b.total / bNorm : 0;
                 return bVal - aVal;
             });
         } else {
@@ -140,7 +178,10 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, 
     // Calculate max value for scaling
     let maxValue;
     if (normalized) {
-        maxValue = Math.max(...sortedData.map(d => d.capacity > 0 ? d.total / d.capacity : 0));
+        maxValue = Math.max(...sortedData.map(d => {
+            const normValue = d.capacity_years || d.capacity || 0;
+            return normValue > 0 ? d.total / normValue : 0;
+        }));
     } else {
         maxValue = Math.max(...sortedData.map(d => d.total || 0));
     }
@@ -151,16 +192,20 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, 
         const moderate = item.moderate || 0;
         const severe = item.severe || 0;
         const capacity = item.capacity || 0;
+        const capacityYears = item.capacity_years || 0;
+        // Use capacity_years if available, otherwise fall back to capacity
+        const normValue = capacityYears > 0 ? capacityYears : capacity;
         
         let displayValue, lowPct, moderatePct, severePct;
         
-        if (normalized && capacity > 0) {
-            // Normalized mode: divide by capacity
-            const normalizedTotal = total / capacity;
+        if (normalized && normValue > 0) {
+            // Normalized mode: divide by capacity_years (or capacity as fallback)
+            const normalizedTotal = total / normValue;
+            // Use 2 decimal places for better readability
             displayValue = normalizedTotal.toFixed(2);
-            lowPct = maxValue > 0 ? ((low / capacity) / maxValue) * 100 : 0;
-            moderatePct = maxValue > 0 ? ((moderate / capacity) / maxValue) * 100 : 0;
-            severePct = maxValue > 0 ? ((severe / capacity) / maxValue) * 100 : 0;
+            lowPct = maxValue > 0 ? ((low / normValue) / maxValue) * 100 : 0;
+            moderatePct = maxValue > 0 ? ((moderate / normValue) / maxValue) * 100 : 0;
+            severePct = maxValue > 0 ? ((severe / normValue) / maxValue) * 100 : 0;
         } else {
             displayValue = total.toString();
             lowPct = maxValue > 0 ? (low / maxValue) * 100 : 0;
@@ -169,9 +214,16 @@ function renderStackedBarChart(containerId, data, labelKey, sortByTotal = true, 
         }
         
         const label = item[labelKey] || 'Unknown';
-        const tooltip = normalized && capacity > 0
-            ? `Low: ${low}, Moderate: ${moderate}, Severe: ${severe} (Capacity: ${capacity})`
-            : `Low: ${low}, Moderate: ${moderate}, Severe: ${severe}`;
+        let tooltip;
+        if (normalized && normValue > 0) {
+            if (capacityYears > 0) {
+                tooltip = `Low: ${low}, Moderate: ${moderate}, Severe: ${severe} (Capacity×Years: ${capacityYears.toFixed(1)})`;
+            } else {
+                tooltip = `Low: ${low}, Moderate: ${moderate}, Severe: ${severe} (Capacity: ${capacity})`;
+            }
+        } else {
+            tooltip = `Low: ${low}, Moderate: ${moderate}, Severe: ${severe}`;
+        }
         
         return `
             <div class="bar-chart-row">
@@ -258,7 +310,15 @@ function setupYearRangeSlider() {
 function getFilteredDataByYearRange(groupingType) {
     if (!violationsData.per_year) return null;
     
-    const labelKey = groupingType === 'capacity' ? 'capacity_bin' : groupingType;
+    // Map grouping type to the correct key in the data
+    let labelKey;
+    if (groupingType === 'capacity') {
+        labelKey = 'capacity_bin';
+    } else if (groupingType === 'years_active') {
+        labelKey = 'years_active_bin';
+    } else {
+        labelKey = groupingType;
+    }
     
     // Aggregate data across selected years
     const aggregated = {};
@@ -272,13 +332,14 @@ function getFilteredDataByYearRange(groupingType) {
         for (const item of groupData) {
             const key = item[labelKey];
             if (!aggregated[key]) {
-                aggregated[key] = { total: 0, low: 0, moderate: 0, severe: 0, capacity: 0 };
+                aggregated[key] = { total: 0, low: 0, moderate: 0, severe: 0, capacity: 0, capacity_years: 0 };
             }
             aggregated[key].total += item.total || 0;
             aggregated[key].low += item.low || 0;
             aggregated[key].moderate += item.moderate || 0;
             aggregated[key].severe += item.severe || 0;
             aggregated[key].capacity += item.capacity || 0;
+            aggregated[key].capacity_years += item.capacity_years || 0;
         }
     }
     
@@ -294,6 +355,12 @@ function getFilteredDataByYearRange(groupingType) {
         result.sort((a, b) => (order[a.capacity_bin] || 99) - (order[b.capacity_bin] || 99));
     }
     
+    // Sort years active bins in order
+    if (groupingType === 'years_active') {
+        const order = {'<1 year': 0, '1-2 years': 1, '2-3 years': 2, '3-5 years': 3, '5-10 years': 4, '10+ years': 5, 'Unknown': 6};
+        result.sort((a, b) => (order[a.years_active_bin] || 99) - (order[b.years_active_bin] || 99));
+    }
+    
     return result;
 }
 
@@ -304,24 +371,30 @@ function renderGroupedChart() {
     let data = [];
     let labelKey = '';
     
+    // Map grouping type to label key
+    if (currentGroupBy === 'capacity') {
+        labelKey = 'capacity_bin';
+    } else if (currentGroupBy === 'years_active') {
+        labelKey = 'years_active_bin';
+    } else {
+        labelKey = currentGroupBy;
+    }
+    
     // Try to use year-filtered data if available
     if (violationsData.per_year && yearRangeMin && yearRangeMax) {
         data = getFilteredDataByYearRange(currentGroupBy);
-        labelKey = currentGroupBy === 'capacity' ? 'capacity_bin' : currentGroupBy;
     } else {
         // Fall back to pre-aggregated data
         if (currentGroupBy === 'facility_type') {
             data = violationsData.by_facility_type || [];
-            labelKey = 'facility_type';
         } else if (currentGroupBy === 'region') {
             data = violationsData.by_region || [];
-            labelKey = 'region';
         } else if (currentGroupBy === 'gender') {
             data = violationsData.by_gender || [];
-            labelKey = 'gender';
         } else if (currentGroupBy === 'capacity') {
             data = violationsData.by_capacity || [];
-            labelKey = 'capacity_bin';
+        } else if (currentGroupBy === 'years_active') {
+            data = violationsData.by_years_active || [];
         }
     }
     
@@ -330,11 +403,11 @@ function renderGroupedChart() {
         return;
     }
     
-    // Allow capacity normalization for all groupings including capacity
-    const useNormalized = capacityNormalized;
+    // Allow capacity normalization for all groupings except years_active
+    const useNormalized = capacityNormalized && currentGroupBy !== 'years_active';
     
-    // Keep capacity bins in original order (already sorted by bins), sort others by total
-    const sortByTotal = currentGroupBy !== 'capacity';
+    // Keep capacity bins and years_active bins in original order (already sorted), sort others by total
+    const sortByTotal = currentGroupBy !== 'capacity' && currentGroupBy !== 'years_active';
     
     renderStackedBarChart('byGroupedChart', data, labelKey, sortByTotal, useNormalized);
 }
@@ -363,7 +436,15 @@ function setupCapacityNormalizedCheckbox() {
 function getFilteredFacilityCountsByYearRange(groupingType) {
     if (!violationsData.facility_counts_per_year) return null;
     
-    const labelKey = groupingType === 'capacity' ? 'capacity_bin' : groupingType;
+    // Map grouping type to label key
+    let labelKey;
+    if (groupingType === 'capacity') {
+        labelKey = 'capacity_bin';
+    } else if (groupingType === 'years_active') {
+        labelKey = 'years_active_bin';
+    } else {
+        labelKey = groupingType;
+    }
     
     // Aggregate unique facilities across selected years
     const aggregated = {};
@@ -398,6 +479,12 @@ function getFilteredFacilityCountsByYearRange(groupingType) {
         result.sort((a, b) => (order[a.capacity_bin] || 99) - (order[b.capacity_bin] || 99));
     }
     
+    // Sort years active bins in order
+    if (groupingType === 'years_active') {
+        const order = {'<1 year': 0, '1-2 years': 1, '2-3 years': 2, '3-5 years': 3, '5-10 years': 4, '10+ years': 5, 'Unknown': 6};
+        result.sort((a, b) => (order[a.years_active_bin] || 99) - (order[b.years_active_bin] || 99));
+    }
+    
     return result;
 }
 
@@ -406,16 +493,25 @@ function renderFacilityCountChart() {
     if (!container) return;
     
     let data = getFilteredFacilityCountsByYearRange(facilityCountGroupBy);
-    const labelKey = facilityCountGroupBy === 'capacity' ? 'capacity_bin' : facilityCountGroupBy;
+    
+    // Map grouping type to label key
+    let labelKey;
+    if (facilityCountGroupBy === 'capacity') {
+        labelKey = 'capacity_bin';
+    } else if (facilityCountGroupBy === 'years_active') {
+        labelKey = 'years_active_bin';
+    } else {
+        labelKey = facilityCountGroupBy;
+    }
     
     if (!data || data.length === 0) {
         container.innerHTML = '<div style="color: #666; font-size: 0.9em; font-style: italic; padding: 20px; text-align: center;">No data available</div>';
         return;
     }
     
-    // Sort by count descending (except capacity bins)
+    // Sort by count descending (except capacity bins and years_active bins)
     let sortedData = [...data];
-    if (facilityCountGroupBy !== 'capacity') {
+    if (facilityCountGroupBy !== 'capacity' && facilityCountGroupBy !== 'years_active') {
         sortedData.sort((a, b) => (b.count || 0) - (a.count || 0));
     }
     

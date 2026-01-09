@@ -350,6 +350,54 @@
         .noUi-value {
             margin-top: 3px;
         }
+        
+        /* Methodology Note */
+        .methodology-note {
+            margin-bottom: 20px;
+        }
+        
+        .methodology-note details {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+        }
+        
+        .methodology-note summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .methodology-note summary:hover {
+            color: #3498db;
+        }
+        
+        .methodology-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9em;
+            color: #555;
+        }
+        
+        .methodology-content p {
+            margin-bottom: 8px;
+        }
+        
+        .methodology-content ul {
+            margin-left: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .methodology-content li {
+            margin-bottom: 4px;
+        }
+        
+        .metadata-stats {
+            color: #888;
+            font-size: 0.85em;
+        }
 
         @media (max-width: 768px) {
             .bar-chart-container {
@@ -441,6 +489,9 @@
         <div id="error" class="error" style="display: none;"></div>
         
         <div id="content" style="display: none;">
+            <!-- Methodology Note -->
+            <div id="methodologyNote" class="methodology-note"></div>
+            
             <!-- Summary Stats -->
             <div id="summaryStats" class="summary-stats"></div>
             
@@ -469,11 +520,11 @@
                 <div id="byYearChart" class="bar-chart-container"></div>
             </div>
             
-            <!-- Violations by Type/Region/Gender/Capacity -->
+            <!-- Violations by Type/Region/Gender/Capacity/Years Active -->
             <div class="chart-section">
                 <div class="chart-header">
                     <h2>🏢 Violations by Facility</h2>
-                    <p class="chart-description">Number of substantiated violations grouped by facility characteristics.</p>
+                    <p class="chart-description">Number of substantiated violations grouped by facility characteristics. Only facilities with currently active licenses are included.</p>
                 </div>
                 <div class="controls-container">
                     <div class="dropdown-container">
@@ -483,10 +534,11 @@
                             <option value="region">Region</option>
                             <option value="gender">Gender Served</option>
                             <option value="capacity">Capacity</option>
+                            <option value="years_active">Years Active</option>
                         </select>
-                        <label class="checkbox-label">
+                        <label class="checkbox-label" title="Normalize by (capacity × years active) to compare facilities of different sizes and ages">
                             <input type="checkbox" id="capacityNormalizedCheckbox">
-                            <span>Normalize by capacity</span>
+                            <span>Normalize by capacity×years</span>
                         </label>
                     </div>
                     <div class="year-range-container">
@@ -512,6 +564,7 @@
                         <option value="region">Region</option>
                         <option value="gender">Gender Served</option>
                         <option value="capacity">Capacity</option>
+                        <option value="years_active">Years Active</option>
                     </select>
                 </div>
                 <div id="facilityCountChart" class="bar-chart-container"></div>
